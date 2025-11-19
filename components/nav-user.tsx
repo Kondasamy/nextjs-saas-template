@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronsUpDown, GitFork, HandHeart, Sparkles } from 'lucide-react'
+import { ChevronsUpDown, GitFork, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -18,8 +18,6 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from '@/components/ui/sidebar'
-import { REPO_URL_FORK, REPO_URL_STAR } from '@/lib/constants'
-import DonationDialog from './donation-dialog'
 
 export function NavUser({
 	user,
@@ -74,26 +72,6 @@ export function NavUser({
 								</div>
 							</div>
 						</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
-							<DropdownMenuItem>
-								<GitFork />
-								<Link href={REPO_URL_FORK}>Fork this thing</Link>
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<Sparkles />
-								<Link href={REPO_URL_STAR}>Give a Star</Link>
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DonationDialog>
-							<DropdownMenuItem asChild>
-								<button className="flex w-full items-center gap-2 text-left">
-									<HandHeart />
-									Donate & Support
-								</button>
-							</DropdownMenuItem>
-						</DonationDialog>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</SidebarMenuItem>

@@ -3,9 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
-import { AppSidebar } from '@/components/app-sidebar'
-import PageHeader from '@/components/page-header'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { TRPCProvider } from '@/components/providers/trpc-provider'
 import { cn } from '@/lib/utils'
 
 export const viewport: Viewport = {
@@ -120,23 +118,17 @@ export default function RootLayout({
 					geistMono.variable
 				)}
 			>
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="dark"
-					enableSystem
-					disableTransitionOnChange
-				>
-					<SidebarProvider>
-						<AppSidebar />
-						<SidebarInset>
-							<PageHeader />
-							<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-								{children}
-							</div>
-						</SidebarInset>
-					</SidebarProvider>
-				</ThemeProvider>
-				<Toaster />
+				<TRPCProvider>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="dark"
+						enableSystem
+						disableTransitionOnChange
+					>
+						{children}
+						<Toaster />
+					</ThemeProvider>
+				</TRPCProvider>
 			</body>
 		</html>
 	)

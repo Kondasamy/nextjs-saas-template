@@ -5,7 +5,7 @@ const nextConfig = {
 	reactStrictMode: true,
 	pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
 	typescript: {
-		ignoreBuildErrors: true,
+		ignoreBuildErrors: false,
 	},
 	images: {
 		dangerouslyAllowSVG: true,

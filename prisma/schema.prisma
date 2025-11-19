@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+	provider = "prisma-client-js"
+}
+
+datasource db {
+	provider  = "postgresql"
+	url       = env("DATABASE_URL")
+	directUrl = env("DIRECT_URL")
+}
+
+model User {
+	id            String    @id @default(cuid())
+	email         String    @unique
+	name          String?
+	emailVerified DateTime?
+	image         String?
+	createdAt     DateTime  @default(now())
+	updatedAt     DateTime  @updatedAt
+
+	// Better Auth fields
+	betterAuthId String? @unique
+
+	// Relations
+	sessions           Session[]
+	organizations      OrganizationMember[]
+	invitations        Invitation[]
+	notifications      Notification[]
+	auditLogs          AuditLog[]
+	twoFactorAuth      TwoFactorAuth?
+	passkeys           Passkey[]
+
+	@@index([email])
+	@@map("users")
+}
+
+model Session {
+	id           String   @id @default(cuid())
+	userId       String
+	user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+	token        String   @unique
+	expiresAt    DateTime
+	ipAddress    String?
+	userAgent    String?
+	deviceName   String?
+	createdAt    DateTime @default(now())
+	lastActiveAt DateTime @default(now())
+
+	@@index([userId])
+	@@index([token])
+	@@map("sessions")
+}
+
+model Organization {
+	id          String   @id @default(cuid())
+	name        String
+	slug        String   @unique
+	description String?
+	logo        String?
+	createdAt   DateTime @default(now())
+	updatedAt   DateTime @updatedAt
+
+	// Relations
+	members     OrganizationMember[]
+	invitations Invitation[]
+	roles       Role[]
+
+	@@index([slug])
+	@@map("organizations")
+}
+
+model OrganizationMember {
+	id             String   @id @default(cuid())
+	organizationId String
+	organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+	userId         String
+	user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+	roleId         String
+	role           Role     @relation(fields: [roleId], references: [id])
+	joinedAt       DateTime @default(now())
+
+	@@unique([organizationId, userId])
+	@@index([organizationId])
+	@@index([userId])
+	@@map("organization_members")
+}
+
+model Role {
+	id             String   @id @default(cuid())
+	organizationId String
+	organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+	name           String
+	description    String?
+	permissions     Json     // Array of permission strings
+	isSystem       Boolean  @default(false)
+	createdAt      DateTime @default(now())
+	updatedAt      DateTime @updatedAt
+
+	// Relations
+	members OrganizationMember[]
+
+	@@unique([organizationId, name])
+	@@index([organizationId])
+	@@map("roles")
+}
+
+model Invitation {
+	id             String   @id @default(cuid())
+	organizationId String
+	organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+	email          String
+	invitedById    String
+	invitedBy      User     @relation(fields: [invitedById], references: [id])
+	roleId         String
+	role           Role     @relation(fields: [roleId], references: [id])
+	token          String   @unique
+	status         String   @default("pending") // pending, accepted, expired
+	expiresAt      DateTime
+	acceptedAt     DateTime?
+	createdAt      DateTime @default(now())
+
+	@@index([token])
+	@@index([email])
+	@@index([organizationId])
+	@@map("invitations")
+}
+
+model Notification {
+	id        String   @id @default(cuid())
+	userId    String
+	user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+	title     String
+	message   String
+	type      String   @default("info") // info, success, warning, error
+	read      Boolean  @default(false)
+	readAt    DateTime?
+	createdAt DateTime @default(now())
+
+	@@index([userId, read])
+	@@map("notifications")
+}
+
+model AuditLog {
+	id             String   @id @default(cuid())
+	userId         String?
+	user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+	organizationId String?
+	action         String
+	resource       String?
+	resourceId     String?
+	metadata       Json?
+	ipAddress      String?
+	userAgent      String?
+	createdAt      DateTime @default(now())
+
+	@@index([userId])
+	@@index([organizationId])
+	@@index([createdAt])
+	@@map("audit_logs")
+}
+
+model TwoFactorAuth {
+	id                String   @id @default(cuid())
+	userId            String   @unique
+	user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+	secret            String
+	enabled            Boolean  @default(false)
+	backupCodes       String[] // Array of backup codes
+	createdAt         DateTime @default(now())
+	updatedAt         DateTime @updatedAt
+
+	@@map("two_factor_auth")
+}
+
+model Passkey {
+	id              String   @id @default(cuid())
+	userId          String
+	user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+	credentialId    String   @unique
+	publicKey       String
+	counter         Int      @default(0)
+	deviceName      String?
+	lastUsedAt      DateTime?
+	createdAt       DateTime @default(now())
+
+	@@index([userId])
+	@@map("passkeys")
+}
+
