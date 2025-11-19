@@ -63,4 +63,3 @@ export const DEFAULT_ROLES = {
 	],
 	Viewer: ['workspace:read', 'member:read', 'resource:read'],
 } as const
-

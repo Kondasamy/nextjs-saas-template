@@ -8,4 +8,3 @@ export async function createServerCaller() {
 	const ctx = await createTRPCContext()
 	return createCaller(ctx)
 }
-

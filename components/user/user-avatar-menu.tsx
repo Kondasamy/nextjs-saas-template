@@ -1,7 +1,7 @@
 'use client'
 
-import { useAuth } from '@/hooks/use-auth'
-import { signOut } from '@/lib/auth/client'
+import { LogOut, Settings, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
 	DropdownMenu,
@@ -12,8 +12,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useRouter } from 'next/navigation'
-import { Settings, LogOut, User } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { signOut } from '@/lib/auth/client'
 
 export function UserAvatarMenu() {
 	const { user } = useAuth()
@@ -28,18 +28,24 @@ export function UserAvatarMenu() {
 		return null
 	}
 
-	const initials = user.name
-		?.split(' ')
-		.map((n) => n[0])
-		.join('')
-		.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? 'U'
+	const initials =
+		user.name
+			?.split(' ')
+			.map((n) => n[0])
+			.join('')
+			.toUpperCase() ??
+		user.email?.[0]?.toUpperCase() ??
+		'U'
 
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<button className="flex items-center gap-2 rounded-lg p-2 hover:bg-accent">
 					<Avatar className="h-8 w-8">
-						<AvatarImage src={user.image ?? undefined} alt={user.name ?? 'User'} />
+						<AvatarImage
+							src={user.image ?? undefined}
+							alt={user.name ?? 'User'}
+						/>
 						<AvatarFallback>{initials}</AvatarFallback>
 					</Avatar>
 					<div className="flex flex-col items-start text-left text-sm">
@@ -70,4 +76,3 @@ export function UserAvatarMenu() {
 		</DropdownMenu>
 	)
 }
-

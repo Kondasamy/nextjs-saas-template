@@ -1,5 +1,5 @@
-import { auth } from './config'
 import { headers } from 'next/headers'
+import { auth } from './config'
 
 export async function getSession() {
 	const h = await headers()
@@ -20,4 +20,3 @@ export async function requireAuth() {
 	}
 	return session
 }
-

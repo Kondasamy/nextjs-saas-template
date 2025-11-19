@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
-import { FileUpload } from './file-upload'
-import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
+import Image from 'next/image'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { FileUpload } from './file-upload'
 
 interface ImageUploadProps {
 	bucket?: string
@@ -35,12 +35,7 @@ export function ImageUpload({
 		<div className="space-y-4">
 			{preview ? (
 				<div className="relative w-32 h-32 rounded-lg overflow-hidden border">
-					<Image
-						src={preview}
-						alt="Preview"
-						fill
-						className="object-cover"
-					/>
+					<Image src={preview} alt="Preview" fill className="object-cover" />
 					<Button
 						variant="destructive"
 						size="icon"
@@ -64,4 +59,3 @@ export function ImageUpload({
 		</div>
 	)
 }
-

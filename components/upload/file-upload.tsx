@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { Upload, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Upload, X } from 'lucide-react'
 import { trpc } from '@/lib/trpc/client'
-import { toast } from 'sonner'
 
 interface FileUploadProps {
 	bucket: string
@@ -91,7 +91,7 @@ export function FileUpload({
 			onUploadComplete?.(publicUrl.publicUrl)
 			setFile(null)
 			setProgress(100)
-		} catch (error) {
+		} catch {
 			toast.error('Failed to upload file')
 		} finally {
 			setUploading(false)

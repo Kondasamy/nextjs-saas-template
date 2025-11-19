@@ -40,7 +40,9 @@ const envSchema = z.object({
 
 	// App
 	NEXT_PUBLIC_APP_URL: z.string().url(),
-	NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+	NODE_ENV: z
+		.enum(['development', 'production', 'test'])
+		.default('development'),
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -50,7 +52,9 @@ function getEnv(): Env {
 		return envSchema.parse(process.env)
 	} catch (error) {
 		if (error instanceof z.ZodError) {
-			const missingVars = error.errors.map((err) => err.path.join('.')).join(', ')
+			const missingVars = error.errors
+				.map((err) => err.path.join('.'))
+				.join(', ')
 			throw new Error(
 				`❌ Invalid environment variables: ${missingVars}\n` +
 					'Please check your .env.local file and ensure all required variables are set.'
@@ -61,4 +65,3 @@ function getEnv(): Env {
 }
 
 export const env = getEnv()
-

@@ -1,7 +1,7 @@
-import { z } from 'zod'
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
 import { randomBytes } from 'crypto'
+import { z } from 'zod'
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 
 export const invitationsRouter = createTRPCRouter({
 	list: protectedProcedure
@@ -75,7 +75,10 @@ export const invitationsRouter = createTRPCRouter({
 				membership.role.permissions.includes('member:invite')
 
 			if (!hasPermission) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' })
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions',
+				})
 			}
 
 			// Check if user is already a member
@@ -151,15 +154,24 @@ export const invitationsRouter = createTRPCRouter({
 			})
 
 			if (!invitation) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Invitation not found' })
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Invitation not found',
+				})
 			}
 
 			if (invitation.status !== 'pending') {
-				throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invitation already used' })
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Invitation already used',
+				})
 			}
 
 			if (invitation.expiresAt < new Date()) {
-				throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invitation expired' })
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Invitation expired',
+				})
 			}
 
 			return invitation
@@ -177,15 +189,24 @@ export const invitationsRouter = createTRPCRouter({
 			})
 
 			if (!invitation) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Invitation not found' })
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Invitation not found',
+				})
 			}
 
 			if (invitation.status !== 'pending') {
-				throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invitation already used' })
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Invitation already used',
+				})
 			}
 
 			if (invitation.expiresAt < new Date()) {
-				throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invitation expired' })
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Invitation expired',
+				})
 			}
 
 			if (invitation.email !== ctx.user.email) {
@@ -241,7 +262,7 @@ export const invitationsRouter = createTRPCRouter({
 			// Check if user can cancel (must be inviter or have permission)
 			const canCancel =
 				invitation.invitedById === ctx.user.id ||
-				invitation.organization.members.some((m) => {
+				invitation.organization.members.some(() => {
 					// Check permissions - simplified
 					return true
 				})
@@ -258,4 +279,3 @@ export const invitationsRouter = createTRPCRouter({
 			})
 		}),
 })
-

@@ -1,7 +1,13 @@
-import { requireAuth } from '@/lib/auth/auth-helpers'
 import { TwoFactorSetup } from '@/components/auth/2fa-setup'
 import { DeviceList } from '@/components/auth/device-list'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
+import { requireAuth } from '@/lib/auth/auth-helpers'
 
 export default async function SecuritySettingsPage() {
 	await requireAuth()
@@ -41,4 +47,3 @@ export default async function SecuritySettingsPage() {
 		</div>
 	)
 }
-

@@ -1,14 +1,14 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { z } from 'zod'
-import { signIn } from '@/lib/auth/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { signIn } from '@/lib/auth/client'
 
 const magicLinkSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -33,7 +33,7 @@ export function MagicLinkForm() {
 			})
 			setSent(true)
 			toast.success('Magic link sent! Check your email.')
-		} catch (error) {
+		} catch {
 			toast.error('Failed to send magic link. Please try again.')
 		} finally {
 			setIsLoading(false)
@@ -73,4 +73,3 @@ export function MagicLinkForm() {
 		</form>
 	)
 }
-

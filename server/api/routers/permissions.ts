@@ -1,6 +1,6 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
-import { TRPCError } from '@trpc/server'
 
 export const permissionsRouter = createTRPCRouter({
 	listRoles: protectedProcedure
@@ -62,7 +62,10 @@ export const permissionsRouter = createTRPCRouter({
 				membership.role.permissions.includes('role:create')
 
 			if (!hasPermission) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' })
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions',
+				})
 			}
 
 			return ctx.prisma.role.create({
@@ -117,7 +120,10 @@ export const permissionsRouter = createTRPCRouter({
 				membership.role.permissions.includes('role:update')
 
 			if (!hasPermission) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' })
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions',
+				})
 			}
 
 			return ctx.prisma.role.update({
@@ -156,7 +162,10 @@ export const permissionsRouter = createTRPCRouter({
 			}
 
 			if (role.isSystem) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Cannot delete system role' })
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Cannot delete system role',
+				})
 			}
 
 			const membership = role.organization.members[0]
@@ -169,7 +178,10 @@ export const permissionsRouter = createTRPCRouter({
 				membership.role.permissions.includes('role:delete')
 
 			if (!hasPermission) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' })
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions',
+				})
 			}
 
 			return ctx.prisma.role.delete({
@@ -177,4 +189,3 @@ export const permissionsRouter = createTRPCRouter({
 			})
 		}),
 })
-

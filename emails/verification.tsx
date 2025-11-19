@@ -75,4 +75,3 @@ const button = {
 	padding: '12px 24px',
 	margin: '20px 0',
 }
-

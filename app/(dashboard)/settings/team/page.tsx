@@ -14,4 +14,3 @@ export default async function TeamSettingsPage() {
 		</div>
 	)
 }
-

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from '@/lib/auth/client'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
 import { Key } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { signIn } from '@/lib/auth/client'
 
 export function PasskeyAuth() {
 	const [isLoading, setIsLoading] = useState(false)
@@ -12,10 +12,8 @@ export function PasskeyAuth() {
 	const handlePasskeySignIn = async () => {
 		setIsLoading(true)
 		try {
-			await signIn.passkey({
-				callbackURL: '/dashboard',
-			})
-		} catch (error) {
+			await signIn.passkey()
+		} catch {
 			toast.error('Failed to sign in with passkey. Please try again.')
 		} finally {
 			setIsLoading(false)
@@ -35,4 +33,3 @@ export function PasskeyAuth() {
 		</Button>
 	)
 }
-

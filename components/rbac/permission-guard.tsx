@@ -1,8 +1,8 @@
 'use client'
 
-import type { Permission } from '@/lib/rbac/permissions'
-import { hasPermission } from '@/lib/rbac/check-permission'
 import { usePermissions } from '@/hooks/use-permissions'
+import { hasPermission } from '@/lib/rbac/check-permission'
+import type { Permission } from '@/lib/rbac/permissions'
 
 interface PermissionGuardProps {
 	permission: Permission
@@ -23,4 +23,3 @@ export function PermissionGuard({
 
 	return <>{children}</>
 }
-

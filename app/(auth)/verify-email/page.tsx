@@ -1,6 +1,12 @@
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
 
 export default function VerifyEmailPage() {
 	return (
@@ -14,7 +20,8 @@ export default function VerifyEmailPage() {
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<p className="text-sm text-muted-foreground">
-						Please check your email and click the verification link to activate your account.
+						Please check your email and click the verification link to activate
+						your account.
 					</p>
 					<Link href="/login">
 						<Button variant="outline" className="w-full">
@@ -26,4 +33,3 @@ export default function VerifyEmailPage() {
 		</div>
 	)
 }
-

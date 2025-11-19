@@ -1,8 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { prisma } from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth/server'
+import { prisma } from '@/lib/prisma'
 
 export const createTRPCContext = async () => {
 	const user = await getAuthUser()
@@ -41,4 +41,3 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 		},
 	})
 })
-

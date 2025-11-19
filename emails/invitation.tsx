@@ -33,9 +33,7 @@ export function InvitationEmail({
 					<Button style={button} href={invitationUrl}>
 						Accept Invitation
 					</Button>
-					<Text style={text}>
-						This invitation will expire in 7 days.
-					</Text>
+					<Text style={text}>This invitation will expire in 7 days.</Text>
 				</Container>
 			</Body>
 		</Html>
@@ -81,4 +79,3 @@ const button = {
 	padding: '12px 24px',
 	margin: '20px 0',
 }
-

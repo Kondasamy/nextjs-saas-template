@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo } from 'react'
-import { trpc } from '@/lib/trpc/client'
 import { useAuth } from './use-auth'
 
 export function usePermissions(organizationId?: string) {
@@ -23,7 +22,7 @@ export function usePermissions(organizationId?: string) {
 
 	return {
 		permissions,
-		hasPermission: (permission: string) => permissions.includes('*') || permissions.includes(permission),
+		hasPermission: (permission: string) =>
+			permissions.includes('*') || permissions.includes(permission),
 	}
 }
-

@@ -1,8 +1,8 @@
 'use client'
 
-import { useRealtime } from './use-realtime'
-import { useNotifications } from './use-notifications'
 import { trpc } from '@/lib/trpc/client'
+import { useNotifications } from './use-notifications'
+import { useRealtime } from './use-realtime'
 
 export function useRealtimeNotifications() {
 	const { notifications, unreadCount } = useNotifications()
@@ -18,4 +18,3 @@ export function useRealtimeNotifications() {
 		unreadCount,
 	}
 }
-

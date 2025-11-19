@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { Check, ChevronsUpDown, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
 	Command,
@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils'
 export function WorkspaceSwitcher() {
 	const [open, setOpen] = useState(false)
 	const router = useRouter()
-	const { data: workspaces, isLoading } = trpc.workspace.list.useQuery()
+	const { data: workspaces } = trpc.workspace.list.useQuery()
 
 	const currentWorkspace = workspaces?.[0] // This would come from context/state
 
@@ -51,7 +51,7 @@ export function WorkspaceSwitcher() {
 					<CommandList>
 						<CommandEmpty>No workspace found.</CommandEmpty>
 						<CommandGroup>
-							{workspaces?.map((workspace) => (
+							{workspaces?.map((workspace: any) => (
 								<CommandItem
 									key={workspace.id}
 									value={workspace.id}
@@ -85,4 +85,3 @@ export function WorkspaceSwitcher() {
 		</Popover>
 	)
 }
-

@@ -1,14 +1,14 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { z } from 'zod'
-import { signIn } from '@/lib/auth/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { signIn } from '@/lib/auth/client'
 
 const otpSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -39,7 +39,7 @@ export function OtpForm() {
 			})
 			setEmailSent(true)
 			toast.success('OTP sent! Check your email.')
-		} catch (error) {
+		} catch {
 			toast.error('Failed to send OTP. Please try again.')
 		} finally {
 			setIsLoading(false)
@@ -54,7 +54,7 @@ export function OtpForm() {
 				otp: data.otp,
 			})
 			toast.success('Signed in successfully')
-		} catch (error) {
+		} catch {
 			toast.error('Invalid OTP. Please try again.')
 		} finally {
 			setIsLoading(false)
@@ -112,4 +112,3 @@ export function OtpForm() {
 		</form>
 	)
 }
-

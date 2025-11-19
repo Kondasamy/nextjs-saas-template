@@ -24,7 +24,8 @@ export function WelcomeEmail({ name = 'there' }: WelcomeEmailProps) {
 						Thank you for joining us. We're excited to have you on board!
 					</Text>
 					<Text style={text}>
-						Get started by exploring your dashboard and setting up your workspace.
+						Get started by exploring your dashboard and setting up your
+						workspace.
 					</Text>
 				</Container>
 			</Body>
@@ -58,4 +59,3 @@ const text = {
 	fontSize: '16px',
 	lineHeight: '26px',
 }
-

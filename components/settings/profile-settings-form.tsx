@@ -1,14 +1,20 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 import { z } from 'zod'
-import { trpc } from '@/lib/trpc/client'
 import { Button } from '@/components/ui/button'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { toast } from 'sonner'
+import { trpc } from '@/lib/trpc/client'
 
 const profileSchema = z.object({
 	name: z.string().min(1).max(100).optional(),
@@ -79,4 +85,3 @@ export function ProfileSettingsForm() {
 		</Card>
 	)
 }
-

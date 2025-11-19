@@ -1,6 +1,6 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireAuth } from '@/lib/auth/auth-helpers'
 import { createServerCaller } from '@/lib/trpc/server'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function DashboardPage() {
 	await requireAuth()
@@ -25,13 +25,10 @@ export default async function DashboardPage() {
 						<div className="text-2xl font-bold">
 							{user?.organizations?.length ?? 0}
 						</div>
-						<p className="text-xs text-muted-foreground">
-							Active workspaces
-						</p>
+						<p className="text-xs text-muted-foreground">Active workspaces</p>
 					</CardContent>
 				</Card>
 			</div>
 		</div>
 	)
 }
-

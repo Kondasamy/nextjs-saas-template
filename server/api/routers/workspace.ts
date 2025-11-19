@@ -1,6 +1,6 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
-import { TRPCError } from '@trpc/server'
 
 export const workspaceRouter = createTRPCRouter({
 	list: protectedProcedure.query(async ({ ctx }) => {
@@ -55,7 +55,10 @@ export const workspaceRouter = createTRPCRouter({
 			})
 
 			if (!membership) {
-				throw new TRPCError({ code: 'NOT_FOUND', message: 'Workspace not found' })
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Workspace not found',
+				})
 			}
 
 			return membership.organization
@@ -65,7 +68,11 @@ export const workspaceRouter = createTRPCRouter({
 		.input(
 			z.object({
 				name: z.string().min(1).max(100),
-				slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/),
+				slug: z
+					.string()
+					.min(1)
+					.max(50)
+					.regex(/^[a-z0-9-]+$/),
 				description: z.string().max(500).optional(),
 			})
 		)
@@ -149,11 +156,15 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			// Check permissions (simplified - you can enhance this)
-			const hasPermission = membership.role.permissions.includes('*') ||
+			const hasPermission =
+				membership.role.permissions.includes('*') ||
 				membership.role.permissions.includes('workspace:update')
 
 			if (!hasPermission) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' })
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions',
+				})
 			}
 
 			return ctx.prisma.organization.update({
@@ -185,7 +196,10 @@ export const workspaceRouter = createTRPCRouter({
 			})
 
 			if (!membership || !membership.role.permissions.includes('*')) {
-				throw new TRPCError({ code: 'FORBIDDEN', message: 'Only owners can delete' })
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Only owners can delete',
+				})
 			}
 
 			return ctx.prisma.organization.delete({
@@ -193,4 +207,3 @@ export const workspaceRouter = createTRPCRouter({
 			})
 		}),
 })
-

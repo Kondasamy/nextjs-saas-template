@@ -1,8 +1,7 @@
-import { z } from 'zod'
-import { createTRPCRouter, protectedProcedure } from '../trpc'
 import { TRPCError } from '@trpc/server'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { env } from '@/lib/env'
+import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const storageRouter = createTRPCRouter({
 	getUploadUrl: protectedProcedure
@@ -50,7 +49,9 @@ export const storageRouter = createTRPCRouter({
 
 			const supabase = await createClient()
 
-			const { data } = supabase.storage.from(input.bucket).getPublicUrl(input.path)
+			const { data } = supabase.storage
+				.from(input.bucket)
+				.getPublicUrl(input.path)
 
 			return data
 		}),
@@ -115,4 +116,3 @@ export const storageRouter = createTRPCRouter({
 			return data
 		}),
 })
-

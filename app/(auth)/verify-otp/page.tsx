@@ -1,5 +1,11 @@
 import { OtpForm } from '@/components/auth/otp-form'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
 
 export default function VerifyOtpPage() {
 	return (
@@ -18,4 +24,3 @@ export default function VerifyOtpPage() {
 		</div>
 	)
 }
-

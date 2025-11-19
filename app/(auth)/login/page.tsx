@@ -1,11 +1,17 @@
 import Link from 'next/link'
 import { AuthForm } from '@/components/auth/auth-form'
-import { SocialLogin } from '@/components/auth/social-login'
 import { MagicLinkForm } from '@/components/auth/magic-link-form'
 import { OtpForm } from '@/components/auth/otp-form'
 import { PasskeyAuth } from '@/components/auth/passkey-auth'
+import { SocialLogin } from '@/components/auth/social-login'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function LoginPage() {
 	return (
@@ -56,7 +62,10 @@ export default function LoginPage() {
 						</Link>
 					</div>
 					<div className="mt-2 text-center text-sm">
-						<Link href="/forgot-password" className="text-primary hover:underline">
+						<Link
+							href="/forgot-password"
+							className="text-primary hover:underline"
+						>
 							Forgot password?
 						</Link>
 					</div>
@@ -65,4 +74,3 @@ export default function LoginPage() {
 		</div>
 	)
 }
-

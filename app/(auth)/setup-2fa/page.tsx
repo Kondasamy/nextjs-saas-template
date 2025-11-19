@@ -1,5 +1,11 @@
 import { TwoFactorSetup } from '@/components/auth/2fa-setup'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
 
 export default function Setup2FAPage() {
 	return (
@@ -18,4 +24,3 @@ export default function Setup2FAPage() {
 		</div>
 	)
 }
-

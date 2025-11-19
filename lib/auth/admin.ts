@@ -1,9 +1,9 @@
-import { auth } from './config'
 import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { auth } from './config'
 
 export async function isSuperAdmin(userId: string): Promise<boolean> {
-	const user = await prisma.user.findUnique({
+	const _user = await prisma.user.findUnique({
 		where: { id: userId },
 		select: { id: true },
 	})
@@ -18,7 +18,10 @@ export async function canImpersonate(userId: string): Promise<boolean> {
 	return await isSuperAdmin(userId)
 }
 
-export async function impersonateUser(adminUserId: string, targetUserId: string) {
+export async function impersonateUser(
+	adminUserId: string,
+	targetUserId: string
+) {
 	if (!(await canImpersonate(adminUserId))) {
 		throw new Error('Unauthorized: Cannot impersonate')
 	}
@@ -31,4 +34,3 @@ export async function impersonateUser(adminUserId: string, targetUserId: string)
 		},
 	})
 }
-

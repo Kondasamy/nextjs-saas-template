@@ -1,8 +1,8 @@
 'use client'
 
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export function useRealtime<T = unknown>(
 	channel: string,
@@ -29,4 +29,3 @@ export function useRealtime<T = unknown>(
 
 	return { isConnected }
 }
-

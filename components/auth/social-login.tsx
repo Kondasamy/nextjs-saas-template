@@ -1,18 +1,20 @@
 'use client'
 
-import { signIn } from '@/lib/auth/client'
-import { Button } from '@/components/ui/button'
+import { Chrome, Github } from 'lucide-react'
 import { toast } from 'sonner'
-import { Github, Chrome } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { signIn } from '@/lib/auth/client'
 
 export function SocialLogin() {
-	const handleSocialSignIn = async (provider: 'google' | 'github' | 'microsoft') => {
+	const handleSocialSignIn = async (
+		provider: 'google' | 'github' | 'microsoft'
+	) => {
 		try {
 			await signIn.social({
 				provider,
 				callbackURL: '/dashboard',
 			})
-		} catch (error) {
+		} catch {
 			toast.error(`Failed to sign in with ${provider}`)
 		}
 	}
@@ -40,4 +42,3 @@ export function SocialLogin() {
 		</div>
 	)
 }
-

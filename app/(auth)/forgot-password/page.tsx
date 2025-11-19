@@ -1,13 +1,19 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { toast } from 'sonner'
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -23,14 +29,14 @@ export default function ForgotPasswordPage() {
 		resolver: zodResolver(forgotPasswordSchema),
 	})
 
-	const handleSubmit = async (data: ForgotPasswordFormData) => {
+	const handleSubmit = async (_data: ForgotPasswordFormData) => {
 		setIsLoading(true)
 		try {
 			// This would call Better Auth's password reset
-			// await authClient.forgotPassword({ email: data.email })
+			// await authClient.forgotPassword({ email: _data.email })
 			toast.success('Password reset link sent! Check your email.')
 			setSent(true)
-		} catch (error) {
+		} catch {
 			toast.error('Failed to send reset link. Please try again.')
 		} finally {
 			setIsLoading(false)
@@ -50,7 +56,8 @@ export default function ForgotPasswordPage() {
 					{sent ? (
 						<div className="space-y-4">
 							<p className="text-sm text-muted-foreground">
-								We've sent a password reset link to your email. Please check your inbox.
+								We've sent a password reset link to your email. Please check
+								your inbox.
 							</p>
 							<Link href="/login">
 								<Button variant="outline" className="w-full">
@@ -59,7 +66,10 @@ export default function ForgotPasswordPage() {
 							</Link>
 						</div>
 					) : (
-						<form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+						<form
+							onSubmit={form.handleSubmit(handleSubmit)}
+							className="space-y-4"
+						>
 							<div className="space-y-2">
 								<Label htmlFor="email">Email</Label>
 								<Input
@@ -91,4 +101,3 @@ export default function ForgotPasswordPage() {
 		</div>
 	)
 }
-

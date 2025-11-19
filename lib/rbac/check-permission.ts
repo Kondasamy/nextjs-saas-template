@@ -43,4 +43,3 @@ export function hasAllPermissions(
 		hasPermission(userPermissions, permission)
 	)
 }
-

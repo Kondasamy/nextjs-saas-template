@@ -10,4 +10,3 @@ export function useSessionData() {
 		isLoading: isPending,
 	}
 }
-

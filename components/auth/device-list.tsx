@@ -1,6 +1,6 @@
 'use client'
 
-import { trpc } from '@/lib/trpc/client'
+import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
 	Table,
@@ -10,8 +10,6 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table'
-import { toast } from 'sonner'
-import { Trash2 } from 'lucide-react'
 
 export function DeviceList() {
 	// This would use a tRPC query to fetch sessions
@@ -45,4 +43,3 @@ export function DeviceList() {
 		</div>
 	)
 }
-

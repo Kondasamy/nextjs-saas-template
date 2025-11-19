@@ -14,4 +14,3 @@ export function useNotifications() {
 		unreadCount: data?.notifications?.length ?? 0,
 	}
 }
-

@@ -1,14 +1,14 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import { z } from 'zod'
-import { signIn, signUp } from '@/lib/auth/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { signIn, signUp } from '@/lib/auth/client'
 
 const signInSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -49,7 +49,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			})
 			toast.success('Signed in successfully')
 			onSuccess?.()
-		} catch (error) {
+		} catch {
 			toast.error('Failed to sign in. Please check your credentials.')
 		} finally {
 			setIsLoading(false)
@@ -66,7 +66,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			})
 			toast.success('Account created! Please check your email to verify.')
 			onSuccess?.()
-		} catch (error) {
+		} catch {
 			toast.error('Failed to create account. Please try again.')
 		} finally {
 			setIsLoading(false)
@@ -75,7 +75,10 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 
 	if (mode === 'signin') {
 		return (
-			<form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
+			<form
+				onSubmit={signInForm.handleSubmit(handleSignIn)}
+				className="space-y-4"
+			>
 				<div className="space-y-2">
 					<Label htmlFor="email">Email</Label>
 					<Input
@@ -113,7 +116,10 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 	}
 
 	return (
-		<form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4">
+		<form
+			onSubmit={signUpForm.handleSubmit(handleSignUp)}
+			className="space-y-4"
+		>
 			<div className="space-y-2">
 				<Label htmlFor="name">Name</Label>
 				<Input
@@ -164,4 +170,3 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 		</form>
 	)
 }
-

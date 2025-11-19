@@ -1,7 +1,13 @@
 import Link from 'next/link'
 import { AuthForm } from '@/components/auth/auth-form'
 import { SocialLogin } from '@/components/auth/social-login'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '@/components/ui/card'
 
 export default function SignUpPage() {
 	return (
@@ -9,9 +15,7 @@ export default function SignUpPage() {
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<CardTitle>Create Account</CardTitle>
-					<CardDescription>
-						Get started with your free account
-					</CardDescription>
+					<CardDescription>Get started with your free account</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<AuthForm mode="signup" />
@@ -39,4 +43,3 @@ export default function SignUpPage() {
 		</div>
 	)
 }
-

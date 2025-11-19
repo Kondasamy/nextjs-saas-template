@@ -1,9 +1,21 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import { type NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/config'
+import { updateSession } from '@/lib/supabase/middleware'
 
-const publicRoutes = ['/login', '/signup', '/forgot-password', '/verify-email', '/verify-otp']
-const authRoutes = ['/login', '/signup', '/forgot-password', '/verify-email', '/verify-otp']
+const publicRoutes = [
+	'/login',
+	'/signup',
+	'/forgot-password',
+	'/verify-email',
+	'/verify-otp',
+]
+const authRoutes = [
+	'/login',
+	'/signup',
+	'/forgot-password',
+	'/verify-email',
+	'/verify-otp',
+]
 
 export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl
@@ -48,4 +60,3 @@ export const config = {
 		'/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
 	],
 }
-
