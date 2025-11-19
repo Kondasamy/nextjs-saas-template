@@ -3,8 +3,17 @@ import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { env } from '@/lib/env'
 import { prisma } from '@/lib/prisma'
 
+// Validate Prisma client is properly initialized
+if (!prisma) {
+	throw new Error(
+		'Prisma Client is not initialized. Please run `pnpm db:generate` to generate the Prisma client.'
+	)
+}
+
 export const auth = betterAuth({
-	database: prismaAdapter(prisma),
+	database: prismaAdapter(prisma, {
+		provider: 'postgresql', // or whatever provider is used, but likely just empty object is enough if not required
+	}),
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
 	basePath: '/api/auth',
