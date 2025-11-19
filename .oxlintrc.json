@@ -1,0 +1,15 @@
+{
+	"$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/crates/oxc_cli/schemas/oxlint.schema.json",
+	"allow": ["@typescript-eslint/no-explicit-any"],
+	"deny": [],
+	"ignore": [
+		"node_modules/**",
+		".next/**",
+		"dist/**",
+		"build/**",
+		"*.min.js",
+		"pnpm-lock.yaml",
+		"package-lock.json",
+		"yarn.lock"
+	]
+}

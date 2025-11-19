@@ -1,0 +1,220 @@
+# Next.js SaaS Template
+
+A modern, production-ready SaaS template built with Next.js 15, React 19, TypeScript, and shadcn/ui components.
+
+## Features
+
+- **Next.js 15** with App Router and React 19
+- **TypeScript** for type safety
+- **Tailwind CSS 4** for styling
+- **shadcn/ui** component library (50+ components)
+- **Motion Primitives** - 10 custom animation components (animated-background, magnetic, morphing-dialog, progressive-blur, scroll-progress, spotlight, text-effect, text-loop, text-morph, tilt)
+- **MDX Support** for rich content authoring
+- **Dark/Light mode** with next-themes
+- **Responsive design** with mobile-first approach
+- **SEO optimized** with proper metadata
+- **Content management** through TypeScript data files
+- **Modern UI patterns** with sidebar navigation
+- **Toast notifications** with Sonner
+- **Vercel Analytics** integration
+- **Code quality** with Biome (formatting, import sorting, unused import removal) and Oxlint (fast linting)
+- **Git hooks** with Husky for pre-commit formatting and linting
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm/pnpm/yarn
+- Git
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourcompany/saas-template.git
+cd saas-template
+```
+
+2. Install dependencies:
+```bash
+pnpm install
+```
+
+3. Run the development server:
+```bash
+pnpm run dev
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Project Structure
+
+```
+├── app/                           # Next.js App Router
+│   ├── features/                  # Features/Products section
+│   │   ├── [slug]/               # Dynamic feature pages
+│   │   └── data.ts               # Features data
+│   ├── docs/                      # Documentation/Guides section
+│   │   ├── [slug]/               # Dynamic documentation pages
+│   │   └── data.ts               # Documentation data
+│   ├── blog/                      # Blog posts
+│   │   ├── [slug]/               # Dynamic blog post pages
+│   │   └── data.ts               # Blog posts data
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Homepage
+│   └── globals.css                # Global styles
+├── components/                     # React components
+│   ├── ui/                        # shadcn/ui components (50+)
+│   ├── motion-primitives/         # Custom animation components
+│   │   ├── animated-background.tsx
+│   │   ├── magnetic.tsx
+│   │   ├── morphing-dialog.tsx
+│   │   ├── progressive-blur.tsx
+│   │   ├── scroll-progress.tsx
+│   │   ├── spotlight.tsx
+│   │   ├── text-effect.tsx
+│   │   ├── text-loop.tsx
+│   │   ├── text-morph.tsx
+│   │   └── tilt.tsx
+│   ├── app-sidebar.tsx            # Main navigation
+│   ├── nav-main.tsx               # Main navigation items
+│   ├── nav-secondary.tsx          # Secondary navigation
+│   ├── nav-user.tsx               # User navigation
+│   └── page-header.tsx            # Page header component
+├── hooks/                          # Custom React hooks
+│   ├── use-media-query.ts
+│   ├── use-mobile.ts
+│   └── useClickOutside.tsx
+├── lib/                            # Utility functions
+│   ├── constants.ts               # App constants
+│   └── utils.ts                   # Utility functions
+├── mdx-components.tsx              # MDX component configuration
+├── .husky/                         # Git hooks
+│   └── pre-commit                  # Pre-commit hook for formatting/linting
+├── biome.json                      # Biome configuration (formatting, linting)
+├── .oxlintrc.json                  # Oxlint configuration
+└── public/                         # Static assets
+```
+
+## Customization
+
+### 1. Update Branding
+
+Edit `/lib/constants.ts` to update:
+- Company name
+- URLs (website, social media, etc.)
+- Contact information
+
+### 2. Update Metadata
+
+Edit `/app/layout.tsx` to update:
+- Site title and description
+- SEO metadata
+- Social media cards (OpenGraph, Twitter)
+
+### 3. Add Content
+
+Add your content in the respective data files:
+- Features: `/app/features/data.ts`
+- Documentation: `/app/docs/data.ts`
+- Blog posts: `/app/blog/data.ts`
+
+You can also add MDX files for blog posts in `/app/blog/[slug]/page.mdx` for rich content authoring.
+
+### 4. Customize Colors
+
+Edit `/app/globals.css` to update CSS variables for theming.
+
+### 5. Code Quality Tools
+
+This template uses modern code quality tools:
+
+- **Biome** - Handles formatting, import sorting, and automatically removes unused imports
+- **Oxlint** - Fast Rust-based linter for catching code issues
+- **Husky** - Git hooks that automatically format and lint code before commits
+
+The pre-commit hook will automatically:
+- Format your code with Biome
+- Sort and organize imports
+- Remove unused imports
+- Run Oxlint to check for linting issues
+
+You can manually run these tools:
+- `pnpm format` - Format and organize code
+- `pnpm lint` - Check for linting issues
+- `pnpm lint:fix` - Auto-fix linting issues where possible
+
+## Tech Stack
+
+- **Framework:** Next.js 15.1.1
+- **Language:** TypeScript 5
+- **Styling:** Tailwind CSS 4
+- **UI Components:** shadcn/ui (Radix UI primitives)
+- **Icons:** Lucide React
+- **Theme:** next-themes
+- **Fonts:** Geist & Geist Mono (from next/font)
+- **Animations:** Motion (Framer Motion)
+- **Forms:** React Hook Form + Zod validation
+- **Content:** MDX with @next/mdx
+- **Markdown:** react-markdown + remark-gfm
+- **Code Highlighting:** Shiki
+- **Toast Notifications:** Sonner
+- **Analytics:** Vercel Analytics
+- **Date Handling:** date-fns
+- **Charts:** Recharts
+- **Code Quality:** Biome 2.3.6 (formatting, import organization, unused import removal)
+- **Linting:** Oxlint 1.29.0 (fast Rust-based linter)
+- **Git Hooks:** Husky 9.1.7
+
+## Scripts
+
+```bash
+pnpm dev         # Start development server
+pnpm build       # Build for production
+pnpm start       # Start production server
+pnpm lint        # Run Oxlint to check for linting issues
+pnpm lint:fix    # Run Oxlint with auto-fix
+pnpm format      # Format code, sort imports, and remove unused imports with Biome
+pnpm pre-commit  # Run formatting and linting (used by Husky)
+```
+
+**Note:** This project uses `pnpm` as the package manager. You can use `npm` or `yarn` as alternatives.
+
+## Deployment
+
+This template is optimized for deployment on [Vercel](https://vercel.com):
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT License - feel free to use this template for your projects.
+
+## Support
+
+For support, email contact@yoursaas.com or open an issue in the GitHub repository.
+
+## Motion Primitives
+
+This template includes 10 custom motion primitives for enhanced UI interactions:
+
+- **Animated Background** - Dynamic background animations
+- **Magnetic** - Elements that follow cursor movement
+- **Morphing Dialog** - Smooth dialog transitions
+- **Progressive Blur** - Gradual blur effects
+- **Scroll Progress** - Visual scroll indicators
+- **Spotlight** - Focused lighting effects
+- **Text Effect** - Animated text effects
+- **Text Loop** - Looping text animations
+- **Text Morph** - Morphing text transitions
+- **Tilt** - 3D tilt effects on hover
+
+These components are located in `/components/motion-primitives/` and can be imported and used throughout your application.
+
+---
+
+Built with Next.js 15, React 19, TypeScript, and shadcn/ui
