@@ -28,7 +28,7 @@ export function ScrollProgress({
 
 	const scaleX = useSpring(scrollYProgress, {
 		...DEFAULT_SPRING_OPTIONS,
-		...(springOptions ?? {}),
+		...springOptions,
 	})
 
 	return (
