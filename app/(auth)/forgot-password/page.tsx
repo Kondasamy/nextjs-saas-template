@@ -1,3 +1,5 @@
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -44,7 +46,7 @@ export default function ForgotPasswordPage() {
 	}
 
 	return (
-		<div className="container flex items-center justify-center min-h-screen py-12">
+		<div className="container mx-auto flex items-center justify-center min-h-screen py-12">
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<CardTitle>Reset Password</CardTitle>

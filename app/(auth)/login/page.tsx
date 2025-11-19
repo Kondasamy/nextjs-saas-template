@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function LoginPage() {
 	return (
-		<div className="container flex items-center justify-center min-h-screen py-12">
+		<div className="container mx-auto flex items-center justify-center min-h-screen py-12">
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<CardTitle>Sign In</CardTitle>
