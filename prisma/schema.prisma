@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-	provider  = "postgresql"
-	url       = env("DATABASE_URL")
+	provider = "postgresql"
+	url      = env("DATABASE_URL")
 	// DIRECT_URL is optional - if not provided, DATABASE_URL will be used for migrations
 	directUrl = env("DIRECT_URL")
 }
@@ -16,7 +16,7 @@ model User {
 	id            String    @id @default(cuid())
 	email         String    @unique
 	name          String?
-	emailVerified DateTime?
+	emailVerified Boolean   @default(false)
 	image         String?
 	createdAt     DateTime  @default(now())
 	updatedAt     DateTime  @updatedAt
@@ -26,6 +26,7 @@ model User {
 
 	// Relations
 	sessions           Session[]
+	accounts           Account[]
 	organizations      OrganizationMember[]
 	invitations        Invitation[]
 	notifications      Notification[]
@@ -52,6 +53,38 @@ model Session {
 	@@index([userId])
 	@@index([token])
 	@@map("sessions")
+}
+
+model Account {
+	id                String   @id @default(cuid())
+	userId            String
+	user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+	accountId         String
+	providerId        String
+	accessToken       String?
+	refreshToken      String?
+	idToken           String?
+	expiresAt         DateTime?
+	password          String?
+	createdAt         DateTime @default(now())
+	updatedAt         DateTime @updatedAt
+
+	@@unique([providerId, accountId])
+	@@index([userId])
+	@@map("accounts")
+}
+
+model Verification {
+	id         String   @id @default(cuid())
+	identifier String
+	value      String
+	expiresAt  DateTime
+	createdAt  DateTime @default(now())
+	updatedAt  DateTime @updatedAt
+
+	@@unique([identifier, value])
+	@@index([identifier])
+	@@map("verifications")
 }
 
 model Organization {

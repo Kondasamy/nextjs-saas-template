@@ -62,8 +62,10 @@ export const auth = betterAuth({
 	},
 	advanced: {
 		useSecureCookies: env.NODE_ENV === 'production',
-		generateId: () => {
-			return `auth_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+		database: {
+			generateId: () => {
+				return `auth_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+			},
 		},
 	},
 })
