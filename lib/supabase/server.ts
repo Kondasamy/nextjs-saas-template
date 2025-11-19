@@ -3,6 +3,12 @@ import { cookies } from 'next/headers'
 import { env } from '@/lib/env'
 
 export async function createClient() {
+	if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+		throw new Error(
+			'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables.'
+		)
+	}
+
 	const cookieStore = await cookies()
 
 	return createServerClient(

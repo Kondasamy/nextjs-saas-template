@@ -7,6 +7,7 @@ const nextConfig = {
 	typescript: {
 		ignoreBuildErrors: false,
 	},
+	turbopack: {},
 	images: {
 		dangerouslyAllowSVG: true,
 		contentDispositionType: 'attachment',

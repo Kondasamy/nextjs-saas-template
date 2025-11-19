@@ -3,6 +3,13 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { env } from '@/lib/env'
 
 export async function updateSession(request: NextRequest) {
+	// Skip Supabase session update if not configured
+	if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+		return NextResponse.next({
+			request,
+		})
+	}
+
 	let supabaseResponse = NextResponse.next({
 		request,
 	})

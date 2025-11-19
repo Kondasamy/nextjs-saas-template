@@ -17,10 +17,30 @@ const envSchema = z.object({
 	MICROSOFT_CLIENT_ID: z.string().optional(),
 	MICROSOFT_CLIENT_SECRET: z.string().optional(),
 
-	// Supabase
-	NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-	NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-	SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+	// Supabase (Optional - required for storage and realtime features)
+	NEXT_PUBLIC_SUPABASE_URL: z
+		.preprocess(
+			(val) => {
+				if (!val || val === '') return undefined
+				try {
+					new URL(val as string)
+					return val
+				} catch {
+					return undefined
+				}
+			},
+			z.string().url().optional()
+		),
+	NEXT_PUBLIC_SUPABASE_ANON_KEY: z
+		.preprocess(
+			(val) => (!val || val === '' ? undefined : val),
+			z.string().min(1).optional()
+		),
+	SUPABASE_SERVICE_ROLE_KEY: z
+		.preprocess(
+			(val) => (!val || val === '' ? undefined : val),
+			z.string().min(1).optional()
+		),
 
 	// Email (Resend)
 	RESEND_API_KEY: z.string().optional(),
@@ -34,7 +54,19 @@ const envSchema = z.object({
 
 	// SSO (Optional)
 	SAML_ENTITY_ID: z.string().optional(),
-	SAML_SSO_URL: z.string().url().optional(),
+	SAML_SSO_URL: z
+		.preprocess(
+			(val) => {
+				if (!val || val === '') return undefined
+				try {
+					new URL(val as string)
+					return val
+				} catch {
+					return undefined
+				}
+			},
+			z.string().url().optional()
+		),
 	OKTA_CLIENT_ID: z.string().optional(),
 	OKTA_CLIENT_SECRET: z.string().optional(),
 

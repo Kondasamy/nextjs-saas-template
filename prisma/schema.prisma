@@ -8,6 +8,7 @@ generator client {
 datasource db {
 	provider  = "postgresql"
 	url       = env("DATABASE_URL")
+	// DIRECT_URL is optional - if not provided, DATABASE_URL will be used for migrations
 	directUrl = env("DIRECT_URL")
 }
 
@@ -99,7 +100,8 @@ model Role {
 	updatedAt      DateTime @updatedAt
 
 	// Relations
-	members OrganizationMember[]
+	members     OrganizationMember[]
+	invitations Invitation[]
 
 	@@unique([organizationId, name])
 	@@index([organizationId])

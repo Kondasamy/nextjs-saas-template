@@ -16,7 +16,7 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - Two-Factor Authentication (2FA/TOTP)
   - Enterprise SSO (SAML, OKTA)
 - **tRPC** for end-to-end type safety
-- **Supabase** integration:
+- **Supabase** integration (optional):
   - PostgreSQL database
   - Storage for file uploads
   - Realtime subscriptions
@@ -39,8 +39,8 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
 
 - Node.js 18+ and pnpm/npm/yarn
 - PostgreSQL database (Supabase recommended)
-- Supabase account
-- Resend account (for emails)
+- Supabase account (optional - required for storage and realtime features)
+- Resend account (optional - for emails)
 
 ### Installation
 
@@ -85,15 +85,24 @@ pnpm dev
 
 See `.env.local.example` for all required environment variables. Key variables:
 
+### Required
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `DIRECT_URL` - Direct database connection (for migrations)
 - `BETTER_AUTH_SECRET` - Secret key for Better Auth (min 32 chars)
 - `BETTER_AUTH_URL` - Your app URL
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
-- `RESEND_API_KEY` - Resend API key for emails
 - `NEXT_PUBLIC_APP_URL` - Your application URL
+
+### Optional
+
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL (required for storage and realtime features)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key (required for storage and realtime features)
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (required for storage and realtime features)
+- `RESEND_API_KEY` - Resend API key for emails
+- `EMAIL_FROM_ADDRESS` - Email sender address
+- `EMAIL_FROM_NAME` - Email sender name
+- OAuth provider credentials (Google, GitHub, Microsoft)
+- SSO credentials (SAML, OKTA)
 
 ## Project Structure
 
@@ -258,7 +267,7 @@ export default async function Page() {
 
 ## Supabase Storage
 
-File uploads are handled through Supabase Storage:
+File uploads are handled through Supabase Storage. **Note:** Supabase configuration is required for this feature.
 
 ```tsx
 import { FileUpload } from '@/components/upload/file-upload'
@@ -269,9 +278,14 @@ import { FileUpload } from '@/components/upload/file-upload'
 />
 ```
 
+To enable Supabase Storage, add the following environment variables:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
 ## Realtime Features
 
-Supabase Realtime is integrated for live updates:
+Supabase Realtime is integrated for live updates. **Note:** Supabase configuration is required for this feature.
 
 ```tsx
 import { useRealtime } from '@/hooks/use-realtime'
@@ -280,6 +294,10 @@ useRealtime('notifications', 'new-notification', (payload) => {
   console.log('New notification:', payload)
 })
 ```
+
+To enable Supabase Realtime, add the following environment variables:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## Internationalization
 
