@@ -15,7 +15,8 @@ export async function requireAdmin() {
 	}
 
 	// Check if user is admin (you can customize this logic)
-	const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || []
+	const adminEmails =
+		process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || []
 	const isAdmin = adminEmails.includes(user.email)
 
 	if (!isAdmin) {
@@ -34,6 +35,7 @@ export async function requireAdmin() {
 }
 
 export async function isUserAdmin(email: string): Promise<boolean> {
-	const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || []
+	const adminEmails =
+		process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || []
 	return adminEmails.includes(email)
 }
