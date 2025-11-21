@@ -1,9 +1,10 @@
 'use client'
 
 import { formatDistanceToNow } from 'date-fns'
-import { MoreHorizontal, Trash2 } from 'lucide-react'
+import { ArrowRightLeft, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { TransferOwnershipDialog } from '@/components/settings/transfer-ownership-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,6 +42,12 @@ export function TeamMembersTable({ organizationId }: TeamMembersTableProps) {
 	const { data: organization, refetch } = trpc.workspace.getById.useQuery({
 		id: organizationId,
 	})
+
+	const { data: roles = [] } = trpc.permissions.listRoles.useQuery({
+		organizationId,
+	})
+
+	const { data: currentUser } = trpc.user.getCurrent.useQuery()
 
 	const updateMemberRole = trpc.workspace.updateMemberRole?.useMutation({
 		onSuccess: () => {
@@ -90,6 +97,13 @@ export function TeamMembersTable({ organizationId }: TeamMembersTableProps) {
 	}
 
 	const members = organization.members || []
+
+	// Check if current user is an owner
+	const currentUserMembership = members.find(
+		(m) => m.userId === currentUser?.id
+	)
+	const isCurrentUserOwner =
+		currentUserMembership?.role.permissions.includes('*') || false
 
 	return (
 		<div className="rounded-md border">
@@ -146,10 +160,11 @@ export function TeamMembersTable({ organizationId }: TeamMembersTableProps) {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="owner">Owner</SelectItem>
-											<SelectItem value="admin">Admin</SelectItem>
-											<SelectItem value="member">Member</SelectItem>
-											<SelectItem value="viewer">Viewer</SelectItem>
+											{roles.map((role) => (
+												<SelectItem key={role.id} value={role.id}>
+													{role.name}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								</TableCell>
@@ -172,6 +187,26 @@ export function TeamMembersTable({ organizationId }: TeamMembersTableProps) {
 										<DropdownMenuContent align="end">
 											<DropdownMenuLabel>Actions</DropdownMenuLabel>
 											<DropdownMenuSeparator />
+											{isCurrentUserOwner &&
+												member.userId !== currentUser?.id &&
+												!member.role.permissions.includes('*') && (
+													<>
+														<TransferOwnershipDialog
+															organizationId={organizationId}
+															workspaceName={organization.name}
+															members={members}
+															currentUserId={currentUser?.id || ''}
+														>
+															<DropdownMenuItem
+																onSelect={(e) => e.preventDefault()}
+															>
+																<ArrowRightLeft className="mr-2 h-4 w-4" />
+																Transfer Ownership
+															</DropdownMenuItem>
+														</TransferOwnershipDialog>
+														<DropdownMenuSeparator />
+													</>
+												)}
 											<DropdownMenuItem
 												onClick={() => handleRemoveMember(member.userId)}
 												className="text-destructive"

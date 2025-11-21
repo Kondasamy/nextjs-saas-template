@@ -7,6 +7,7 @@ import { TRPCProvider } from '@/components/providers/trpc-provider'
 import { ThemeStyles } from '@/components/theme-styles'
 import { ThemeTransition } from '@/components/theme-transition'
 import { cn } from '@/lib/utils'
+import { WorkspaceProvider } from '@/lib/workspace/workspace-context'
 
 export const viewport: Viewport = {
 	width: 'device-width',
@@ -141,10 +142,12 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						<ThemeTransition>
-							{children}
-							<Toaster />
-						</ThemeTransition>
+						<WorkspaceProvider>
+							<ThemeTransition>
+								{children}
+								<Toaster />
+							</ThemeTransition>
+						</WorkspaceProvider>
 					</ThemeProvider>
 				</TRPCProvider>
 			</body>

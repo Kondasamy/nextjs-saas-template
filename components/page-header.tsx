@@ -11,8 +11,8 @@ import {
 } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
 import * as React from 'react'
+import { useEffect, useState } from 'react'
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -84,7 +84,7 @@ export default function PageHeader() {
 			const rect = buttonRef.current.getBoundingClientRect()
 			const x = rect.left + rect.width / 2
 			const y = rect.top + rect.height / 2
-			
+
 			// Store position in a custom event or sessionStorage for the transition component
 			window.dispatchEvent(
 				new CustomEvent('theme-toggle', {

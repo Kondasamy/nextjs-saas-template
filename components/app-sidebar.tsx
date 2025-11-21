@@ -19,11 +19,14 @@ import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupContent,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher'
 import { EMAIL_URL, EMAIL_URL_LINK, IMAGE_URL, NAME } from '@/lib/constants'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -141,6 +144,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
+				<SidebarGroup>
+					<SidebarGroupContent>
+						<WorkspaceSwitcher />
+					</SidebarGroupContent>
+				</SidebarGroup>
 				<NavMain items={data.navMain} />
 				<NavSecondary items={data.navSecondary} className="mt-auto" />
 			</SidebarContent>

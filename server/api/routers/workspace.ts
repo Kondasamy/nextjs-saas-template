@@ -206,4 +206,399 @@ export const workspaceRouter = createTRPCRouter({
 				where: { id: input.id },
 			})
 		}),
+
+	updateMemberRole: protectedProcedure
+		.input(
+			z.object({
+				organizationId: z.string(),
+				userId: z.string(),
+				roleId: z.string(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check caller's permissions
+			const callerMembership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!callerMembership) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Not a member of this workspace',
+				})
+			}
+
+			const hasPermission =
+				callerMembership.role.permissions.includes('*') ||
+				callerMembership.role.permissions.includes('member:manage')
+
+			if (!hasPermission) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions to manage members',
+				})
+			}
+
+			// Verify role exists and belongs to the organization
+			const role = await ctx.prisma.role.findFirst({
+				where: {
+					id: input.roleId,
+					organizationId: input.organizationId,
+				},
+			})
+
+			if (!role) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Role not found in this workspace',
+				})
+			}
+
+			// Verify target member exists
+			const targetMembership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: input.userId,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!targetMembership) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Member not found in this workspace',
+				})
+			}
+
+			// Prevent demoting the last owner
+			if (targetMembership.role.permissions.includes('*')) {
+				const ownerCount = await ctx.prisma.organizationMember.count({
+					where: {
+						organizationId: input.organizationId,
+						role: {
+							permissions: {
+								equals: ['*'],
+							},
+						},
+					},
+				})
+
+				if (ownerCount <= 1 && !role.permissions.includes('*')) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Cannot demote the last owner',
+					})
+				}
+			}
+
+			// Update member role
+			const updatedMember = await ctx.prisma.organizationMember.update({
+				where: { id: targetMembership.id },
+				data: { roleId: input.roleId },
+				include: {
+					user: true,
+					role: true,
+				},
+			})
+
+			// Create audit log
+			await ctx.prisma.auditLog.create({
+				data: {
+					userId: ctx.user.id,
+					organizationId: input.organizationId,
+					action: 'member.role_updated',
+					resource: 'member',
+					resourceId: updatedMember.id,
+					metadata: {
+						targetUserId: input.userId,
+						oldRoleId: targetMembership.roleId,
+						newRoleId: input.roleId,
+						oldRoleName: targetMembership.role.name,
+						newRoleName: role.name,
+					},
+					ipAddress: ctx.req?.headers.get('x-forwarded-for') || undefined,
+					userAgent: ctx.req?.headers.get('user-agent') || undefined,
+				},
+			})
+
+			return updatedMember
+		}),
+
+	removeMember: protectedProcedure
+		.input(
+			z.object({
+				organizationId: z.string(),
+				userId: z.string(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check caller's permissions
+			const callerMembership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!callerMembership) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Not a member of this workspace',
+				})
+			}
+
+			const hasPermission =
+				callerMembership.role.permissions.includes('*') ||
+				callerMembership.role.permissions.includes('member:remove')
+
+			if (!hasPermission) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions to remove members',
+				})
+			}
+
+			// Verify target member exists
+			const targetMembership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: input.userId,
+				},
+				include: {
+					role: true,
+					user: true,
+				},
+			})
+
+			if (!targetMembership) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Member not found in this workspace',
+				})
+			}
+
+			// Prevent removing the last owner
+			if (targetMembership.role.permissions.includes('*')) {
+				const ownerCount = await ctx.prisma.organizationMember.count({
+					where: {
+						organizationId: input.organizationId,
+						role: {
+							permissions: {
+								equals: ['*'],
+							},
+						},
+					},
+				})
+
+				if (ownerCount <= 1) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Cannot remove the last owner',
+					})
+				}
+			}
+
+			// Delete member
+			await ctx.prisma.organizationMember.delete({
+				where: { id: targetMembership.id },
+			})
+
+			// Create audit log
+			await ctx.prisma.auditLog.create({
+				data: {
+					userId: ctx.user.id,
+					organizationId: input.organizationId,
+					action: 'member.removed',
+					resource: 'member',
+					resourceId: targetMembership.id,
+					metadata: {
+						targetUserId: input.userId,
+						targetUserEmail: targetMembership.user.email,
+						targetUserName: targetMembership.user.name,
+						roleName: targetMembership.role.name,
+					},
+					ipAddress: ctx.req?.headers.get('x-forwarded-for') || undefined,
+					userAgent: ctx.req?.headers.get('user-agent') || undefined,
+				},
+			})
+
+			return { success: true }
+		}),
+
+	transferOwnership: protectedProcedure
+		.input(
+			z.object({
+				organizationId: z.string(),
+				newOwnerId: z.string(),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Verify caller is current owner
+			const callerMembership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!callerMembership) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Not a member of this workspace',
+				})
+			}
+
+			// Only owners (users with '*' permission) can transfer ownership
+			if (!callerMembership.role.permissions.includes('*')) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Only owners can transfer ownership',
+				})
+			}
+
+			// Verify target user is a member
+			const targetMembership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: input.newOwnerId,
+				},
+				include: {
+					role: true,
+					user: true,
+				},
+			})
+
+			if (!targetMembership) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Target user is not a member of this workspace',
+				})
+			}
+
+			// Don't allow transferring to someone who's already an owner
+			if (targetMembership.role.permissions.includes('*')) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Target user is already an owner',
+				})
+			}
+
+			// Find or create Owner role
+			let ownerRole = await ctx.prisma.role.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					permissions: {
+						equals: ['*'],
+					},
+					isSystem: true,
+				},
+			})
+
+			if (!ownerRole) {
+				// Create owner role if it doesn't exist
+				ownerRole = await ctx.prisma.role.create({
+					data: {
+						organizationId: input.organizationId,
+						name: 'Owner',
+						description: 'Workspace owner with full access',
+						permissions: ['*'],
+						isSystem: true,
+					},
+				})
+			}
+
+			// Find or create Admin role for demoted owner
+			let adminRole = await ctx.prisma.role.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					name: 'Admin',
+					isSystem: true,
+				},
+			})
+
+			if (!adminRole) {
+				// Create admin role if it doesn't exist
+				adminRole = await ctx.prisma.role.create({
+					data: {
+						organizationId: input.organizationId,
+						name: 'Admin',
+						description: 'Workspace administrator',
+						permissions: [
+							'workspace:update',
+							'member:invite',
+							'member:manage',
+							'member:remove',
+						],
+						isSystem: true,
+					},
+				})
+			}
+
+			// Perform the transfer in a transaction
+			const result = await ctx.prisma.$transaction(async (tx) => {
+				// Demote current owner to admin
+				await tx.organizationMember.update({
+					where: { id: callerMembership.id },
+					data: { roleId: adminRole.id },
+				})
+
+				// Promote new owner
+				await tx.organizationMember.update({
+					where: { id: targetMembership.id },
+					data: { roleId: ownerRole.id },
+				})
+
+				return { success: true }
+			})
+
+			// Create audit log
+			await ctx.prisma.auditLog.create({
+				data: {
+					userId: ctx.user.id,
+					organizationId: input.organizationId,
+					action: 'workspace.ownership_transferred',
+					resource: 'workspace',
+					resourceId: input.organizationId,
+					metadata: {
+						previousOwnerId: ctx.user.id,
+						previousOwnerEmail: ctx.user.email,
+						newOwnerId: input.newOwnerId,
+						newOwnerEmail: targetMembership.user.email,
+						newOwnerName: targetMembership.user.name,
+					},
+					ipAddress: ctx.req?.headers.get('x-forwarded-for') || undefined,
+					userAgent: ctx.req?.headers.get('user-agent') || undefined,
+				},
+			})
+
+			// TODO: Send email notifications to both users
+
+			return result
+		}),
 })

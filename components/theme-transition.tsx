@@ -13,8 +13,12 @@ export function ThemeTransition({ children }: { children: React.ReactNode }) {
 	const { theme } = useTheme()
 	const [mounted, setMounted] = useState(false)
 	const [isTransitioning, setIsTransitioning] = useState(false)
-	const [buttonPosition, setButtonPosition] = useState<ButtonPosition | null>(null)
-	const [transitionDirection, setTransitionDirection] = useState<'light-to-dark' | 'dark-to-light' | null>(null)
+	const [buttonPosition, setButtonPosition] = useState<ButtonPosition | null>(
+		null
+	)
+	const [_transitionDirection, setTransitionDirection] = useState<
+		'light-to-dark' | 'dark-to-light' | null
+	>(null)
 	const prevThemeRef = useRef<string | undefined>(theme)
 
 	useEffect(() => {
@@ -29,7 +33,10 @@ export function ThemeTransition({ children }: { children: React.ReactNode }) {
 		window.addEventListener('theme-toggle', handleThemeToggle as EventListener)
 
 		return () => {
-			window.removeEventListener('theme-toggle', handleThemeToggle as EventListener)
+			window.removeEventListener(
+				'theme-toggle',
+				handleThemeToggle as EventListener
+			)
 		}
 	}, [])
 
@@ -37,9 +44,14 @@ export function ThemeTransition({ children }: { children: React.ReactNode }) {
 		if (!mounted || !theme) return
 
 		// Detect theme change
-		if (theme !== prevThemeRef.current && prevThemeRef.current && buttonPosition) {
+		if (
+			theme !== prevThemeRef.current &&
+			prevThemeRef.current &&
+			buttonPosition
+		) {
 			// Determine transition direction
-			const direction = prevThemeRef.current === 'light' ? 'light-to-dark' : 'dark-to-light'
+			const direction =
+				prevThemeRef.current === 'light' ? 'light-to-dark' : 'dark-to-light'
 			setTransitionDirection(direction)
 			setIsTransitioning(true)
 			// Reset after animation completes
@@ -75,15 +87,14 @@ export function ThemeTransition({ children }: { children: React.ReactNode }) {
 	// Calculate the maximum distance from center to corner for full coverage
 	const getMaxDistance = () => {
 		if (typeof window === 'undefined') return 2000
-		
+
 		const { x, y } = center
 		const corners = [
 			Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)), // Top-left
 			Math.sqrt(Math.pow(window.innerWidth - x, 2) + Math.pow(y, 2)), // Top-right
 			Math.sqrt(Math.pow(x, 2) + Math.pow(window.innerHeight - y, 2)), // Bottom-left
 			Math.sqrt(
-				Math.pow(window.innerWidth - x, 2) +
-					Math.pow(window.innerHeight - y, 2)
+				Math.pow(window.innerWidth - x, 2) + Math.pow(window.innerHeight - y, 2)
 			), // Bottom-right
 		]
 		return Math.max(...corners) * 1.2 // Add 20% padding to ensure full coverage
@@ -112,9 +123,10 @@ export function ThemeTransition({ children }: { children: React.ReactNode }) {
 						}}
 						className="fixed inset-0 z-[9999] pointer-events-none"
 						style={{
-							background: theme === 'dark'
-								? 'hsl(var(--background))'
-								: 'hsl(var(--background))',
+							background:
+								theme === 'dark'
+									? 'hsl(var(--background))'
+									: 'hsl(var(--background))',
 							willChange: 'clip-path',
 							opacity: 0.98,
 						}}
