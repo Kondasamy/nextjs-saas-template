@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { signIn, signUp } from '@/lib/auth/client'
+import { signIn, signUp, useSession } from '@/lib/auth/client'
 
 const signInSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -31,6 +31,7 @@ interface AuthFormProps {
 
 export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 	const [isLoading, setIsLoading] = useState(false)
+	const { data: session, refetch: refetchSession } = useSession()
 
 	const signInForm = useForm<SignInFormData>({
 		resolver: zodResolver(signInSchema),
@@ -43,14 +44,74 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 	const handleSignIn = async (data: SignInFormData) => {
 		setIsLoading(true)
 		try {
-			await signIn.email({
+			const result = await signIn.email({
 				email: data.email,
 				password: data.password,
 			})
+
+			// Check if the result has an error
+			if (result?.error) {
+				toast.error(
+					result.error.message || 'Failed to sign in. Please check your credentials.'
+				)
+				setIsLoading(false)
+				return
+			}
+
+			// Wait a moment for the session to update after sign-in
+			await new Promise((resolve) => setTimeout(resolve, 300))
+
+			// Verify authentication by checking the session
+			// This ensures the user was actually authenticated even if signIn.email() doesn't throw
+			let isAuthenticated = false
+			
+			try {
+				// Try to refetch session to get the latest state
+				if (refetchSession) {
+					const sessionResult = await refetchSession()
+					const updatedSession = sessionResult?.data ?? session
+					isAuthenticated = !!updatedSession?.user
+				} else {
+					// Fallback: check current session from hook
+					isAuthenticated = !!session?.user
+				}
+			} catch {
+				// If refetch fails, check current session
+				isAuthenticated = !!session?.user
+			}
+
+			// If still not authenticated, make a direct API call to verify
+			if (!isAuthenticated) {
+				try {
+					const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+					const response = await fetch(`${baseURL}/api/auth/session`, {
+						method: 'GET',
+						credentials: 'include',
+					})
+					
+					if (response.ok) {
+						const sessionData = await response.json()
+						isAuthenticated = !!sessionData?.user
+					}
+				} catch {
+					// If API call fails, authentication likely failed
+				}
+			}
+
+			if (!isAuthenticated) {
+				toast.error('Failed to sign in. Please check your credentials.')
+				setIsLoading(false)
+				return
+			}
+
 			toast.success('Signed in successfully')
 			onSuccess?.()
-		} catch {
-			toast.error('Failed to sign in. Please check your credentials.')
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: 'Failed to sign in. Please check your credentials.'
+			toast.error(errorMessage)
 		} finally {
 			setIsLoading(false)
 		}
