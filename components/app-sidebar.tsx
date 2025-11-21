@@ -2,32 +2,269 @@
 
 import {
 	Boxes,
-	Command,
+	Check,
+	ChevronsUpDown,
+	Command as CommandIcon,
 	LifeBuoy,
+	Plus,
 	Send,
 	Settings2,
 	Shield,
 	SquareTerminal,
 } from 'lucide-react'
-import { usePathname } from 'next/navigation'
-import * as React from 'react'
-
-import { NavMain } from '@/components/nav-main'
-import { NavSecondary } from '@/components/nav-secondary'
-import { NavUser } from '@/components/nav-user'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	CommandSeparator,
+} from '@/components/ui/command'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '@/components/ui/popover'
 import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
-	SidebarGroup,
-	SidebarGroupContent,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher'
+import { NavMain } from '@/components/nav-main'
+import { NavSecondary } from '@/components/nav-secondary'
+import { NavUser } from '@/components/nav-user'
+import { trpc } from '@/lib/trpc/client'
+import { useWorkspace } from '@/lib/workspace/workspace-context'
 import { EMAIL_URL, EMAIL_URL_LINK, IMAGE_URL, NAME } from '@/lib/constants'
+
+function WorkspaceSwitcherMenu() {
+	const router = useRouter()
+	const { currentWorkspace, workspaces, switchWorkspace, isLoading } =
+		useWorkspace()
+	const [open, setOpen] = useState(false)
+	const [showCreateDialog, setShowCreateDialog] = useState(false)
+	const [newWorkspaceName, setNewWorkspaceName] = useState('')
+	const [newWorkspaceSlug, setNewWorkspaceSlug] = useState('')
+
+	const utils = trpc.useUtils()
+
+	const createWorkspace = trpc.workspace.create.useMutation({
+		onSuccess: (data) => {
+			toast.success('Workspace created successfully')
+			setShowCreateDialog(false)
+			setNewWorkspaceName('')
+			setNewWorkspaceSlug('')
+			void utils.workspace.list.invalidate()
+			switchWorkspace(data.id)
+			void utils.invalidate()
+			router.refresh()
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to create workspace')
+		},
+	})
+
+	const handleCreateWorkspace = () => {
+		if (!newWorkspaceName.trim() || !newWorkspaceSlug.trim()) {
+			toast.error('Please provide both name and slug')
+			return
+		}
+
+		createWorkspace.mutate({
+			name: newWorkspaceName,
+			slug: newWorkspaceSlug,
+		})
+	}
+
+	const handleWorkspaceSelect = (workspaceId: string) => {
+		switchWorkspace(workspaceId)
+		setOpen(false)
+		void utils.invalidate()
+		router.refresh()
+	}
+
+	const handleNameChange = (name: string) => {
+		setNewWorkspaceName(name)
+		if (!newWorkspaceSlug) {
+			const slug = name
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/^-|-$/g, '')
+			setNewWorkspaceSlug(slug)
+		}
+	}
+
+	if (isLoading || !currentWorkspace) {
+		return (
+			<SidebarMenuButton size="lg" disabled>
+				<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+					<CommandIcon className="size-4" />
+				</div>
+				<div className="grid flex-1 text-left text-sm leading-tight">
+					<span className="truncate font-medium">Loading...</span>
+					<span className="truncate text-xs text-primary/70">
+						Please wait
+					</span>
+				</div>
+			</SidebarMenuButton>
+		)
+	}
+
+	return (
+		<>
+			<Popover open={open} onOpenChange={setOpen}>
+				<PopoverTrigger asChild>
+					<SidebarMenuButton size="lg">
+						<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+							{currentWorkspace.logo ? (
+								<img
+									src={currentWorkspace.logo}
+									alt={currentWorkspace.name}
+									className="size-full object-cover"
+								/>
+							) : (
+								<span className="text-sm font-semibold">
+									{currentWorkspace.name[0]?.toUpperCase()}
+								</span>
+							)}
+						</div>
+						<div className="grid flex-1 text-left text-sm leading-tight">
+							<span className="truncate font-medium">
+								{currentWorkspace.name}
+							</span>
+							<span className="truncate text-xs text-primary/70">
+								{currentWorkspace.role.name}
+							</span>
+						</div>
+						<ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
+					</SidebarMenuButton>
+				</PopoverTrigger>
+				<PopoverContent className="w-[280px] p-0" align="start">
+					<Command>
+						<CommandInput placeholder="Search workspaces..." />
+						<CommandList>
+							<CommandEmpty>No workspace found.</CommandEmpty>
+							<CommandGroup heading="Workspaces">
+								{workspaces.map((workspace) => (
+									<CommandItem
+										key={workspace.id}
+										value={workspace.name}
+										onSelect={() => handleWorkspaceSelect(workspace.id)}
+										className="gap-2"
+									>
+										<Avatar className="h-6 w-6">
+											<AvatarImage src={workspace.logo || undefined} />
+											<AvatarFallback className="text-xs">
+												{workspace.name[0]?.toUpperCase()}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex flex-1 flex-col overflow-hidden">
+											<span className="truncate text-sm">
+												{workspace.name}
+											</span>
+											<span className="truncate text-xs text-muted-foreground">
+												{workspace.role.name}
+											</span>
+										</div>
+										{currentWorkspace.id === workspace.id && (
+											<Check className="h-4 w-4 shrink-0" />
+										)}
+									</CommandItem>
+								))}
+							</CommandGroup>
+							<CommandSeparator />
+							<CommandGroup>
+								<CommandItem
+									onSelect={() => {
+										setOpen(false)
+										setShowCreateDialog(true)
+									}}
+									className="gap-2"
+								>
+									<div className="flex h-6 w-6 items-center justify-center rounded-md border border-dashed">
+										<Plus className="h-4 w-4" />
+									</div>
+									<span>Create Workspace</span>
+								</CommandItem>
+							</CommandGroup>
+						</CommandList>
+					</Command>
+				</PopoverContent>
+			</Popover>
+
+			<Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create Workspace</DialogTitle>
+						<DialogDescription>
+							Create a new workspace to organize your team and projects.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="workspace-name">Workspace Name</Label>
+							<Input
+								id="workspace-name"
+								placeholder="Acme Inc"
+								value={newWorkspaceName}
+								onChange={(e) => handleNameChange(e.target.value)}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="workspace-slug">
+								Workspace Slug
+								<span className="ml-1 text-xs text-muted-foreground">
+									(used in URLs)
+								</span>
+							</Label>
+							<Input
+								id="workspace-slug"
+								placeholder="acme-inc"
+								value={newWorkspaceSlug}
+								onChange={(e) => setNewWorkspaceSlug(e.target.value)}
+							/>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setShowCreateDialog(false)}
+							disabled={createWorkspace.isPending}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleCreateWorkspace}
+							disabled={createWorkspace.isPending}
+						>
+							{createWorkspace.isPending ? 'Creating...' : 'Create Workspace'}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
+	)
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname()
@@ -127,28 +364,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<SidebarMenuButton size="lg" asChild>
-							<a href="/">
-								<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-									<Command className="size-4" />
-								</div>
-								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-medium">Your SaaS</span>
-									<span className="truncate text-xs text-primary/70">
-										Enterprise Edition
-									</span>
-								</div>
-							</a>
-						</SidebarMenuButton>
+						<WorkspaceSwitcherMenu />
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent>
-				<SidebarGroup>
-					<SidebarGroupContent>
-						<WorkspaceSwitcher />
-					</SidebarGroupContent>
-				</SidebarGroup>
 				<NavMain items={data.navMain} />
 				<NavSecondary items={data.navSecondary} className="mt-auto" />
 			</SidebarContent>

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signIn, signUp, useSession } from '@/lib/auth/client'
+import { trpc } from '@/lib/trpc/client'
 
 const signInSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -35,6 +36,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 	const { data: session, refetch: refetchSession } = useSession()
 	const router = useRouter()
 	const searchParams = useSearchParams()
+	const ensureDefaultWorkspace = trpc.workspace.ensureDefault.useMutation()
 
 	const signInForm = useForm<SignInFormData>({
 		resolver: zodResolver(signInSchema),
@@ -139,11 +141,26 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 	const handleSignUp = async (data: SignUpFormData) => {
 		setIsLoading(true)
 		try {
-			await signUp.email({
+			const result = await signUp.email({
 				email: data.email,
 				password: data.password,
 				name: data.name,
 			})
+
+			// If signup was successful and user is logged in, ensure default workspace
+			if (result && !result.error) {
+				// Wait a bit for session to be established
+				await new Promise((resolve) => setTimeout(resolve, 500))
+				
+				// Try to ensure default workspace exists
+				try {
+					await ensureDefaultWorkspace.mutateAsync()
+				} catch (error) {
+					// Don't fail signup if workspace creation fails
+					console.error('Failed to create default workspace:', error)
+				}
+			}
+
 			toast.success('Account created! Please check your email to verify.')
 			onSuccess?.()
 		} catch {

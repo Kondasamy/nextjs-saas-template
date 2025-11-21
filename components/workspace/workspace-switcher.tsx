@@ -42,13 +42,19 @@ export function WorkspaceSwitcher() {
 	const [newWorkspaceName, setNewWorkspaceName] = useState('')
 	const [newWorkspaceSlug, setNewWorkspaceSlug] = useState('')
 
+	const utils = trpc.useUtils()
+
 	const createWorkspace = trpc.workspace.create.useMutation({
 		onSuccess: (data) => {
 			toast.success('Workspace created successfully')
 			setShowCreateDialog(false)
 			setNewWorkspaceName('')
 			setNewWorkspaceSlug('')
+			// Invalidate workspace list to include the new workspace
+			void utils.workspace.list.invalidate()
 			switchWorkspace(data.id)
+			// Invalidate all queries to refetch data for the new workspace
+			void utils.invalidate()
 			router.refresh()
 		},
 		onError: (error) => {
@@ -71,6 +77,8 @@ export function WorkspaceSwitcher() {
 	const handleWorkspaceSelect = (workspaceId: string) => {
 		switchWorkspace(workspaceId)
 		setOpen(false)
+		// Invalidate all queries to refetch data for the new workspace
+		void utils.invalidate()
 		router.refresh()
 	}
 
@@ -86,7 +94,36 @@ export function WorkspaceSwitcher() {
 		}
 	}
 
-	if (isLoading || !currentWorkspace) {
+	if (isLoading) {
+		return (
+			<div className="flex items-center gap-2 px-2 py-1.5">
+				<div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
+				<div className="flex-1 space-y-1">
+					<div className="h-3 w-24 animate-pulse rounded bg-muted" />
+					<div className="h-2 w-16 animate-pulse rounded bg-muted" />
+				</div>
+			</div>
+		)
+	}
+
+	// No workspaces - show create button
+	if (!currentWorkspace && workspaces.length === 0) {
+		return (
+			<Button
+				variant="ghost"
+				className="w-full justify-start px-2"
+				onClick={() => setShowCreateDialog(true)}
+			>
+				<div className="flex h-6 w-6 items-center justify-center rounded-md border border-dashed">
+					<Plus className="h-4 w-4" />
+				</div>
+				<span className="ml-2">Create Workspace</span>
+			</Button>
+		)
+	}
+
+	// Still loading or workspace not found
+	if (!currentWorkspace) {
 		return (
 			<div className="flex items-center gap-2 px-2 py-1.5">
 				<div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />

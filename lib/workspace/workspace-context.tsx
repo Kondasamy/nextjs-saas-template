@@ -43,31 +43,64 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const [isInitialized, setIsInitialized] = useState(false)
 
 	// Fetch all workspaces
-	const { data: workspaces = [], isLoading: isLoadingWorkspaces } =
+	const { data: workspaces = [], isLoading: isLoadingWorkspaces, refetch: refetchWorkspaces } =
 		trpc.workspace.list.useQuery()
+
+	const ensureDefaultWorkspace = trpc.workspace.ensureDefault.useMutation({
+		onSuccess: () => {
+			// Refetch workspaces after creating default
+			void refetchWorkspaces()
+		},
+	})
 
 	// Initialize workspace from localStorage or first workspace
 	useEffect(() => {
-		if (!isLoadingWorkspaces && workspaces.length > 0 && !isInitialized) {
-			const storedWorkspaceId =
-				typeof window !== 'undefined'
-					? localStorage.getItem(WORKSPACE_STORAGE_KEY)
-					: null
+		if (!isLoadingWorkspaces && !isInitialized) {
+			if (workspaces.length > 0) {
+				const storedWorkspaceId =
+					typeof window !== 'undefined'
+						? localStorage.getItem(WORKSPACE_STORAGE_KEY)
+						: null
 
-			// Check if stored workspace exists in user's workspaces
-			const storedWorkspace = workspaces.find((w) => w.id === storedWorkspaceId)
+				// Check if stored workspace exists in user's workspaces
+				const storedWorkspace = workspaces.find(
+					(w) => w.id === storedWorkspaceId
+				)
 
-			// Use stored workspace if valid, otherwise use first workspace
-			const initialWorkspace = storedWorkspace || workspaces[0]
-			setCurrentWorkspaceId(initialWorkspace.id)
-			setIsInitialized(true)
+				// Use stored workspace if valid, otherwise use first workspace
+				const initialWorkspace = storedWorkspace || workspaces[0]
+				setCurrentWorkspaceId(initialWorkspace.id)
+				setIsInitialized(true)
 
-			// Update localStorage if we're using the first workspace
-			if (typeof window !== 'undefined' && !storedWorkspace) {
-				localStorage.setItem(WORKSPACE_STORAGE_KEY, initialWorkspace.id)
+				// Update localStorage if we're using the first workspace
+				if (typeof window !== 'undefined' && !storedWorkspace) {
+					localStorage.setItem(WORKSPACE_STORAGE_KEY, initialWorkspace.id)
+				}
+			} else {
+				// No workspaces - try to create default workspace
+				void ensureDefaultWorkspace.mutate()
+				// Mark as initialized so loading state resolves
+				setIsInitialized(true)
 			}
 		}
-	}, [workspaces, isLoadingWorkspaces, isInitialized])
+	}, [workspaces, isLoadingWorkspaces, isInitialized, ensureDefaultWorkspace, refetchWorkspaces])
+
+	// Ensure current workspace is still valid when workspaces list changes
+	useEffect(() => {
+		if (
+			isInitialized &&
+			currentWorkspaceId &&
+			workspaces.length > 0 &&
+			!workspaces.find((w) => w.id === currentWorkspaceId)
+		) {
+			// Current workspace no longer exists, switch to first available
+			const firstWorkspace = workspaces[0]
+			setCurrentWorkspaceId(firstWorkspace.id)
+			if (typeof window !== 'undefined') {
+				localStorage.setItem(WORKSPACE_STORAGE_KEY, firstWorkspace.id)
+			}
+		}
+	}, [workspaces, currentWorkspaceId, isInitialized])
 
 	// Switch workspace function
 	const switchWorkspace = (id: string) => {

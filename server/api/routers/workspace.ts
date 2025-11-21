@@ -3,6 +3,80 @@ import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const workspaceRouter = createTRPCRouter({
+	ensureDefault: protectedProcedure.mutation(async ({ ctx }) => {
+		if (!ctx.user) {
+			throw new TRPCError({ code: 'UNAUTHORIZED' })
+		}
+
+		// Check if user already has a workspace
+		const existingMembership = await ctx.prisma.organizationMember.findFirst({
+			where: { userId: ctx.user.id },
+		})
+
+		if (existingMembership) {
+			// User already has a workspace
+			return { created: false, workspaceId: existingMembership.organizationId }
+		}
+
+		// Generate a unique slug from user's email or name
+		const baseSlug = ctx.user.email
+			.split('@')[0]
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-|-$/g, '')
+			.slice(0, 30)
+
+		// Ensure slug is unique
+		let slug = baseSlug
+		let counter = 1
+		while (
+			await ctx.prisma.organization.findUnique({
+				where: { slug },
+			})
+		) {
+			slug = `${baseSlug}-${counter}`
+			counter++
+		}
+
+		// Create default workspace using a transaction
+		const workspaceName = ctx.user.name || `${ctx.user.email.split('@')[0]}'s Workspace`
+		
+		const result = await ctx.prisma.$transaction(async (tx) => {
+			// Create the organization
+			const organization = await tx.organization.create({
+				data: {
+					name: workspaceName,
+					slug,
+					description: 'My default workspace',
+				},
+			})
+
+			// Create the Owner role
+			const role = await tx.role.create({
+				data: {
+					organizationId: organization.id,
+					name: 'Owner',
+					description: 'Workspace owner with full access',
+					permissions: ['*'], // All permissions
+					isSystem: true,
+				},
+			})
+
+			// Create the membership
+			await tx.organizationMember.create({
+				data: {
+					organizationId: organization.id,
+					userId: ctx.user.id,
+					roleId: role.id,
+				},
+			})
+
+			return organization
+		})
+
+		return { created: true, workspaceId: result.id }
+	}),
+
 	list: protectedProcedure.query(async ({ ctx }) => {
 		if (!ctx.user) {
 			throw new TRPCError({ code: 'UNAUTHORIZED' })
