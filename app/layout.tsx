@@ -138,9 +138,10 @@ export default function RootLayout({
 				<TRPCProvider>
 					<ThemeProvider
 						attribute="class"
-						defaultTheme="dark"
+						defaultTheme="system"
 						enableSystem
 						disableTransitionOnChange
+						storageKey="theme-preference"
 					>
 						<WorkspaceProvider>
 							<ThemeTransition>
