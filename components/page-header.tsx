@@ -12,6 +12,7 @@ import {
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
+import * as React from 'react'
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -70,11 +71,29 @@ export default function PageHeader() {
 	const { title, icon } = getPageInfo()
 	const { theme, setTheme } = useTheme()
 	const [mounted, setMounted] = useState(false)
+	const buttonRef = React.useRef<HTMLButtonElement>(null)
 
 	// Only set mounted state, don't force theme
 	useEffect(() => {
 		setMounted(true)
 	}, [])
+
+	const handleThemeToggle = () => {
+		// Store button position before theme change
+		if (buttonRef.current) {
+			const rect = buttonRef.current.getBoundingClientRect()
+			const x = rect.left + rect.width / 2
+			const y = rect.top + rect.height / 2
+			
+			// Store position in a custom event or sessionStorage for the transition component
+			window.dispatchEvent(
+				new CustomEvent('theme-toggle', {
+					detail: { x, y },
+				})
+			)
+		}
+		setTheme(theme === 'dark' ? 'light' : 'dark')
+	}
 
 	// Prevent hydration mismatch
 	if (!mounted) return null
@@ -130,10 +149,11 @@ export default function PageHeader() {
 
 			<div className="flex items-center px-4">
 				<Button
+					ref={buttonRef}
 					variant="ghost"
 					size="icon"
 					className="cursor-pointer"
-					onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+					onClick={handleThemeToggle}
 				>
 					{theme === 'dark' ? (
 						<MoonStar className="h-5 w-5" />

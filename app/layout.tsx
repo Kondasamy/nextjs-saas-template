@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 import { TRPCProvider } from '@/components/providers/trpc-provider'
 import { ThemeStyles } from '@/components/theme-styles'
+import { ThemeTransition } from '@/components/theme-transition'
 import { cn } from '@/lib/utils'
 
 export const viewport: Viewport = {
@@ -140,8 +141,10 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						{children}
-						<Toaster />
+						<ThemeTransition>
+							{children}
+							<Toaster />
+						</ThemeTransition>
 					</ThemeProvider>
 				</TRPCProvider>
 			</body>
