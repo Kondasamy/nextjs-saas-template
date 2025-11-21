@@ -18,7 +18,6 @@ import { toast } from 'sonner'
 import { NavMain } from '@/components/nav-main'
 import { NavSecondary } from '@/components/nav-secondary'
 import { NavUser } from '@/components/nav-user'
-import { useAuth } from '@/hooks/use-auth'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -54,6 +53,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { useAuth } from '@/hooks/use-auth'
 import { EMAIL_URL, EMAIL_URL_LINK, IMAGE_URL, NAME } from '@/lib/constants'
 import { trpc } from '@/lib/trpc/client'
 import { useWorkspace } from '@/lib/workspace/workspace-context'
@@ -266,7 +266,7 @@ function WorkspaceSwitcherMenu() {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname()
 	const { user } = useAuth()
-	
+
 	// Check if user is admin via tRPC
 	const { data: isAdmin = false } = trpc.user.isAdmin.useQuery(undefined, {
 		enabled: !!user,
