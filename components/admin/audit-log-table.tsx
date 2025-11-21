@@ -3,6 +3,7 @@
 import { formatDistanceToNow } from 'date-fns'
 import { Download, Filter } from 'lucide-react'
 import { useState } from 'react'
+import { ActivityDetailModal } from '@/components/admin/activity-detail-modal'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,8 @@ const ACTION_COLORS: Record<string, string> = {
 export function AuditLogTable() {
 	const [page, setPage] = useState(0)
 	const [actionFilter, setActionFilter] = useState<string>('all')
+	const [selectedActivity, setSelectedActivity] = useState<any>(null)
+	const [modalOpen, setModalOpen] = useState(false)
 	const limit = 50
 
 	const { data } = trpc.admin.getAuditLogs.useQuery({
@@ -117,7 +120,14 @@ export function AuditLogTable() {
 							</TableRow>
 						) : (
 							data.logs.map((log) => (
-								<TableRow key={log.id}>
+								<TableRow
+									key={log.id}
+									className="cursor-pointer hover:bg-muted/50"
+									onClick={() => {
+										setSelectedActivity(log)
+										setModalOpen(true)
+									}}
+								>
 									<TableCell>
 										{log.user ? (
 											<div className="flex items-center gap-3">
@@ -194,6 +204,12 @@ export function AuditLogTable() {
 					</div>
 				</div>
 			)}
+
+			<ActivityDetailModal
+				activity={selectedActivity}
+				open={modalOpen}
+				onOpenChange={setModalOpen}
+			/>
 		</div>
 	)
 }

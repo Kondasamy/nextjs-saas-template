@@ -1,6 +1,8 @@
 import { Activity, Bell, Building2, Users } from 'lucide-react'
 import { Suspense } from 'react'
 import { ActivityFeed } from '@/components/analytics/activity-feed'
+import { ActivityHeatmap } from '@/components/analytics/activity-heatmap'
+import { RevenueChart } from '@/components/analytics/revenue-chart'
 import { StatsCard } from '@/components/analytics/stats-card'
 import { UserGrowthChart } from '@/components/analytics/user-growth-chart'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -103,7 +105,13 @@ export default async function DashboardPage() {
 				<DashboardStats />
 			</Suspense>
 
-			{/* Charts and Activity Feed with Suspense */}
+			{/* Revenue and Heatmap Charts */}
+			<div className="grid gap-4 md:grid-cols-2">
+				<RevenueChart />
+				<ActivityHeatmap />
+			</div>
+
+			{/* User Growth and Activity Feed with Suspense */}
 			<Suspense fallback={<ChartsSkeleton />}>
 				<DashboardCharts />
 			</Suspense>
