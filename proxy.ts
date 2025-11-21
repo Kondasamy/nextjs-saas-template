@@ -23,6 +23,22 @@ export async function proxy(request: NextRequest) {
 	// Update Supabase session
 	const supabaseResponse = await updateSession(request)
 
+	// Add security headers to response
+	const securityHeaders = {
+		'X-DNS-Prefetch-Control': 'on',
+		'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+		'X-Frame-Options': 'SAMEORIGIN',
+		'X-Content-Type-Options': 'nosniff',
+		'X-XSS-Protection': '1; mode=block',
+		'Referrer-Policy': 'strict-origin-when-cross-origin',
+		'Permissions-Policy':
+			'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+	}
+
+	Object.entries(securityHeaders).forEach(([key, value]) => {
+		supabaseResponse.headers.set(key, value)
+	})
+
 	// Check if route is public
 	const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 	const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
@@ -34,14 +50,22 @@ export async function proxy(request: NextRequest) {
 
 	// Redirect authenticated users away from auth pages
 	if (isAuthRoute && session?.user) {
-		return NextResponse.redirect(new URL('/', request.url))
+		const redirect = NextResponse.redirect(new URL('/', request.url))
+		Object.entries(securityHeaders).forEach(([key, value]) => {
+			redirect.headers.set(key, value)
+		})
+		return redirect
 	}
 
 	// Redirect unauthenticated users to login
 	if (!isPublicRoute && !session?.user) {
 		const redirectUrl = new URL('/login', request.url)
 		redirectUrl.searchParams.set('redirect', pathname)
-		return NextResponse.redirect(redirectUrl)
+		const redirect = NextResponse.redirect(redirectUrl)
+		Object.entries(securityHeaders).forEach(([key, value]) => {
+			redirect.headers.set(key, value)
+		})
+		return redirect
 	}
 
 	return supabaseResponse

@@ -1,7 +1,8 @@
 'use client'
 
 import { formatDistanceToNow } from 'date-fns'
-import { MoreHorizontal, Search, Trash2, UserX } from 'lucide-react'
+import { MoreHorizontal, Search, Trash2, UserCog, UserX } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -27,8 +28,10 @@ import {
 import { trpc } from '@/lib/trpc/client'
 
 export function UsersTable() {
+	const router = useRouter()
 	const [search, setSearch] = useState('')
 	const [page, setPage] = useState(0)
+	const [impersonating, setImpersonating] = useState(false)
 	const limit = 50
 
 	const { data, refetch } = trpc.admin.getAllUsers.useQuery({
@@ -68,6 +71,38 @@ export function UsersTable() {
 			userId,
 			banned: !currentlyBanned,
 		})
+	}
+
+	const handleImpersonate = async (userId: string, email: string) => {
+		if (
+			!confirm(
+				`Are you sure you want to impersonate ${email}? This action will be logged.`
+			)
+		) {
+			return
+		}
+
+		setImpersonating(true)
+		try {
+			const response = await fetch('/api/admin/impersonation/start', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ userId }),
+			})
+
+			if (!response.ok) {
+				throw new Error('Failed to start impersonation')
+			}
+
+			toast.success(`Now impersonating ${email}`)
+			router.push('/')
+			router.refresh()
+		} catch (error) {
+			console.error('Error starting impersonation:', error)
+			toast.error('Failed to start impersonation')
+		} finally {
+			setImpersonating(false)
+		}
 	}
 
 	return (
@@ -154,6 +189,13 @@ export function UsersTable() {
 											<DropdownMenuContent align="end">
 												<DropdownMenuLabel>Actions</DropdownMenuLabel>
 												<DropdownMenuSeparator />
+												<DropdownMenuItem
+													onClick={() => handleImpersonate(user.id, user.email)}
+													disabled={impersonating}
+												>
+													<UserCog className="mr-2 h-4 w-4" />
+													Impersonate User
+												</DropdownMenuItem>
 												<DropdownMenuItem
 													onClick={() =>
 														handleBan(user.id, user.banned ?? false)

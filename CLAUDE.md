@@ -134,6 +134,12 @@ export function Component() {
 - Three main pages: dashboard (`/admin`), users (`/admin/users`), audit logs (`/admin/audit`)
 - Admin warning banner in layout
 
+**Admin Features**:
+- User impersonation system with audit logging
+- Impersonation banner component (`components/admin/impersonation-banner.tsx`)
+- Impersonation API routes (`app/api/admin/impersonation/`)
+- 1-hour session expiry for security
+
 **Admin Components** (`components/admin/`):
 - `users-table.tsx` - User management with search, ban/unban, delete
 - `audit-log-table.tsx` - Audit trail with filtering and CSV export
@@ -176,7 +182,13 @@ export function Component() {
 - Confirmation dialogs for destructive actions (e.g., delete account requires typing "DELETE")
 - Role-based access control for team management
 
-### Email System Pattern
+### Email System Pattern (✅ Fully Integrated)
+
+**Better Auth Integration** (`lib/auth/config.ts`):
+- All email templates are connected to Better Auth hooks
+- Emails automatically sent for: verification, password reset, magic links, OTP, 2FA
+- Welcome emails sent automatically after signup
+- Graceful fallback: logs to console if RESEND_API_KEY not set
 
 **Email Templates** (`emails/`):
 - Base layout in `components/email-layout.tsx` with header and footer
@@ -210,6 +222,41 @@ await EmailService.send2FACode(email, name, code)
 - Placeholder structure for online user tracking
 - TODO comments for Supabase Realtime Presence integration
 - Returns `onlineUsers` and `onlineCount`
+
+### Production Ready Features (✅ Implemented)
+
+**Error Boundaries**:
+- Global error boundary (`app/global-error.tsx`)
+- Root error boundary (`app/error.tsx`)
+- Dashboard error boundary (`app/(dashboard)/error.tsx`)
+- Admin error boundary (`app/(admin)/admin/error.tsx`)
+- User-friendly messages with recovery actions
+- Development mode shows detailed errors
+
+**Loading States**:
+- Dashboard loading skeletons (`app/(dashboard)/loading.tsx`)
+- Settings loading skeletons (`app/(dashboard)/settings/loading.tsx`)
+- Admin loading skeletons (`app/(admin)/admin/loading.tsx`)
+- React Suspense boundaries for streaming SSR
+- Inline skeleton components in dashboard page
+
+**Rate Limiting** (`lib/rate-limit.ts`):
+- In-memory rate limiting (Redis-ready)
+- Three tiers: default (100 req/15min), strict (10 req/15min), auth (5 req/15min)
+- IP-based tracking with automatic cleanup
+- Rate limit headers in responses
+
+**Security Headers** (`proxy.ts` and `next.config.mjs`):
+- HSTS, CSP, X-Frame-Options, X-Content-Type-Options
+- X-XSS-Protection, Referrer-Policy, Permissions-Policy
+- Applied to all responses via proxy function
+
+**User Impersonation** (`lib/auth/impersonation.ts`):
+- Complete impersonation system with cookie-based sessions
+- Audit logging of all impersonation actions
+- Impersonation banner component
+- API routes for start/stop impersonation
+- Admin panel integration in users table
 
 ### Customization Entry Points
 
@@ -358,3 +405,54 @@ SVG images are allowed with CSP restrictions.
 - SSO credentials (SAML, OKTA)
 
 See `.env.local.example` for complete list with descriptions.
+
+## Important Implementation Notes
+
+### Email System
+All email templates are fully integrated with Better Auth. Emails are sent automatically for:
+- User signup (verification + welcome)
+- Password reset requests
+- Magic link authentication
+- OTP codes
+- 2FA codes
+
+No additional code needed - just configure `RESEND_API_KEY` in environment variables.
+
+### Rate Limiting
+Use the rate limiting system in API routes and tRPC procedures:
+```typescript
+import { checkRateLimit, strictRateLimiter } from '@/lib/rate-limit'
+
+// In API route or tRPC procedure
+await checkRateLimit() // Uses default limiter
+await checkRateLimit(strictRateLimiter) // Uses strict limiter
+```
+
+### User Impersonation
+Admins can impersonate users from the admin panel (`/admin/users`):
+- Click actions menu (⋮) on any user
+- Select "Impersonate User"
+- All actions are logged to audit log
+- 1-hour session expiry
+- Visual banner when impersonating
+
+### Error Boundaries
+Error boundaries are automatically in place:
+- Catch errors at global, route group, and page levels
+- Show user-friendly error messages
+- Provide recovery actions
+- Log errors in development mode
+
+### Loading States
+Loading states work automatically via:
+- `loading.tsx` files in route groups
+- React Suspense boundaries in dashboard
+- Skeleton components that match actual content
+
+## Known Issues
+
+**Next.js 16 Build Issue**: Production builds fail with Turbopack error. This is a pre-existing issue with Next.js 16.0.3, not introduced by recent changes.
+- **Solution 1**: Use Next.js 15 for production (`pnpm add next@15`)
+- **Solution 2**: Wait for Next.js 16.1+ with fixes
+- **Note**: Development server works perfectly
+- See `BUILD_NOTES.md` for full details

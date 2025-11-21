@@ -21,6 +21,7 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
 - **Workspace Management** with multi-tenant architecture
 - **Admin Dashboard**:
   - User management (search, ban/unban, delete)
+  - User impersonation with audit logging (1-hour sessions)
   - System statistics and metrics
   - Audit logs with filtering and CSV export
   - Environment-based admin access control (ADMIN_EMAILS)
@@ -37,9 +38,11 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - Notifications (7 categories with email/in-app toggles)
 - **Email Infrastructure**:
   - Resend integration with React Email
+  - Fully integrated with Better Auth hooks (automatic email sending)
   - 6 templates: welcome, verification, password-reset, magic-link, invitation, 2FA
   - EmailService class for centralized email sending
   - Email preview route for development
+  - Welcome emails sent automatically after signup
 - **In-app Notifications** with realtime updates (polling + Supabase-ready)
 - **Supabase** integration (optional):
   - PostgreSQL database
@@ -59,6 +62,12 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
 - **Vercel Analytics** integration
 - **Code quality** with Biome and Oxlint
 - **Git hooks** with Husky for pre-commit formatting and linting
+- **Production Ready**:
+  - Error boundaries (global, root, dashboard, admin)
+  - Loading skeletons with React Suspense
+  - Rate limiting (3 tiers: default, strict, auth)
+  - Security headers (HSTS, CSP, X-Frame-Options, etc.)
+  - User impersonation system with audit logging
 
 ## Getting Started
 
@@ -188,12 +197,12 @@ pnpm dev
 │   │   ├── email-layout.tsx
 │   │   ├── email-header.tsx
 │   │   └── email-footer.tsx
-│   ├── welcome.tsx
-│   ├── verification.tsx
-│   ├── password-reset.tsx
-│   ├── magic-link.tsx
-│   ├── invitation.tsx
-│   └── two-factor.tsx
+│   ├── welcome.tsx                # Auto-sent after signup
+│   ├── verification.tsx           # Auto-sent on signup
+│   ├── password-reset.tsx         # Auto-sent on reset request
+│   ├── magic-link.tsx             # Auto-sent on magic link auth
+│   ├── invitation.tsx             # Sent on team invitation
+│   └── two-factor.tsx             # Auto-sent for 2FA
 ├── server/                        # Server-side code
 │   └── api/                       # tRPC routers
 │       ├── trpc.ts                # tRPC setup
@@ -205,14 +214,16 @@ pnpm dev
 │           └── admin.ts           # Admin router
 ├── lib/                           # Utility functions
 │   ├── auth/                      # Better Auth configuration
-│   │   ├── config.ts
+│   │   ├── config.ts              # Better Auth + email hooks
 │   │   ├── auth-helpers.ts
-│   │   └── admin-helpers.ts       # Admin access control
+│   │   ├── admin-helpers.ts       # Admin access control
+│   │   └── impersonation.ts       # User impersonation system
 │   ├── trpc/                      # tRPC client/server
 │   ├── rbac/                      # RBAC utilities
 │   ├── email/                     # Email utilities
 │   │   └── service.ts             # EmailService class
 │   ├── supabase/                  # Supabase clients
+│   ├── rate-limit.ts              # Rate limiting system
 │   ├── prisma.ts                  # Prisma client
 │   ├── constants.ts               # App constants
 │   ├── env.ts                     # Environment validation
@@ -333,11 +344,60 @@ Configuration files:
 
 **Note:** This project uses `pnpm` as the package manager. You can use `npm` or `yarn` as alternatives.
 
+## Production Features
+
+### Rate Limiting
+Three-tier rate limiting system ready for production:
+```typescript
+import { checkRateLimit, strictRateLimiter, authRateLimiter } from '@/lib/rate-limit'
+
+// Default: 100 requests per 15 minutes
+await checkRateLimit()
+
+// Strict: 10 requests per 15 minutes
+await checkRateLimit(strictRateLimiter)
+
+// Auth: 5 attempts per 15 minutes
+await checkRateLimit(authRateLimiter)
+```
+
+### Error Boundaries
+Comprehensive error handling with recovery:
+- `app/global-error.tsx` - Critical errors
+- `app/error.tsx` - Root errors
+- `app/(dashboard)/error.tsx` - Dashboard errors
+- `app/(admin)/admin/error.tsx` - Admin errors
+
+### Loading States
+React Suspense with loading skeletons:
+- `app/(dashboard)/loading.tsx`
+- `app/(dashboard)/settings/loading.tsx`
+- `app/(admin)/admin/loading.tsx`
+
+### Security Headers
+Applied via `proxy.ts`:
+- HSTS, CSP, X-Frame-Options
+- X-Content-Type-Options, X-XSS-Protection
+- Referrer-Policy, Permissions-Policy
+
+### User Impersonation
+Admins can impersonate users:
+- Access: Admin → Users → ⋮ → "Impersonate User"
+- 1-hour session expiry
+- Complete audit logging
+- Visual banner when active
+
 ## Deployment
 
 This template is optimized for deployment on [Vercel](https://vercel.com):
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
+
+### Known Issues
+**Next.js 16 Build Issue**: Production builds have Turbopack errors. This is a pre-existing Next.js 16.0.3 issue.
+- **Solution**: Use Next.js 15 (`pnpm add next@15`) or wait for Next.js 16.1+
+- **Note**: Development server works perfectly
+- See `BUILD_NOTES.md` for details
 
 ## Motion Primitives
 

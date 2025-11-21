@@ -25,6 +25,7 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
 - **Workspace Management** with multi-tenant architecture
 - **Admin Dashboard**:
   - User management (search, ban/unban, delete)
+  - User impersonation with audit logging
   - System statistics and metrics
   - Audit logs with filtering and CSV export
   - Environment-based admin access control
@@ -40,16 +41,24 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - Team management (invite members, role assignment, pending invitations)
   - Notification preferences (7 categories with email/in-app toggles)
 - **Email Infrastructure**:
-  - Resend integration
+  - Resend integration with Better Auth hooks
   - React Email templates (6 templates: welcome, verification, password-reset, magic-link, invitation, 2FA)
   - EmailService class for centralized email sending
   - Email preview route for development
+  - Automatic email sending for all authentication flows
+  - Welcome emails sent automatically after signup
   - Marketing email support (Mailchimp, Loops, ConvertKit)
 - **In-app Notifications** with realtime updates (polling + Supabase-ready)
 - **Internationalization (i18n)** with next-intl
 - **ShadCN UI** component library (50+ components)
 - **Tailwind CSS 4** for styling
 - **Code Quality** with Biome and Oxlint
+- **Production Ready**:
+  - Error boundaries (global and page-level)
+  - Loading skeletons with React Suspense
+  - Rate limiting (3 tiers: default, strict, auth)
+  - Security headers (HSTS, CSP, X-Frame-Options, etc.)
+  - Comprehensive error handling and recovery
 
 ## Getting Started
 
@@ -311,6 +320,16 @@ Templates are located in `emails/`:
 - `invitation.tsx` - Workspace/team invitation
 - `two-factor.tsx` - 2FA authentication code
 
+### Better Auth Integration
+
+Emails are automatically sent for all authentication flows via Better Auth hooks in `lib/auth/config.ts`:
+- Email verification on signup
+- Password reset emails
+- Magic link emails
+- OTP emails
+- 2FA code emails
+- Welcome emails after successful signup
+
 ### EmailService
 
 Centralized email sending service in `lib/email/service.ts`:
@@ -351,6 +370,104 @@ http://localhost:3000/api/email/preview?template=two-factor
 ```
 
 **Note:** Email preview route is only available in development mode.
+
+## Rate Limiting
+
+Built-in rate limiting system with three tiers:
+
+```typescript
+import { checkRateLimit, strictRateLimiter, authRateLimiter } from '@/lib/rate-limit'
+
+// Default rate limiter (100 requests per 15 minutes)
+await checkRateLimit()
+
+// Strict rate limiter (10 requests per 15 minutes)
+await checkRateLimit(strictRateLimiter)
+
+// Auth rate limiter (5 attempts per 15 minutes)
+await checkRateLimit(authRateLimiter)
+
+// Custom identifier (e.g., user ID)
+await checkRateLimit(undefined, userId)
+```
+
+The rate limiting system:
+- Uses in-memory storage (Redis-ready for production)
+- IP-based tracking by default
+- Automatic cleanup of expired entries
+- Rate limit headers in responses
+
+## Security Features
+
+### Security Headers
+
+Comprehensive security headers applied via `proxy.ts` and `next.config.mjs`:
+- **HSTS**: HTTP Strict Transport Security
+- **CSP**: Content Security Policy for images
+- **X-Frame-Options**: Clickjacking protection
+- **X-Content-Type-Options**: MIME sniffing prevention
+- **X-XSS-Protection**: XSS attack protection
+- **Referrer-Policy**: Referrer information control
+- **Permissions-Policy**: Feature policy restrictions
+
+### Error Handling
+
+Multi-level error boundaries for resilient error handling:
+- Global error boundary (`app/global-error.tsx`)
+- Root error boundary (`app/error.tsx`)
+- Dashboard error boundary (`app/(dashboard)/error.tsx`)
+- Admin error boundary (`app/(admin)/admin/error.tsx`)
+
+Features:
+- User-friendly error messages
+- Development mode shows detailed errors
+- Recovery actions (try again, go home)
+- Automatic error logging
+
+### Loading States
+
+Comprehensive loading states with React Suspense:
+- Dashboard loading skeletons (`app/(dashboard)/loading.tsx`)
+- Settings loading skeletons (`app/(dashboard)/settings/loading.tsx`)
+- Admin loading skeletons (`app/(admin)/admin/loading.tsx`)
+- Suspense boundaries for streaming SSR
+- Progressive content loading
+
+## User Impersonation
+
+Admins can impersonate users for support purposes:
+
+### How to Use
+1. Navigate to Admin → Users (`/admin/users`)
+2. Click the actions menu (⋮) on any user
+3. Select "Impersonate User"
+4. Confirm the action
+5. You'll be redirected to the dashboard as that user
+6. Click "Exit Impersonation" in the banner when done
+
+### Features
+- 1-hour session expiry for security
+- Complete audit logging of all impersonation actions
+- Visual banner shows when impersonating
+- Automatic session cleanup
+- Admin-only access
+
+### Implementation
+```typescript
+import { startImpersonation, stopImpersonation } from '@/lib/auth/impersonation'
+
+// Start impersonating
+await startImpersonation(adminId, userId)
+
+// Stop impersonating
+await stopImpersonation()
+```
+
+All impersonation actions are logged to the audit log with:
+- Admin user ID
+- Target user ID and email
+- Start/end timestamps
+- Session duration
 
 ## tRPC Usage
 
@@ -493,6 +610,7 @@ Only users with emails in `ADMIN_EMAILS` can access the admin dashboard at `/adm
 - Search users by email or name
 - Ban/unban users
 - Delete user accounts
+- Impersonate users for support (with audit logging)
 - View user organizations and roles
 - Pagination support (50 users per page)
 
@@ -639,6 +757,13 @@ Run migrations before deployment:
 ```bash
 pnpm db:migrate
 ```
+
+### Known Issues
+
+**Next.js 16 Build Issue**: The production build currently has a Turbopack error. This is a known issue with Next.js 16.0.3. See `BUILD_NOTES.md` for details and solutions:
+- Use Next.js 15 for production: `pnpm add next@15`
+- Wait for Next.js 16.1+ with Turbopack fixes
+- Development server works perfectly
 
 ## Documentation
 
