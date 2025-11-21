@@ -1,11 +1,11 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { getAuthUser } from '@/lib/auth/server'
+import { getUser } from '@/lib/auth/server'
 import { prisma } from '@/lib/prisma'
 
 export const createTRPCContext = async () => {
-	const user = await getAuthUser()
+	const user = await getUser()
 
 	return {
 		prisma,

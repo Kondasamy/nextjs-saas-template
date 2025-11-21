@@ -1,3 +1,6 @@
+'use client'
+
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AuthForm } from '@/components/auth/auth-form'
 import { MagicLinkForm } from '@/components/auth/magic-link-form'
@@ -14,6 +17,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function LoginPage() {
+	const searchParams = useSearchParams()
+	const router = useRouter()
+	const redirect = searchParams.get('redirect') || '/dashboard'
+
+	const handleSuccess = () => {
+		router.push(redirect)
+	}
 	return (
 		<div className="container mx-auto flex items-center justify-center min-h-screen py-12">
 			<Card className="w-full max-w-md">
@@ -32,7 +42,7 @@ export default function LoginPage() {
 							<TabsTrigger value="passkey">Passkey</TabsTrigger>
 						</TabsList>
 						<TabsContent value="email" className="space-y-4">
-							<AuthForm mode="signin" />
+							<AuthForm mode="signin" onSuccess={handleSuccess} />
 							<div className="relative">
 								<div className="absolute inset-0 flex items-center">
 									<span className="w-full border-t" />

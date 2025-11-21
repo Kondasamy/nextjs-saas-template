@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -32,6 +33,8 @@ interface AuthFormProps {
 export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 	const [isLoading, setIsLoading] = useState(false)
 	const { data: session, refetch: refetchSession } = useSession()
+	const router = useRouter()
+	const searchParams = useSearchParams()
 
 	const signInForm = useForm<SignInFormData>({
 		resolver: zodResolver(signInSchema),
@@ -60,43 +63,49 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			}
 
 			// Wait a moment for the session to update after sign-in
-			await new Promise((resolve) => setTimeout(resolve, 300))
+			await new Promise((resolve) => setTimeout(resolve, 400))
 
-			// Verify authentication by checking the session
+			// Verify authentication by checking the session via API
 			// This ensures the user was actually authenticated even if signIn.email() doesn't throw
 			let isAuthenticated = false
 
 			try {
-				// Try to refetch session to get the latest state
-				if (refetchSession) {
-					const sessionResult = await refetchSession()
-					const updatedSession = sessionResult?.data ?? session
-					isAuthenticated = !!updatedSession?.user
+				const baseURL =
+					process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+				const response = await fetch(`${baseURL}/api/auth/get-session`, {
+					method: 'GET',
+					credentials: 'include',
+				})
+
+				if (response.ok) {
+					const sessionData = await response.json()
+					// Check various possible response structures from Better Auth
+					const user =
+						sessionData?.user ??
+						sessionData?.data?.user ??
+						sessionData?.session?.user
+					isAuthenticated = !!user
+				} else if (response.status === 401 || response.status === 403) {
+					// Explicitly unauthorized
+					isAuthenticated = false
 				} else {
-					// Fallback: check current session from hook
-					isAuthenticated = !!session?.user
+					// Other error status, assume failure
+					isAuthenticated = false
 				}
 			} catch {
-				// If refetch fails, check current session
-				isAuthenticated = !!session?.user
-			}
-
-			// If still not authenticated, make a direct API call to verify
-			if (!isAuthenticated) {
-				try {
-					const baseURL =
-						process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-					const response = await fetch(`${baseURL}/api/auth/session`, {
-						method: 'GET',
-						credentials: 'include',
-					})
-
-					if (response.ok) {
-						const sessionData = await response.json()
-						isAuthenticated = !!sessionData?.user
+				// If API call fails, try refetching session hook as fallback
+				if (refetchSession) {
+					try {
+						const refetchResult = await refetchSession()
+						const refetchSessionData = refetchResult?.data ?? refetchResult
+						isAuthenticated = !!refetchSessionData?.user
+					} catch {
+						// Check current session from hook as last resort
+						isAuthenticated = !!session?.user
 					}
-				} catch {
-					// If API call fails, authentication likely failed
+				} else {
+					// Check current session from hook as last resort
+					isAuthenticated = !!session?.user
 				}
 			}
 
@@ -107,7 +116,15 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			}
 
 			toast.success('Signed in successfully')
-			onSuccess?.()
+			
+			// Call onSuccess callback if provided, otherwise redirect
+			if (onSuccess) {
+				onSuccess()
+			} else {
+				// Default redirect: check for redirect query param or go to dashboard
+				const redirect = searchParams.get('redirect') || '/dashboard'
+				router.push(redirect)
+			}
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error
