@@ -19,7 +19,7 @@ export default async function AdminLayout({
 			<SidebarInset>
 				<PageHeader />
 				<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-					<Alert>
+					<Alert variant="warning">
 						<Shield className="h-4 w-4" />
 						<AlertTitle>Admin Mode</AlertTitle>
 						<AlertDescription>

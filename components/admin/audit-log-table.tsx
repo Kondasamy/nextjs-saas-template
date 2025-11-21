@@ -48,13 +48,13 @@ export function AuditLogTable() {
 		if (!data) return
 
 		const csv = [
-			['Timestamp', 'User', 'Action', 'Organization', 'IP Address'].join(','),
+			['Timestamp', 'User', 'Action', 'Organization ID', 'IP Address'].join(','),
 			...data.logs.map((log) =>
 				[
 					new Date(log.createdAt).toISOString(),
-					log.user.email,
+					log.user?.email || 'N/A',
 					log.action,
-					log.organization?.name || 'N/A',
+					log.organizationId || 'N/A',
 					log.ipAddress || 'N/A',
 				].join(',')
 			),
@@ -117,23 +117,27 @@ export function AuditLogTable() {
 							data.logs.map((log) => (
 								<TableRow key={log.id}>
 									<TableCell>
-										<div className="flex items-center gap-3">
-											<Avatar className="h-8 w-8">
-												<AvatarImage src={log.user.image || undefined} />
-												<AvatarFallback>
-													{log.user.name?.[0]?.toUpperCase() ||
-														log.user.email[0]?.toUpperCase()}
-												</AvatarFallback>
-											</Avatar>
-											<div className="flex flex-col">
-												<span className="font-medium">
-													{log.user.name || log.user.email}
-												</span>
-												<span className="text-xs text-muted-foreground">
-													{log.user.email}
-												</span>
+										{log.user ? (
+											<div className="flex items-center gap-3">
+												<Avatar className="h-8 w-8">
+													<AvatarImage src={log.user.image || undefined} />
+													<AvatarFallback>
+														{log.user.name?.[0]?.toUpperCase() ||
+															log.user.email[0]?.toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<div className="flex flex-col">
+													<span className="font-medium">
+														{log.user.name || log.user.email}
+													</span>
+													<span className="text-xs text-muted-foreground">
+														{log.user.email}
+													</span>
+												</div>
 											</div>
-										</div>
+										) : (
+											<span className="text-muted-foreground">Unknown User</span>
+										)}
 									</TableCell>
 									<TableCell>
 										<Badge
@@ -143,7 +147,7 @@ export function AuditLogTable() {
 										</Badge>
 									</TableCell>
 									<TableCell className="text-sm">
-										{log.organization?.name || '-'}
+										{log.organizationId || '-'}
 									</TableCell>
 									<TableCell className="font-mono text-xs">
 										{log.ipAddress || '-'}
