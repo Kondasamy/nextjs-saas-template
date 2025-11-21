@@ -97,6 +97,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						url: '/admin/audit',
 					},
 					{
+						title: 'Themes',
+						url: '/admin/themes',
+					},
+					{
 						title: 'Email Templates',
 						url: '/admin/emails',
 					},

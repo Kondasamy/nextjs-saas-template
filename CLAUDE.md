@@ -258,12 +258,49 @@ await EmailService.send2FACode(email, name, code)
 - API routes for start/stop impersonation
 - Admin panel integration in users table
 
+### Theme Management System
+
+**Admin-Controlled Themes**:
+- Themes are stored as CSS files in the `themes/` directory
+- Active theme is stored in the database (`SystemSettings` model)
+- Admins can switch themes via `/admin/themes` page
+- Theme CSS is dynamically loaded on every page load
+
+**Available Themes**:
+- `default` - Neutral slate palette (original)
+- `bubblegum` - Playful pink and purple
+- `ocean` - Calm blue and teal
+- `forest` - Natural green and earth tones
+
+**Adding Custom Themes**:
+1. Create a new CSS file in `themes/your-theme.css` with OKLCH color variables
+2. Add theme definition to `lib/theme/config.ts` in `AVAILABLE_THEMES` array
+3. Restart the application
+4. Theme will appear in admin panel
+
+**Using TweakCN to Create Themes**:
+1. Visit https://tweakcn.com/editor/theme
+2. Customize colors using the visual editor
+3. Export as CSS (choose OKLCH format)
+4. Save to `themes/your-theme.css`
+5. Add definition to `lib/theme/config.ts`
+
+**Theme Architecture**:
+- `themes/` - Theme CSS files
+- `lib/theme/config.ts` - Theme definitions and metadata
+- `lib/theme/server.ts` - Server-side theme utilities
+- `server/api/routers/theme.ts` - tRPC router for theme operations
+- `components/theme-styles.tsx` - Server component that injects theme CSS
+- `components/admin/theme-manager.tsx` - Admin UI for theme management
+- `app/api/theme/route.ts` - API endpoint to serve active theme CSS
+
 ### Customization Entry Points
 
 1. **Branding**: `lib/constants.ts` - Update company name, URLs, contact info
 2. **SEO Metadata**: `app/layout.tsx` - Site title, description, OpenGraph, Twitter cards
-3. **Theme Colors**: `app/globals.css` - CSS variables for theming
-4. **Navigation**: `components/app-sidebar.tsx` - Sidebar menu structure
+3. **Theme Management**: `/admin/themes` - Admin panel to switch themes (TweakCN-style)
+4. **Custom Themes**: `themes/` directory - Add new theme CSS files
+5. **Navigation**: `components/app-sidebar.tsx` - Sidebar menu structure
 
 ### TypeScript Configuration
 

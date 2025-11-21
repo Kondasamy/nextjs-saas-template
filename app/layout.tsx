@@ -4,6 +4,7 @@ import './globals.css'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 import { TRPCProvider } from '@/components/providers/trpc-provider'
+import { ThemeStyles } from '@/components/theme-styles'
 import { cn } from '@/lib/utils'
 
 export const viewport: Viewport = {
@@ -110,7 +111,9 @@ export default function RootLayout({
 }) {
 	return (
 		<html className="bg-sidebar" lang="en" suppressHydrationWarning>
-			<head />
+			<head>
+				<ThemeStyles />
+			</head>
 			<body
 				className={cn(
 					'min-h-screen bg-sidebar font-sans antialiased overflow-x-hidden',
