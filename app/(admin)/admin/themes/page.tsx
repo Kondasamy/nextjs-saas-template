@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
-import { createServerCaller } from '@/lib/trpc/server'
 import { ThemeManager } from '@/components/admin/theme-manager'
+import { createServerCaller } from '@/lib/trpc/server'
 
 export const metadata = {
 	title: 'Theme Management',

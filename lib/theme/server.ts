@@ -35,7 +35,7 @@ export async function getActiveTheme(): Promise<string> {
  */
 export async function setActiveTheme(
 	themeId: string,
-	updatedBy?: string,
+	updatedBy?: string
 ): Promise<void> {
 	if (!isValidTheme(themeId)) {
 		throw new Error(`Invalid theme ID: ${themeId}`)

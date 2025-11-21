@@ -130,9 +130,9 @@ export const AVAILABLE_THEMES: ThemeDefinition[] = [
 		name: 'Claude',
 		description: 'Claude AI palette',
 		previewColors: {
-			primary: '#e879f9',
-			secondary: '#cffafe',
-			accent: '#f0f9ff',
+			primary: '#c96442',
+			secondary: '#e9e6dc',
+			accent: '#9c87f5',
 		},
 	},
 	{

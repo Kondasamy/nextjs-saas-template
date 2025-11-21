@@ -3,16 +3,16 @@
  * Handles theme management operations
  */
 
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
+import { isUserAdmin } from '@/lib/auth/admin-helpers'
 import {
 	AVAILABLE_THEMES,
 	getThemeById,
 	isValidTheme,
 } from '@/lib/theme/config'
 import { getActiveTheme, getThemeCSS, setActiveTheme } from '@/lib/theme/server'
-import { isUserAdmin } from '@/lib/auth/admin-helpers'
-import { TRPCError } from '@trpc/server'
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 
 export const themeRouter = createTRPCRouter({
 	/**
@@ -56,7 +56,7 @@ export const themeRouter = createTRPCRouter({
 		.input(
 			z.object({
 				themeId: z.string(),
-			}),
+			})
 		)
 		.mutation(async ({ ctx, input }) => {
 			// Check if user is admin

@@ -1,10 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { Check, Palette } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { trpc } from '@/lib/trpc/client'
-import type { ThemeDefinition } from '@/lib/theme/config'
 import { Button } from '@/components/ui/button'
 import {
 	Card,
@@ -13,7 +11,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import type { ThemeDefinition } from '@/lib/theme/config'
+import { trpc } from '@/lib/trpc/client'
 
 type ThemeManagerProps = {
 	themes: ThemeDefinition[]
@@ -65,7 +64,8 @@ export function ThemeManager({ themes, activeThemeId }: ThemeManagerProps) {
 						{themes.map((theme) => {
 							const isActive = theme.id === selectedTheme
 							const isLoading =
-								setThemeMutation.isPending && setThemeMutation.variables?.themeId === theme.id
+								setThemeMutation.isPending &&
+								setThemeMutation.variables?.themeId === theme.id
 
 							return (
 								<div
@@ -82,11 +82,11 @@ export function ThemeManager({ themes, activeThemeId }: ThemeManagerProps) {
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-2">
 												<Palette className="size-4 text-muted-foreground" />
-												<span className="text-sm font-semibold">{theme.name}</span>
+												<span className="text-sm font-semibold">
+													{theme.name}
+												</span>
 											</div>
-											{isActive && (
-												<Check className="size-4 text-primary" />
-											)}
+											{isActive && <Check className="size-4 text-primary" />}
 										</div>
 
 										{/* Color palette */}
@@ -98,7 +98,9 @@ export function ThemeManager({ themes, activeThemeId }: ThemeManagerProps) {
 											/>
 											<div
 												className="h-8 flex-1 rounded border shadow-sm"
-												style={{ backgroundColor: theme.previewColors.secondary }}
+												style={{
+													backgroundColor: theme.previewColors.secondary,
+												}}
 												title="Secondary"
 											/>
 											<div
@@ -169,8 +171,7 @@ export function ThemeManager({ themes, activeThemeId }: ThemeManagerProps) {
 								Create a CSS file in <code>themes/your-theme-name.css</code>
 							</li>
 							<li>
-								Add theme definition to{' '}
-								<code>lib/theme/config.ts</code>
+								Add theme definition to <code>lib/theme/config.ts</code>
 							</li>
 							<li>Restart the application to see your new theme</li>
 						</ol>
