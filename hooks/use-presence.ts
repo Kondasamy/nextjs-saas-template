@@ -16,7 +16,7 @@ interface PresenceUser {
  * For now, it's a placeholder that can be extended
  */
 export function usePresence(workspaceId?: string) {
-	const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([])
+	const [onlineUsers, _setOnlineUsers] = useState<PresenceUser[]>([])
 
 	useEffect(() => {
 		if (!workspaceId) return

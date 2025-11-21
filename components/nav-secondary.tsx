@@ -1,6 +1,12 @@
 import { ChevronRight, type LucideIcon } from 'lucide-react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import * as React from 'react'
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import {
 	Dialog,
 	DialogContent,
@@ -15,11 +21,6 @@ import {
 	DrawerTitle,
 	DrawerTrigger,
 } from '@/components/ui/drawer'
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from '@/components/ui/collapsible'
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -48,7 +49,7 @@ export function NavSecondary({
 		}[]
 	}[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
-	const pathname = usePathname()
+	const _pathname = usePathname()
 	const [open, setOpen] = React.useState(false)
 	const [activeItem, setActiveItem] = React.useState<(typeof items)[0] | null>(
 		null
@@ -87,7 +88,7 @@ export function NavSecondary({
 		<SidebarGroup {...props}>
 			<SidebarGroupContent>
 				<SidebarMenu>
-					{items.map((item) => (
+					{items.map((item) =>
 						item.items?.length ? (
 							<Collapsible key={item.title} asChild defaultOpen={item.isActive}>
 								<SidebarMenuItem>
@@ -97,12 +98,12 @@ export function NavSecondary({
 										tooltip={item.title}
 										isActive={item.isActive}
 									>
-										<a href={item.url}>
+										<Link href={item.url}>
 											<item.icon
 												className={item.isActive ? 'text-primary' : ''}
 											/>
 											<span>{item.title}</span>
-										</a>
+										</Link>
 									</SidebarMenuButton>
 									<CollapsibleTrigger asChild>
 										<SidebarMenuAction className="data-[state=open]:rotate-90">
@@ -115,9 +116,9 @@ export function NavSecondary({
 											{item.items.map((subItem) => (
 												<SidebarMenuSubItem key={subItem.title}>
 													<SidebarMenuSubButton asChild>
-														<a href={subItem.url}>
+														<Link href={subItem.url}>
 															<span>{subItem.title}</span>
-														</a>
+														</Link>
 													</SidebarMenuSubButton>
 												</SidebarMenuSubItem>
 											))}
@@ -176,22 +177,18 @@ export function NavSecondary({
 										</Drawer>
 									)
 								) : (
-									<SidebarMenuButton
-										asChild
-										size="sm"
-										isActive={item.isActive}
-									>
-										<a href={item.url}>
+									<SidebarMenuButton asChild size="sm" isActive={item.isActive}>
+										<Link href={item.url}>
 											<item.icon
 												className={item.isActive ? 'text-primary' : ''}
 											/>
 											<span>{item.title}</span>
-										</a>
+										</Link>
 									</SidebarMenuButton>
 								)}
 							</SidebarMenuItem>
 						)
-					))}
+					)}
 				</SidebarMenu>
 			</SidebarGroupContent>
 		</SidebarGroup>

@@ -1,12 +1,11 @@
 'use client'
 
 import { formatDistanceToNow } from 'date-fns'
-import { Download, Filter, Search } from 'lucide-react'
+import { Download, Filter } from 'lucide-react'
 import { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
 	Select,
 	SelectContent,
@@ -137,7 +136,9 @@ export function AuditLogTable() {
 										</div>
 									</TableCell>
 									<TableCell>
-										<Badge variant={ACTION_COLORS[log.action] as any || 'default'}>
+										<Badge
+											variant={(ACTION_COLORS[log.action] as any) || 'default'}
+										>
 											{log.action}
 										</Badge>
 									</TableCell>

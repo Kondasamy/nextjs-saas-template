@@ -1,6 +1,14 @@
 'use client'
 
-import { BookOpen, Boxes, MoonStar, SquareTerminal, SunDim } from 'lucide-react'
+import {
+	BookOpen,
+	Boxes,
+	MoonStar,
+	Settings2,
+	Shield,
+	SquareTerminal,
+	SunDim,
+} from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
@@ -41,6 +49,16 @@ export default function PageHeader() {
 				title: 'Blog',
 				icon: <BookOpen className="h-5 w-5" />,
 			}
+		} else if (pathname.startsWith('/settings')) {
+			return {
+				title: 'Settings',
+				icon: <Settings2 className="h-5 w-5" />,
+			}
+		} else if (pathname.startsWith('/admin')) {
+			return {
+				title: 'Admin',
+				icon: <Shield className="h-5 w-5" />,
+			}
 		} else {
 			return {
 				title: 'Dashboard',
@@ -73,7 +91,7 @@ export default function PageHeader() {
 					<BreadcrumbList>
 						<BreadcrumbItem className="hidden md:block">
 							<BreadcrumbLink
-								href={pathname === '/' ? '/' : `/${pathname.split('/')[1]}`}
+								href={pathname === '/' ? '/' : `/${pathname.split('/').filter(Boolean)[0]}`}
 							>
 								<div className="flex items-center gap-2">
 									{icon}
@@ -87,10 +105,16 @@ export default function PageHeader() {
 									<BreadcrumbSeparator className="hidden md:block" />
 									<BreadcrumbItem>
 										<BreadcrumbPage>
-											<BreadcrumbLink
-												href={pathname === '/' ? '/' : pathname.split('/')[0]}
-											>
-												{pathname.split('/').filter(Boolean)[1]}
+											<BreadcrumbLink href={pathname}>
+												{pathname
+													.split('/')
+													.filter(Boolean)[1]
+													.split('-')
+													.map(
+														(word) =>
+															word.charAt(0).toUpperCase() + word.slice(1)
+													)
+													.join(' ')}
 											</BreadcrumbLink>
 										</BreadcrumbPage>
 									</BreadcrumbItem>

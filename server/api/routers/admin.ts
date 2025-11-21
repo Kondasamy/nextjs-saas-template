@@ -115,8 +115,15 @@ export const adminRouter = createTRPCRouter({
 			})
 		)
 		.query(async ({ ctx, input }) => {
-			const { limit, offset, userId, organizationId, action, startDate, endDate } =
-				input
+			const {
+				limit,
+				offset,
+				userId,
+				organizationId,
+				action,
+				startDate,
+				endDate,
+			} = input
 
 			// TODO: Add admin check
 

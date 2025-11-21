@@ -1,5 +1,4 @@
 import { Shield } from 'lucide-react'
-import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { requireAdmin } from '@/lib/auth/admin-helpers'
@@ -9,11 +8,7 @@ export default async function AdminLayout({
 }: {
 	children: ReactNode
 }) {
-	try {
-		await requireAdmin()
-	} catch {
-		redirect('/')
-	}
+	await requireAdmin()
 
 	return (
 		<div className="space-y-6">

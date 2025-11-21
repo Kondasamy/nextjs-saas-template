@@ -155,7 +155,9 @@ export function UsersTable() {
 												<DropdownMenuLabel>Actions</DropdownMenuLabel>
 												<DropdownMenuSeparator />
 												<DropdownMenuItem
-													onClick={() => handleBan(user.id, user.banned ?? false)}
+													onClick={() =>
+														handleBan(user.id, user.banned ?? false)
+													}
 												>
 													<UserX className="mr-2 h-4 w-4" />
 													{user.banned ? 'Unban User' : 'Ban User'}
