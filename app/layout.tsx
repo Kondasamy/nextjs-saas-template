@@ -113,13 +113,25 @@ export default function RootLayout({
 		<html className="bg-sidebar" lang="en" suppressHydrationWarning>
 			<head>
 				<ThemeStyles />
+				{/* Load Google Fonts for theme typography */}
+				<link rel="preconnect" href="https://fonts.googleapis.com" />
+				<link
+					rel="preconnect"
+					href="https://fonts.gstatic.com"
+					crossOrigin="anonymous"
+				/>
+				<link
+					href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Montserrat:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Lora:ital,wght@0,400..700;1,400..700&family=Fira+Code:wght@300..700&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap"
+					rel="stylesheet"
+				/>
 			</head>
 			<body
 				className={cn(
-					'min-h-screen bg-sidebar font-sans antialiased overflow-x-hidden',
+					'min-h-screen bg-sidebar antialiased overflow-x-hidden',
 					geist.variable,
 					geistMono.variable
 				)}
+				style={{ fontFamily: 'var(--font-sans)' }}
 			>
 				<TRPCProvider>
 					<ThemeProvider
