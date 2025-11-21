@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
 	Card,
@@ -32,66 +33,43 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import { THINGS, Thing } from './data'
+import { CATEGORY_MAP, type Category, FEATURES, Feature } from './data'
 
 // Card that handles navigation but allows button clicks without nesting <a> tags
-function ThingCard({ thing }: { thing: Thing }) {
+function FeatureCard({ feature }: { feature: Feature }) {
 	const router = useRouter()
-	const [showPrize, setShowPrize] = useState(false)
 
 	const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
 		// Only navigate if the click was directly on the card, not on a button
 		if ((e.target as HTMLElement).closest('button')) {
 			return
 		}
-		router.push(thing.link)
+		if (feature.link) {
+			router.push(feature.link)
+		}
 	}
 
 	const handleExternalLink = (url?: string) => {
 		if (url) window.open(url, '_blank', 'noopener,noreferrer')
 	}
 
-	// Toggle between badge status and prize amount
-	const _togglePrize = (e: React.MouseEvent) => {
-		e.stopPropagation()
-		setShowPrize(!showPrize)
-	}
-
-	// Get badge variant based on hackathon status
-	const _getBadgeVariant = (status: string) => {
-		switch (status) {
-			case 'winner':
-				return 'destructive'
-			case 'finalist':
-				return 'secondary'
-			case 'honorable-mention':
-				return 'outline'
-			case 'in-progress':
-				return 'default'
-			case 'loser':
-				return 'outline'
-			default:
-				return 'outline'
-		}
-	}
-
 	return (
 		<Card
 			className={cn(
-				'py-4 h-full overflow-hidden transition-colors hover:bg-muted/50 cursor-pointer flex flex-col',
-				thing.uid === 'thing--6' && 'border-1 border-primary animate-pulse'
+				'py-4 h-full overflow-hidden transition-colors hover:bg-muted/50 flex flex-col',
+				feature.link && 'cursor-pointer'
 			)}
-			onClick={handleCardClick}
+			onClick={feature.link ? handleCardClick : undefined}
 		>
 			<div className="px-4 relative">
 				<AspectRatio
 					ratio={16 / 9}
 					className="bg-muted rounded-md overflow-hidden"
 				>
-					{thing.cover ? (
+					{feature.cover ? (
 						<Image
-							src={thing.cover}
-							alt={thing.title}
+							src={feature.cover}
+							alt={feature.title}
 							fill
 							className="object-cover"
 						/>
@@ -104,59 +82,59 @@ function ThingCard({ thing }: { thing: Thing }) {
 			</div>
 
 			<CardHeader className="text-left px-4 flex-1">
-				<div className="flex items-center justify-between">
-					<CardTitle className="line-clamp-2">{thing.title}</CardTitle>
+				<div className="flex items-start justify-between gap-2 mb-2">
+					<CardTitle className="line-clamp-2 flex-1">{feature.title}</CardTitle>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
 								size="icon"
 								variant="ghost"
-								className="rounded-full h-8 w-8 cursor-pointer"
+								className="rounded-full h-8 w-8 cursor-pointer flex-shrink-0"
 								onClick={(e) => e.stopPropagation()}
 							>
 								<ListCollapse className="h-4 w-4" />
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="w-48">
-							{thing.url && (
+							{feature.url && (
 								<DropdownMenuItem
 									className="cursor-pointer"
 									onClick={(e) => {
 										e.stopPropagation()
-										handleExternalLink(thing.url)
+										handleExternalLink(feature.url)
 									}}
 								>
 									<ExternalLink className="mr-2 h-4 w-4" /> Visit website
 								</DropdownMenuItem>
 							)}
-							{thing.youtube && (
+							{feature.youtube && (
 								<DropdownMenuItem
 									className="cursor-pointer"
 									onClick={(e) => {
 										e.stopPropagation()
-										handleExternalLink(thing.youtube)
+										handleExternalLink(feature.youtube)
 									}}
 								>
 									<PlayCircle className="mr-2 h-4 w-4" /> Watch on YouTube
 								</DropdownMenuItem>
 							)}
-							{thing.github && (
+							{feature.github && (
 								<DropdownMenuItem
 									className="cursor-pointer"
 									onClick={(e) => {
 										e.stopPropagation()
-										handleExternalLink(thing.github)
+										handleExternalLink(feature.github)
 									}}
 								>
-									<Github className="mr-2 h-4 w-4" /> Fork on GitHub
+									<Github className="mr-2 h-4 w-4" /> View on GitHub
 								</DropdownMenuItem>
 							)}
-							{thing.tutorial && (
+							{feature.tutorial && (
 								<DropdownMenuItem
 									className="cursor-pointer"
 									onClick={(e) => {
 										e.stopPropagation()
-										router.push(thing.tutorial!)
+										router.push(feature.tutorial!)
 									}}
 								>
 									<BookOpen className="mr-2 h-4 w-4" /> Read tutorial
@@ -165,86 +143,75 @@ function ThingCard({ thing }: { thing: Thing }) {
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
-				<CardDescription className="line-clamp-3">
-					{thing.description}
+				<CardDescription className="line-clamp-3 mb-3">
+					{feature.description}
 				</CardDescription>
+				{feature.tags && feature.tags.length > 0 && (
+					<div className="flex flex-wrap gap-1.5 mt-2">
+						{feature.tags.slice(0, 3).map((tag) => (
+							<Badge key={tag} variant="secondary" className="text-xs">
+								{tag}
+							</Badge>
+						))}
+					</div>
+				)}
 			</CardHeader>
 		</Card>
 	)
 }
 
-export default function ThingsPage() {
+export default function FeaturesPage() {
 	const [showAllTabs, setShowAllTabs] = useState(false)
-	const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-
-	// Sort things in ascending order (newest first)
-	const sortedThings = [...THINGS]
-	const youtubeThings = sortedThings.filter((thing) => thing.youtube)
-	const tutorialThings = sortedThings.filter((thing) => thing.tutorial)
-	const githubThings = sortedThings.filter((thing) => thing.github)
-
-	// Hackathon filtering
-	const hackathonThings = sortedThings.filter((thing) => thing.hackathon)
-	const _hackathonWinners = sortedThings.filter(
-		(thing) => thing.hackathon?.winner === 'winner'
-	)
-	const _hackathonFinalists = sortedThings.filter(
-		(thing) => thing.hackathon?.winner === 'finalist'
-	)
-	const _hackathonHonorableMentions = sortedThings.filter(
-		(thing) => thing.hackathon?.winner === 'honorable-mention'
-	)
-	const _hackathonInProgress = sortedThings.filter(
-		(thing) => thing.hackathon?.winner === 'in-progress'
-	)
-	const _hackathonLosers = sortedThings.filter(
-		(thing) => thing.hackathon?.winner === 'loser'
+	const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+		null
 	)
 
-	// Get all hackathon statuses for filtering
-	const hackathonCategories = [
-		'All Hackathons',
-		'Winners',
-		'Finalists',
-		'Honorable Mentions',
-		'In Progress',
-		'Losers',
-	]
+	// Sort features
+	const sortedFeatures = [...FEATURES]
 
-	// Filter things based on selected category
-	const getFilteredThings = (baseThings: Thing[]) => {
-		if (!selectedCategory) return baseThings
+	// Filter by category
+	const coreFeatures = sortedFeatures.filter((f) => f.category === 'core')
+	const authFeatures = sortedFeatures.filter((f) => f.category === 'auth')
+	const workspaceFeatures = sortedFeatures.filter(
+		(f) => f.category === 'workspace'
+	)
+	const communicationFeatures = sortedFeatures.filter(
+		(f) => f.category === 'communication'
+	)
+	const storageFeatures = sortedFeatures.filter((f) => f.category === 'storage')
+	const analyticsFeatures = sortedFeatures.filter(
+		(f) => f.category === 'analytics'
+	)
+	const uiFeatures = sortedFeatures.filter((f) => f.category === 'ui')
+	const productionFeatures = sortedFeatures.filter(
+		(f) => f.category === 'production'
+	)
 
-		switch (selectedCategory) {
-			case 'All Hackathons':
-				return baseThings.filter((thing) => thing.hackathon)
-			case 'Winners':
-				return baseThings.filter(
-					(thing) => thing.hackathon?.winner === 'winner'
-				)
-			case 'Finalists':
-				return baseThings.filter(
-					(thing) => thing.hackathon?.winner === 'finalist'
-				)
-			case 'Honorable Mentions':
-				return baseThings.filter(
-					(thing) => thing.hackathon?.winner === 'honorable-mention'
-				)
-			case 'In Progress':
-				return baseThings.filter(
-					(thing) => thing.hackathon?.winner === 'in-progress'
-				)
-			case 'Losers':
-				return baseThings.filter((thing) => thing.hackathon?.winner === 'loser')
-			default:
-				return baseThings
-		}
+	// Filter features based on selected category
+	const getFilteredFeatures = (baseFeatures: Feature[]) => {
+		if (!selectedCategory || selectedCategory === 'all') return baseFeatures
+
+		return baseFeatures.filter(
+			(feature) => feature.category === selectedCategory
+		)
 	}
+
+	const categoryOptions: { value: Category; label: string }[] = [
+		{ value: 'all', label: 'All Features' },
+		{ value: 'core', label: 'Core Infrastructure' },
+		{ value: 'auth', label: 'Authentication & Security' },
+		{ value: 'workspace', label: 'Workspace & RBAC' },
+		{ value: 'communication', label: 'Communication' },
+		{ value: 'storage', label: 'Storage & Files' },
+		{ value: 'analytics', label: 'Analytics & Admin' },
+		{ value: 'ui', label: 'UI & Developer Experience' },
+		{ value: 'production', label: 'Production Ready' },
+	]
 
 	return (
 		<div className="not-prose">
 			<Tabs defaultValue="all" className="w-full mt-4">
-				<div className="flex justify-between items-center mb-4">
+				<div className="flex justify-between items-center mb-4 flex-wrap gap-4">
 					<TabsList className="flex flex-wrap">
 						<div className="flex justify-between items-center">
 							<TabsTrigger value="all" className="cursor-pointer">
@@ -253,11 +220,17 @@ export default function ThingsPage() {
 							<Button
 								variant="ghost"
 								size="icon"
-								className={`h-8 w-8 cursor-pointer ${showAllTabs ? 'text-primary' : ''}`}
+								className={cn(
+									'h-8 w-8 cursor-pointer',
+									showAllTabs && 'text-primary'
+								)}
 								onClick={() => setShowAllTabs(!showAllTabs)}
 							>
 								<ChevronRight
-									className={`h-4 w-4 transition-transform duration-200 ${showAllTabs ? 'rotate-180' : ''}`}
+									className={cn(
+										'h-4 w-4 transition-transform duration-200',
+										showAllTabs && 'rotate-180'
+									)}
 								/>
 							</Button>
 						</div>
@@ -265,17 +238,29 @@ export default function ThingsPage() {
 						{showAllTabs && (
 							<>
 								<Separator orientation="vertical" className="mx-1" />
-								<TabsTrigger value="videos" className="cursor-pointer">
-									YouTube videos
+								<TabsTrigger value="core" className="cursor-pointer">
+									Core
 								</TabsTrigger>
-								<TabsTrigger value="tutorials" className="cursor-pointer">
-									Written tutorials
+								<TabsTrigger value="auth" className="cursor-pointer">
+									Auth
 								</TabsTrigger>
-								<TabsTrigger value="github" className="cursor-pointer">
-									Source codes
+								<TabsTrigger value="workspace" className="cursor-pointer">
+									Workspace
 								</TabsTrigger>
-								<TabsTrigger value="hackathon" className="cursor-pointer">
-									Hackathons
+								<TabsTrigger value="communication" className="cursor-pointer">
+									Communication
+								</TabsTrigger>
+								<TabsTrigger value="storage" className="cursor-pointer">
+									Storage
+								</TabsTrigger>
+								<TabsTrigger value="analytics" className="cursor-pointer">
+									Analytics
+								</TabsTrigger>
+								<TabsTrigger value="ui" className="cursor-pointer">
+									UI
+								</TabsTrigger>
+								<TabsTrigger value="production" className="cursor-pointer">
+									Production
 								</TabsTrigger>
 							</>
 						)}
@@ -285,30 +270,23 @@ export default function ThingsPage() {
 						<DropdownMenuTrigger asChild>
 							<Button variant="outline" size="sm" className="gap-2">
 								<ListFilter className="h-4 w-4" />
-								{selectedCategory || 'Filter by Hackathon'}
+								{selectedCategory
+									? CATEGORY_MAP[selectedCategory]
+									: 'Filter by Category'}
 								<ChevronDown className="h-4 w-4" />
 							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem
-								className="cursor-pointer"
-								onClick={() => {
-									setSelectedCategory(null)
-									toast.success('Showing all projects')
-								}}
-							>
-								All Projects
-							</DropdownMenuItem>
-							{hackathonCategories.map((category) => (
+						<DropdownMenuContent align="end" className="w-56">
+							{categoryOptions.map((option) => (
 								<DropdownMenuItem
-									key={category}
+									key={option.value}
 									className="cursor-pointer"
 									onClick={() => {
-										setSelectedCategory(category)
-										toast.success(`Filtered by ${category}`)
+										setSelectedCategory(option.value)
+										toast.success(`Filtered by ${option.label}`)
 									}}
 								>
-									{category}
+									{option.label}
 								</DropdownMenuItem>
 							))}
 						</DropdownMenuContent>
@@ -317,40 +295,72 @@ export default function ThingsPage() {
 
 				<TabsContent value="all" className="mt-6">
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{getFilteredThings(sortedThings).map((thing) => (
-							<ThingCard key={thing.uid} thing={thing} />
+						{getFilteredFeatures(sortedFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
 						))}
 					</div>
 				</TabsContent>
 
-				<TabsContent value="videos" className="mt-6">
+				<TabsContent value="core" className="mt-6">
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{getFilteredThings(youtubeThings).map((thing) => (
-							<ThingCard key={thing.uid} thing={thing} />
+						{getFilteredFeatures(coreFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
 						))}
 					</div>
 				</TabsContent>
 
-				<TabsContent value="tutorials" className="mt-6">
+				<TabsContent value="auth" className="mt-6">
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{getFilteredThings(tutorialThings).map((thing) => (
-							<ThingCard key={thing.uid} thing={thing} />
+						{getFilteredFeatures(authFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
 						))}
 					</div>
 				</TabsContent>
 
-				<TabsContent value="github" className="mt-6">
+				<TabsContent value="workspace" className="mt-6">
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{getFilteredThings(githubThings).map((thing) => (
-							<ThingCard key={thing.uid} thing={thing} />
+						{getFilteredFeatures(workspaceFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
 						))}
 					</div>
 				</TabsContent>
 
-				<TabsContent value="hackathon" className="mt-6">
+				<TabsContent value="communication" className="mt-6">
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{getFilteredThings(hackathonThings).map((thing) => (
-							<ThingCard key={thing.uid} thing={thing} />
+						{getFilteredFeatures(communicationFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
+						))}
+					</div>
+				</TabsContent>
+
+				<TabsContent value="storage" className="mt-6">
+					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+						{getFilteredFeatures(storageFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
+						))}
+					</div>
+				</TabsContent>
+
+				<TabsContent value="analytics" className="mt-6">
+					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+						{getFilteredFeatures(analyticsFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
+						))}
+					</div>
+				</TabsContent>
+
+				<TabsContent value="ui" className="mt-6">
+					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+						{getFilteredFeatures(uiFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
+						))}
+					</div>
+				</TabsContent>
+
+				<TabsContent value="production" className="mt-6">
+					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+						{getFilteredFeatures(productionFeatures).map((feature) => (
+							<FeatureCard key={feature.uid} feature={feature} />
 						))}
 					</div>
 				</TabsContent>

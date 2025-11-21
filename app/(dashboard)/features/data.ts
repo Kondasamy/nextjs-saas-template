@@ -1,70 +1,382 @@
-export type Hackathon = {
-	winner:
-		| 'winner'
-		| 'loser'
-		| 'finalist'
-		| 'in-progress'
-		| 'honorable-mention'
-		| 'unknown'
-	prize?: string
-}
-
-export type Thing = {
+export interface Feature {
 	uid: string
 	title: string
-	description?: string
-	link: string
+	description: string
+	cover?: string
+	category:
+		| 'core'
+		| 'auth'
+		| 'workspace'
+		| 'communication'
+		| 'storage'
+		| 'analytics'
+		| 'ui'
+		| 'production'
+	link?: string
 	url?: string
-	cover: string
-	youtube?: string
-	tutorial?: string
 	github?: string
-	hackathon?: Hackathon
+	tutorial?: string
+	youtube?: string
+	tags?: string[]
 }
 
-export const THINGS: Thing[] = [
+export const FEATURES: Feature[] = [
+	// Core Infrastructure
 	{
-		uid: 'feature-1',
-		title: 'Advanced Analytics Dashboard',
+		uid: 'feature--1',
+		title: 'Next.js 16 with App Router',
 		description:
-			'Get real-time insights into your business metrics with our powerful analytics engine. Track user behavior, conversion rates, and revenue growth all in one place.',
-		link: '/features/analytics-dashboard',
-		url: 'https://example.com/analytics',
-		cover:
-			'https://placehold.co/600x400/3b82f6/ffffff?text=Analytics+Dashboard',
-		github: 'https://github.com/yourcompany/analytics',
+			'Built with Next.js 16 and React 19, featuring the App Router for optimal performance, server components, and modern React patterns.',
+		cover: 'https://placehold.co/800x450/0066FF/FFFFFF?text=Next.js+16',
+		category: 'core',
+		tags: ['Framework', 'React', 'Server Components'],
 	},
 	{
-		uid: 'feature-2',
-		title: 'Team Collaboration Tools',
+		uid: 'feature--2',
+		title: 'TypeScript for Type Safety',
 		description:
-			'Seamlessly collaborate with your team in real-time. Share documents, chat, video call, and manage projects all within a unified workspace.',
-		link: '/features/collaboration-tools',
-		url: 'https://example.com/collaboration',
-		cover:
-			'https://placehold.co/600x400/10b981/ffffff?text=Collaboration+Tools',
-		github: 'https://github.com/yourcompany/collaboration',
+			'End-to-end type safety with TypeScript, ensuring robust code quality and developer experience across the entire stack.',
+		cover: 'https://placehold.co/800x450/3178C6/FFFFFF?text=TypeScript',
+		category: 'core',
+		tags: ['Type Safety', 'Developer Experience'],
 	},
 	{
-		uid: 'feature-3',
-		title: 'API Integration Platform',
+		uid: 'feature--3',
+		title: 'Prisma ORM with PostgreSQL',
 		description:
-			'Connect your favorite tools and automate workflows with our extensive API integration platform. Support for 100+ popular services out of the box.',
-		link: '/features/api-integration',
-		url: 'https://example.com/api',
-		cover: 'https://placehold.co/600x400/8b5cf6/ffffff?text=API+Integration',
-		github: 'https://github.com/yourcompany/api-platform',
+			'Type-safe database access with Prisma ORM, connected to PostgreSQL (Supabase) with comprehensive schema management.',
+		cover: 'https://placehold.co/800x450/2D3748/FFFFFF?text=Prisma+ORM',
+		category: 'core',
+		tags: ['Database', 'ORM', 'PostgreSQL'],
 	},
 	{
-		uid: 'feature-4',
-		title: 'Custom Reporting Engine',
+		uid: 'feature--4',
+		title: 'tRPC for Type-Safe APIs',
 		description:
-			'Build custom reports tailored to your business needs. Export data in multiple formats and schedule automated report delivery.',
-		link: '/features/reporting-engine',
-		cover: 'https://placehold.co/600x400/f59e0b/ffffff?text=Reporting+Engine',
-		github: 'https://github.com/yourcompany/reporting',
+			'End-to-end type safety with tRPC, eliminating API contract mismatches and providing excellent developer experience.',
+		cover: 'https://placehold.co/800x450/2596BE/FFFFFF?text=tRPC',
+		category: 'core',
+		tags: ['API', 'Type Safety', 'RPC'],
+	},
+	{
+		uid: 'feature--5',
+		title: 'Supabase Integration',
+		description:
+			'Optional Supabase integration for PostgreSQL database, file storage, realtime subscriptions, and edge functions.',
+		cover: 'https://placehold.co/800x450/3ECF8E/FFFFFF?text=Supabase',
+		category: 'core',
+		tags: ['Database', 'Storage', 'Realtime'],
+	},
+	// Authentication & Security
+	{
+		uid: 'feature--6',
+		title: 'Better Auth - Multiple Methods',
+		description:
+			'Comprehensive authentication system with email/password, OAuth (Google, GitHub, Microsoft), magic links, passkeys, OTP, and 2FA.',
+		cover: 'https://placehold.co/800x450/FF6B6B/FFFFFF?text=Better+Auth',
+		category: 'auth',
+		tags: ['Authentication', 'Security', 'OAuth'],
+	},
+	{
+		uid: 'feature--7',
+		title: 'Two-Factor Authentication (2FA)',
+		description:
+			'Time-based one-time password (TOTP) authentication for enhanced security, with QR code setup and backup codes.',
+		cover: 'https://placehold.co/800x450/4ECDC4/FFFFFF?text=2FA',
+		category: 'auth',
+		tags: ['Security', '2FA', 'TOTP'],
+	},
+	{
+		uid: 'feature--8',
+		title: 'Passkeys (WebAuthn)',
+		description:
+			'Passwordless authentication with WebAuthn passkeys, providing secure and convenient login without passwords.',
+		cover: 'https://placehold.co/800x450/95E1D3/FFFFFF?text=Passkeys',
+		category: 'auth',
+		tags: ['Security', 'WebAuthn', 'Passwordless'],
+	},
+	{
+		uid: 'feature--9',
+		title: 'Enterprise SSO (SAML/OKTA)',
+		description:
+			'Enterprise-grade single sign-on support with SAML and OKTA integration for large organizations.',
+		cover: 'https://placehold.co/800x450/FFA07A/FFFFFF?text=Enterprise+SSO',
+		category: 'auth',
+		tags: ['SSO', 'Enterprise', 'SAML'],
+	},
+	{
+		uid: 'feature--10',
+		title: 'Session Management',
+		description:
+			'Advanced session management with device tracking, active session monitoring, and remote logout capabilities.',
+		cover: 'https://placehold.co/800x450/FFD93D/FFFFFF?text=Sessions',
+		category: 'auth',
+		tags: ['Security', 'Sessions', 'Devices'],
+	},
+	// Workspace & RBAC
+	{
+		uid: 'feature--11',
+		title: 'Multi-Tenant Workspace Management',
+		description:
+			'Complete workspace management system with multi-tenant architecture, workspace switching, and data isolation.',
+		cover: 'https://placehold.co/800x450/6C5CE7/FFFFFF?text=Workspaces',
+		category: 'workspace',
+		tags: ['Multi-Tenant', 'Workspaces', 'Organizations'],
+	},
+	{
+		uid: 'feature--12',
+		title: 'RBAC System (6-30+ Permissions)',
+		description:
+			'Comprehensive role-based access control with 6-30+ permission levels, including Owner, Admin, Member, and Viewer roles.',
+		cover: 'https://placehold.co/800x450/A29BFE/FFFFFF?text=RBAC',
+		category: 'workspace',
+		tags: ['RBAC', 'Permissions', 'Roles'],
+	},
+	{
+		uid: 'feature--13',
+		title: 'Team Member Invitations',
+		description:
+			'Invite team members via email with role assignment, pending invitation management, and acceptance workflows.',
+		cover: 'https://placehold.co/800x450/74B9FF/FFFFFF?text=Invitations',
+		category: 'workspace',
+		tags: ['Team', 'Invitations', 'Collaboration'],
+	},
+	{
+		uid: 'feature--14',
+		title: 'Permission Guards',
+		description:
+			'Component-level permission guards for fine-grained access control, ensuring users only see what they can access.',
+		cover: 'https://placehold.co/800x450/55A3FF/FFFFFF?text=Permissions',
+		category: 'workspace',
+		tags: ['RBAC', 'Access Control', 'UI'],
+	},
+	// Communication
+	{
+		uid: 'feature--15',
+		title: 'Email Infrastructure with Resend',
+		description:
+			'Complete email system with Resend integration, React Email templates, and automatic email sending for all auth flows.',
+		cover: 'https://placehold.co/800x450/FF6B9D/FFFFFF?text=Email',
+		category: 'communication',
+		tags: ['Email', 'Resend', 'Templates'],
+	},
+	{
+		uid: 'feature--16',
+		title: 'React Email Templates',
+		description:
+			'Six beautiful email templates: welcome, verification, password-reset, magic-link, invitation, and 2FA codes.',
+		cover: 'https://placehold.co/800x450/FF8E9B/FFFFFF?text=Email+Templates',
+		category: 'communication',
+		tags: ['Email', 'Templates', 'React Email'],
+	},
+	{
+		uid: 'feature--17',
+		title: 'In-App Notifications',
+		description:
+			'Real-time in-app notifications with polling support and Supabase-ready architecture for live updates.',
+		cover: 'https://placehold.co/800x450/FFB3BA/FFFFFF?text=Notifications',
+		category: 'communication',
+		tags: ['Notifications', 'Realtime', 'UI'],
+	},
+	{
+		uid: 'feature--18',
+		title: 'Notification Preferences',
+		description:
+			'Granular notification preferences with 7 categories and email/in-app toggles for each notification type.',
+		cover: 'https://placehold.co/800x450/FFC1C8/FFFFFF?text=Preferences',
+		category: 'communication',
+		tags: ['Notifications', 'Settings', 'User Control'],
+	},
+	// Storage & Files
+	{
+		uid: 'feature--19',
+		title: 'File Upload & Storage',
+		description:
+			'Supabase Storage integration for file uploads with image optimization, file type validation, and size limits.',
+		cover: 'https://placehold.co/800x450/00D9FF/FFFFFF?text=File+Storage',
+		category: 'storage',
+		tags: ['Storage', 'Uploads', 'Files'],
+	},
+	{
+		uid: 'feature--20',
+		title: 'Image Upload with Preview',
+		description:
+			'Image upload component with real-time preview, cropping support, and automatic optimization for avatars and media.',
+		cover: 'https://placehold.co/800x450/00C9FF/FFFFFF?text=Image+Upload',
+		category: 'storage',
+		tags: ['Images', 'Upload', 'Preview'],
+	},
+	// Analytics & Admin
+	{
+		uid: 'feature--21',
+		title: 'Analytics Dashboard',
+		description:
+			'Comprehensive analytics dashboard with user growth charts (Recharts), activity metrics, and customizable time ranges.',
+		cover: 'https://placehold.co/800x450/00B8FF/FFFFFF?text=Analytics',
+		category: 'analytics',
+		tags: ['Analytics', 'Charts', 'Metrics'],
+	},
+	{
+		uid: 'feature--22',
+		title: 'Admin Dashboard',
+		description:
+			'Full-featured admin dashboard with user management, system statistics, audit logs, and environment-based access control.',
+		cover: 'https://placehold.co/800x450/0099FF/FFFFFF?text=Admin',
+		category: 'analytics',
+		tags: ['Admin', 'Management', 'Dashboard'],
+	},
+	{
+		uid: 'feature--23',
+		title: 'User Impersonation',
+		description:
+			'Secure user impersonation for support purposes with 1-hour session expiry, audit logging, and visual indicators.',
+		cover: 'https://placehold.co/800x450/0088FF/FFFFFF?text=Impersonation',
+		category: 'analytics',
+		tags: ['Admin', 'Support', 'Security'],
+	},
+	{
+		uid: 'feature--24',
+		title: 'Audit Logs',
+		description:
+			'Complete audit trail with filtering, CSV export, user tracking, IP addresses, and comprehensive action logging.',
+		cover: 'https://placehold.co/800x450/0077FF/FFFFFF?text=Audit+Logs',
+		category: 'analytics',
+		tags: ['Audit', 'Logging', 'Compliance'],
+	},
+	// UI & Developer Experience
+	{
+		uid: 'feature--25',
+		title: 'ShadCN UI (50+ Components)',
+		description:
+			'Comprehensive UI component library with 50+ accessible components built on Radix UI primitives.',
+		cover: 'https://placehold.co/800x450/000000/FFFFFF?text=ShadCN+UI',
+		category: 'ui',
+		tags: ['UI', 'Components', 'Accessibility'],
+	},
+	{
+		uid: 'feature--26',
+		title: 'Tailwind CSS 4',
+		description:
+			'Modern utility-first CSS framework with Tailwind CSS 4 for rapid UI development and consistent design.',
+		cover: 'https://placehold.co/800x450/38BDF8/FFFFFF?text=Tailwind+CSS',
+		category: 'ui',
+		tags: ['Styling', 'CSS', 'Design System'],
+	},
+	{
+		uid: 'feature--27',
+		title: 'Motion Primitives (10 Components)',
+		description:
+			'Ten custom animation components including magnetic effects, text morphing, spotlight, and progressive blur.',
+		cover: 'https://placehold.co/800x450/FF0055/FFFFFF?text=Motion',
+		category: 'ui',
+		tags: ['Animations', 'Motion', 'UX'],
+	},
+	{
+		uid: 'feature--28',
+		title: 'Dark/Light Mode',
+		description:
+			'System-aware dark and light mode with next-themes, CSS variables, and seamless theme switching.',
+		cover: 'https://placehold.co/800x450/6366F1/FFFFFF?text=Themes',
+		category: 'ui',
+		tags: ['Theming', 'Dark Mode', 'UX'],
+	},
+	{
+		uid: 'feature--29',
+		title: 'Internationalization (i18n)',
+		description:
+			'Full internationalization support with next-intl, locale detection, and translation management for global apps.',
+		cover: 'https://placehold.co/800x450/8B5CF6/FFFFFF?text=i18n',
+		category: 'ui',
+		tags: ['i18n', 'Localization', 'Translations'],
+	},
+	{
+		uid: 'feature--30',
+		title: 'Settings Pages (5 Complete)',
+		description:
+			'Five comprehensive settings pages: Profile, Account, Security, Team, and Notifications with full functionality.',
+		cover: 'https://placehold.co/800x450/EC4899/FFFFFF?text=Settings',
+		category: 'ui',
+		tags: ['Settings', 'User Management', 'UI'],
+	},
+	// Production Ready
+	{
+		uid: 'feature--31',
+		title: 'Error Boundaries',
+		description:
+			'Multi-level error boundaries (global, root, dashboard, admin) with user-friendly messages and recovery actions.',
+		cover: 'https://placehold.co/800x450/EF4444/FFFFFF?text=Error+Handling',
+		category: 'production',
+		tags: ['Error Handling', 'Resilience', 'UX'],
+	},
+	{
+		uid: 'feature--32',
+		title: 'Loading States & Skeletons',
+		description:
+			'Comprehensive loading states with React Suspense, loading skeletons, and progressive content loading.',
+		cover: 'https://placehold.co/800x450/F59E0B/FFFFFF?text=Loading',
+		category: 'production',
+		tags: ['Loading', 'Suspense', 'UX'],
+	},
+	{
+		uid: 'feature--33',
+		title: 'Rate Limiting (3 Tiers)',
+		description:
+			'Three-tier rate limiting system: default (100/15min), strict (10/15min), and auth (5/15min) with IP tracking.',
+		cover: 'https://placehold.co/800x450/10B981/FFFFFF?text=Rate+Limiting',
+		category: 'production',
+		tags: ['Security', 'Rate Limiting', 'Performance'],
+	},
+	{
+		uid: 'feature--34',
+		title: 'Security Headers',
+		description:
+			'Comprehensive security headers: HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and more for production.',
+		cover: 'https://placehold.co/800x450/059669/FFFFFF?text=Security',
+		category: 'production',
+		tags: ['Security', 'Headers', 'Production'],
+	},
+	{
+		uid: 'feature--35',
+		title: 'Code Quality Tools',
+		description:
+			'Biome for formatting and import organization, Oxlint for fast linting, and Husky for pre-commit hooks.',
+		cover: 'https://placehold.co/800x450/7C3AED/FFFFFF?text=Code+Quality',
+		category: 'production',
+		tags: ['Linting', 'Formatting', 'Developer Experience'],
 	},
 ]
 
-// Alias for backward compatibility
-export { THINGS as things }
+export const CATEGORIES = [
+	'All Features',
+	'Core Infrastructure',
+	'Authentication & Security',
+	'Workspace & RBAC',
+	'Communication',
+	'Storage & Files',
+	'Analytics & Admin',
+	'UI & Developer Experience',
+	'Production Ready',
+] as const
+
+export type Category =
+	| 'all'
+	| 'core'
+	| 'auth'
+	| 'workspace'
+	| 'communication'
+	| 'storage'
+	| 'analytics'
+	| 'ui'
+	| 'production'
+
+export const CATEGORY_MAP: Record<Category, string> = {
+	all: 'All Features',
+	core: 'Core Infrastructure',
+	auth: 'Authentication & Security',
+	workspace: 'Workspace & RBAC',
+	communication: 'Communication',
+	storage: 'Storage & Files',
+	analytics: 'Analytics & Admin',
+	ui: 'UI & Developer Experience',
+	production: 'Production Ready',
+}
