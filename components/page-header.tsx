@@ -91,7 +91,11 @@ export default function PageHeader() {
 					<BreadcrumbList>
 						<BreadcrumbItem className="hidden md:block">
 							<BreadcrumbLink
-								href={pathname === '/' ? '/' : `/${pathname.split('/').filter(Boolean)[0]}`}
+								href={
+									pathname === '/'
+										? '/'
+										: `/${pathname.split('/').filter(Boolean)[0]}`
+								}
 							>
 								<div className="flex items-center gap-2">
 									{icon}

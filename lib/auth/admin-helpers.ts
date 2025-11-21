@@ -15,10 +15,18 @@ export async function requireAdmin() {
 	}
 
 	// Check if user is admin (you can customize this logic)
-	const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
+	const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || []
 	const isAdmin = adminEmails.includes(user.email)
 
 	if (!isAdmin) {
+		// Log helpful debug info in development
+		if (process.env.NODE_ENV === 'development') {
+			console.log('[Admin Access] Access denied:', {
+				userEmail: user.email,
+				adminEmails: adminEmails.length > 0 ? adminEmails : '(not configured)',
+				hint: 'Add your email to ADMIN_EMAILS in .env.local',
+			})
+		}
 		redirect('/')
 	}
 
@@ -26,6 +34,6 @@ export async function requireAdmin() {
 }
 
 export async function isUserAdmin(email: string): Promise<boolean> {
-	const adminEmails = process.env.ADMIN_EMAILS?.split(',') || []
+	const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || []
 	return adminEmails.includes(email)
 }
