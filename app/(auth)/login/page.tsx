@@ -1,7 +1,7 @@
 'use client'
 
-import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AuthForm } from '@/components/auth/auth-form'
 import { MagicLinkForm } from '@/components/auth/magic-link-form'
 import { OtpForm } from '@/components/auth/otp-form'

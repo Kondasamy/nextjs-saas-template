@@ -1,8 +1,8 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -116,7 +116,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			}
 
 			toast.success('Signed in successfully')
-			
+
 			// Call onSuccess callback if provided, otherwise redirect
 			if (onSuccess) {
 				onSuccess()
