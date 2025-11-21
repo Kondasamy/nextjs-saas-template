@@ -48,7 +48,9 @@ export function AuditLogTable() {
 		if (!data) return
 
 		const csv = [
-			['Timestamp', 'User', 'Action', 'Organization ID', 'IP Address'].join(','),
+			['Timestamp', 'User', 'Action', 'Organization ID', 'IP Address'].join(
+				','
+			),
 			...data.logs.map((log) =>
 				[
 					new Date(log.createdAt).toISOString(),
@@ -136,7 +138,9 @@ export function AuditLogTable() {
 												</div>
 											</div>
 										) : (
-											<span className="text-muted-foreground">Unknown User</span>
+											<span className="text-muted-foreground">
+												Unknown User
+											</span>
 										)}
 									</TableCell>
 									<TableCell>

@@ -2,17 +2,53 @@
 alwaysApply: true
 ---
 
-# Next.js SaaS Template
+# Enterprise SaaS Template
 
-A modern, production-ready SaaS template built with Next.js 15, React 19, TypeScript, and shadcn/ui components.
+A production-ready enterprise SaaS template built with Next.js 16, Prisma, Better Auth, Supabase, tRPC, and comprehensive RBAC.
 
 ## Features
 
-- **Next.js 15** with App Router and React 19
+- **Next.js 16** with App Router and React 19
 - **TypeScript** for type safety
+- **Prisma ORM** with PostgreSQL (Supabase)
+- **Better Auth** - Multiple authentication methods:
+  - Email/password, OAuth (Google, GitHub, Microsoft)
+  - Magic links, Passkeys (WebAuthn), OTP
+  - Two-Factor Authentication (2FA/TOTP)
+  - Enterprise SSO (SAML, OKTA)
+- **tRPC** for end-to-end type safety with React Query
+- **RBAC System** with 6-30+ permission levels (Owner, Admin, Member, Viewer roles)
+- **Workspace Management** with multi-tenant architecture
+- **Admin Dashboard**:
+  - User management (search, ban/unban, delete)
+  - System statistics and metrics
+  - Audit logs with filtering and CSV export
+  - Environment-based admin access control (ADMIN_EMAILS)
+- **Analytics Dashboard**:
+  - User growth charts with Recharts
+  - Activity metrics and feeds
+  - Statistics cards with real-time data
+  - Customizable time ranges (7-90 days)
+- **Settings Pages** (5 complete pages):
+  - Profile (avatar upload, bio, timezone, language)
+  - Account (email change, password change, delete account)
+  - Security (2FA, sessions, passkeys)
+  - Team (invite members, role assignment, pending invitations)
+  - Notifications (7 categories with email/in-app toggles)
+- **Email Infrastructure**:
+  - Resend integration with React Email
+  - 6 templates: welcome, verification, password-reset, magic-link, invitation, 2FA
+  - EmailService class for centralized email sending
+  - Email preview route for development
+- **In-app Notifications** with realtime updates (polling + Supabase-ready)
+- **Supabase** integration (optional):
+  - PostgreSQL database
+  - Storage for file uploads
+  - Realtime subscriptions
+  - Edge Functions support
 - **Tailwind CSS 4** for styling
 - **shadcn/ui** component library (50+ components)
-- **Motion Primitives** - 10 custom animation components (animated-background, magnetic, morphing-dialog, progressive-blur, scroll-progress, spotlight, text-effect, text-loop, text-morph, tilt)
+- **Motion Primitives** - 10 custom animation components
 - **MDX Support** for rich content authoring
 - **Dark/Light mode** with next-themes
 - **Responsive design** with mobile-first approach
@@ -21,15 +57,17 @@ A modern, production-ready SaaS template built with Next.js 15, React 19, TypeSc
 - **Modern UI patterns** with sidebar navigation
 - **Toast notifications** with Sonner
 - **Vercel Analytics** integration
-- **Code quality** with Biome (formatting, import sorting, unused import removal) and Oxlint (fast linting)
+- **Code quality** with Biome and Oxlint
 - **Git hooks** with Husky for pre-commit formatting and linting
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm/pnpm/yarn
-- Git
+- Node.js 18+ and pnpm
+- PostgreSQL database (Supabase recommended)
+- Supabase account (optional - required for storage and realtime features)
+- Resend account (optional - for emails)
 
 ### Installation
 
@@ -44,17 +82,61 @@ cd saas-template
 pnpm install
 ```
 
-3. Run the development server:
+3. Set up environment variables:
 ```bash
-pnpm run dev
+cp .env.local.example .env.local
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+Edit `.env.local` and fill in all required variables.
+
+4. Set up the database:
+```bash
+# Generate Prisma client
+pnpm db:generate
+
+# Run migrations
+pnpm db:migrate
+
+# Or push schema directly (development only)
+pnpm db:push
+```
+
+5. Configure admin access (optional):
+
+Add your email to `.env.local`:
+```env
+ADMIN_EMAILS="your-email@example.com"
+```
+
+6. Run the development server:
+```bash
+pnpm dev
+```
+
+7. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Project Structure
 
 ```
 ├── app/                           # Next.js App Router
+│   ├── (auth)/                    # Authentication pages
+│   │   ├── login/, signup/, forgot-password/, etc.
+│   ├── (dashboard)/               # Protected dashboard routes
+│   │   ├── page.tsx               # Dashboard with analytics
+│   │   ├── workspaces/
+│   │   ├── notifications/
+│   │   └── settings/              # Settings pages (5 pages)
+│   │       ├── profile/
+│   │       ├── account/
+│   │       ├── security/
+│   │       ├── team/
+│   │       └── notifications/
+│   ├── (admin)/                   # Admin route group
+│   │   └── admin/
+│   │       ├── layout.tsx         # Admin layout with access control
+│   │       ├── page.tsx           # Admin dashboard
+│   │       ├── users/             # User management
+│   │       └── audit/             # Audit logs
 │   ├── features/                  # Features/Products section
 │   │   ├── [slug]/               # Dynamic feature pages
 │   │   └── data.ts               # Features data
@@ -64,40 +146,92 @@ pnpm run dev
 │   ├── blog/                      # Blog posts
 │   │   ├── [slug]/               # Dynamic blog post pages
 │   │   └── data.ts               # Blog posts data
+│   ├── api/                       # API routes
+│   │   ├── auth/[...all]/         # Better Auth routes
+│   │   ├── trpc/[trpc]/           # tRPC routes
+│   │   └── email/preview/         # Email template preview (dev only)
 │   ├── layout.tsx                 # Root layout
 │   ├── page.tsx                   # Homepage
 │   └── globals.css                # Global styles
 ├── components/                     # React components
+│   ├── admin/                     # Admin components
+│   │   ├── users-table.tsx
+│   │   └── audit-log-table.tsx
+│   ├── analytics/                 # Analytics components
+│   │   ├── stats-card.tsx
+│   │   ├── user-growth-chart.tsx
+│   │   └── activity-feed.tsx
+│   ├── settings/                  # Settings components
+│   │   ├── profile-settings-form.tsx
+│   │   ├── email-change-form.tsx
+│   │   ├── password-change-form.tsx
+│   │   ├── delete-account-form.tsx
+│   │   ├── team-members-table.tsx
+│   │   ├── invite-member-dialog.tsx
+│   │   ├── pending-invitations.tsx
+│   │   └── notification-preferences.tsx
+│   ├── auth/                      # Authentication components
+│   ├── workspace/                 # Workspace management
+│   ├── rbac/                      # RBAC components
+│   ├── notifications/             # Notification components
+│   ├── upload/                    # File upload components
+│   ├── user/                      # User components
 │   ├── ui/                        # shadcn/ui components (50+)
-│   ├── motion-primitives/         # Custom animation components
-│   │   ├── animated-background.tsx
-│   │   ├── magnetic.tsx
-│   │   ├── morphing-dialog.tsx
-│   │   ├── progressive-blur.tsx
-│   │   ├── scroll-progress.tsx
-│   │   ├── spotlight.tsx
-│   │   ├── text-effect.tsx
-│   │   ├── text-loop.tsx
-│   │   ├── text-morph.tsx
-│   │   └── tilt.tsx
-│   ├── app-sidebar.tsx            # Main navigation
+│   ├── motion-primitives/         # Custom animation components (10)
+│   ├── app-sidebar.tsx            # Main navigation with settings & admin
 │   ├── nav-main.tsx               # Main navigation items
 │   ├── nav-secondary.tsx          # Secondary navigation
 │   ├── nav-user.tsx               # User navigation
 │   └── page-header.tsx            # Page header component
-├── hooks/                          # Custom React hooks
+├── emails/                        # React Email templates
+│   ├── components/                # Email components
+│   │   ├── email-layout.tsx
+│   │   ├── email-header.tsx
+│   │   └── email-footer.tsx
+│   ├── welcome.tsx
+│   ├── verification.tsx
+│   ├── password-reset.tsx
+│   ├── magic-link.tsx
+│   ├── invitation.tsx
+│   └── two-factor.tsx
+├── server/                        # Server-side code
+│   └── api/                       # tRPC routers
+│       ├── trpc.ts                # tRPC setup
+│       └── routers/               # tRPC routers
+│           ├── _app.ts            # Router aggregation
+│           ├── user.ts
+│           ├── workspace.ts
+│           ├── analytics.ts       # Analytics router
+│           └── admin.ts           # Admin router
+├── lib/                           # Utility functions
+│   ├── auth/                      # Better Auth configuration
+│   │   ├── config.ts
+│   │   ├── auth-helpers.ts
+│   │   └── admin-helpers.ts       # Admin access control
+│   ├── trpc/                      # tRPC client/server
+│   ├── rbac/                      # RBAC utilities
+│   ├── email/                     # Email utilities
+│   │   └── service.ts             # EmailService class
+│   ├── supabase/                  # Supabase clients
+│   ├── prisma.ts                  # Prisma client
+│   ├── constants.ts               # App constants
+│   ├── env.ts                     # Environment validation
+│   └── utils.ts                   # Utility functions
+├── prisma/                        # Prisma schema
+│   └── schema.prisma              # Database schema
+├── hooks/                         # Custom React hooks
+│   ├── use-realtime-notifications.ts
+│   ├── use-presence.ts
 │   ├── use-media-query.ts
 │   ├── use-mobile.ts
 │   └── useClickOutside.tsx
-├── lib/                            # Utility functions
-│   ├── constants.ts               # App constants
-│   └── utils.ts                   # Utility functions
-├── mdx-components.tsx              # MDX component configuration
-├── .husky/                         # Git hooks
-│   └── pre-commit                  # Pre-commit hook for formatting/linting
-├── biome.json                      # Biome configuration (formatting, linting)
-├── .oxlintrc.json                  # Oxlint configuration
-└── public/                         # Static assets
+├── mdx-components.tsx             # MDX component configuration
+├── middleware.ts                  # Next.js middleware
+├── .husky/                        # Git hooks
+│   └── pre-commit                 # Pre-commit hook
+├── biome.json                     # Biome configuration
+├── .oxlintrc.json                 # Oxlint configuration
+└── public/                        # Static assets
 ```
 
 ## Customization
@@ -131,12 +265,19 @@ Edit `/app/globals.css` to update CSS variables for theming.
 
 ## Tech Stack
 
-- **Framework:** Next.js 15.1.1
+- **Framework:** Next.js 16 with App Router
 - **Language:** TypeScript 5
+- **Database:** PostgreSQL via Prisma ORM
+- **Authentication:** Better Auth (7 auth methods)
+- **API:** tRPC with React Query
+- **Storage:** Supabase Storage (optional)
+- **Realtime:** Supabase Realtime (optional)
+- **Email:** React Email + Resend
 - **Styling:** Tailwind CSS 4
-- **UI Components:** shadcn/ui (Radix UI primitives)
+- **UI Components:** shadcn/ui (50+ Radix UI components)
+- **Charts:** Recharts for data visualization
 - **Icons:** Lucide React
-- **Theme:** next-themes
+- **Theme:** next-themes (dark/light mode)
 - **Fonts:** Geist & Geist Mono (from next/font)
 - **Animations:** Motion (Framer Motion)
 - **Forms:** React Hook Form + Zod validation
@@ -146,7 +287,6 @@ Edit `/app/globals.css` to update CSS variables for theming.
 - **Toast Notifications:** Sonner
 - **Analytics:** Vercel Analytics
 - **Date Handling:** date-fns
-- **Charts:** Recharts
 - **Code Quality:** Biome 2.3.6 (formatting, import organization, unused import removal)
 - **Linting:** Oxlint 1.29.0 (fast Rust-based linter)
 - **Git Hooks:** Husky 9.1.7
@@ -154,9 +294,18 @@ Edit `/app/globals.css` to update CSS variables for theming.
 ## Scripts
 
 ```bash
+# Development
 pnpm dev         # Start development server
 pnpm build       # Build for production
 pnpm start       # Start production server
+
+# Database
+pnpm db:generate # Generate Prisma client
+pnpm db:migrate  # Run database migrations
+pnpm db:push     # Push schema to database (dev only)
+pnpm db:studio   # Open Prisma Studio
+
+# Code Quality
 pnpm lint        # Run Oxlint to check for linting issues
 pnpm lint:fix    # Run Oxlint with auto-fix
 pnpm format      # Format code, sort imports, and remove unused imports with Biome
