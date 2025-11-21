@@ -48,6 +48,7 @@ model Session {
 	userAgent    String?
 	deviceName   String?
 	createdAt    DateTime @default(now())
+	updatedAt    DateTime @updatedAt
 	lastActiveAt DateTime @default(now())
 
 	@@index([userId])

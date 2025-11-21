@@ -52,7 +52,8 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			// Check if the result has an error
 			if (result?.error) {
 				toast.error(
-					result.error.message || 'Failed to sign in. Please check your credentials.'
+					result.error.message ||
+						'Failed to sign in. Please check your credentials.'
 				)
 				setIsLoading(false)
 				return
@@ -64,7 +65,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			// Verify authentication by checking the session
 			// This ensures the user was actually authenticated even if signIn.email() doesn't throw
 			let isAuthenticated = false
-			
+
 			try {
 				// Try to refetch session to get the latest state
 				if (refetchSession) {
@@ -83,12 +84,13 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 			// If still not authenticated, make a direct API call to verify
 			if (!isAuthenticated) {
 				try {
-					const baseURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+					const baseURL =
+						process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 					const response = await fetch(`${baseURL}/api/auth/session`, {
 						method: 'GET',
 						credentials: 'include',
 					})
-					
+
 					if (response.ok) {
 						const sessionData = await response.json()
 						isAuthenticated = !!sessionData?.user
