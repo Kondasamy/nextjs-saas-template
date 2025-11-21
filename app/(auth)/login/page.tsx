@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 export default function LoginPage() {
 	const searchParams = useSearchParams()
 	const router = useRouter()
-	const redirect = searchParams.get('redirect') || '/dashboard'
+	const redirect = searchParams.get('redirect') || '/'
 
 	const handleSuccess = () => {
 		router.push(redirect)

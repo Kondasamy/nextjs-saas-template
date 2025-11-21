@@ -2,7 +2,6 @@
 
 import {
 	BookOpen,
-	Bot,
 	Boxes,
 	Command,
 	LifeBuoy,
@@ -54,12 +53,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				url: '/docs',
 				icon: BookOpen,
 				isActive: pathname.startsWith('/docs'),
-			},
-			{
-				title: 'Blog',
-				url: '/blog',
-				icon: Bot,
-				isActive: pathname.startsWith('/blog'),
 			},
 		],
 		navSecondary: [
