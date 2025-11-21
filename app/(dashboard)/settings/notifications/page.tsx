@@ -1,3 +1,4 @@
+import { NotificationPreferences } from '@/components/settings/notification-preferences'
 import { requireAuth } from '@/lib/auth/auth-helpers'
 
 export default async function NotificationSettingsPage() {
@@ -8,9 +9,11 @@ export default async function NotificationSettingsPage() {
 			<div>
 				<h1 className="text-3xl font-bold">Notification Settings</h1>
 				<p className="text-muted-foreground">
-					Manage your notification preferences
+					Control how and when you receive notifications
 				</p>
 			</div>
+
+			<NotificationPreferences />
 		</div>
 	)
 }

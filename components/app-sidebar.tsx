@@ -54,6 +54,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				icon: BookOpen,
 				isActive: pathname.startsWith('/docs'),
 			},
+			{
+				title: 'Settings',
+				url: '/settings/profile',
+				icon: Settings2,
+				isActive: pathname.startsWith('/settings'),
+				items: [
+					{
+						title: 'Profile',
+						url: '/settings/profile',
+					},
+					{
+						title: 'Account',
+						url: '/settings/account',
+					},
+					{
+						title: 'Security',
+						url: '/settings/security',
+					},
+					{
+						title: 'Team',
+						url: '/settings/team',
+					},
+					{
+						title: 'Notifications',
+						url: '/settings/notifications',
+					},
+				],
+			},
 		],
 		navSecondary: [
 			{
@@ -65,11 +93,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				title: 'Feedback',
 				url: EMAIL_URL_LINK,
 				icon: Send,
-			},
-			{
-				title: 'Settings',
-				url: '#',
-				icon: Settings2,
 			},
 		],
 	}
