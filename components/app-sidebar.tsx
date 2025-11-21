@@ -15,7 +15,12 @@ import {
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { NavMain } from '@/components/nav-main'
+import { NavSecondary } from '@/components/nav-secondary'
+import { NavUser } from '@/components/nav-user'
+import { useAuth } from '@/hooks/use-auth'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import {
 	Command,
 	CommandEmpty,
@@ -33,7 +38,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -50,12 +54,9 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { NavMain } from '@/components/nav-main'
-import { NavSecondary } from '@/components/nav-secondary'
-import { NavUser } from '@/components/nav-user'
+import { EMAIL_URL, EMAIL_URL_LINK, IMAGE_URL, NAME } from '@/lib/constants'
 import { trpc } from '@/lib/trpc/client'
 import { useWorkspace } from '@/lib/workspace/workspace-context'
-import { EMAIL_URL, EMAIL_URL_LINK, IMAGE_URL, NAME } from '@/lib/constants'
 
 function WorkspaceSwitcherMenu() {
 	const router = useRouter()
@@ -122,9 +123,7 @@ function WorkspaceSwitcherMenu() {
 				</div>
 				<div className="grid flex-1 text-left text-sm leading-tight">
 					<span className="truncate font-medium">Loading...</span>
-					<span className="truncate text-xs text-primary/70">
-						Please wait
-					</span>
+					<span className="truncate text-xs text-primary/70">Please wait</span>
 				</div>
 			</SidebarMenuButton>
 		)
@@ -179,9 +178,7 @@ function WorkspaceSwitcherMenu() {
 											</AvatarFallback>
 										</Avatar>
 										<div className="flex flex-1 flex-col overflow-hidden">
-											<span className="truncate text-sm">
-												{workspace.name}
-											</span>
+											<span className="truncate text-sm">{workspace.name}</span>
 											<span className="truncate text-xs text-muted-foreground">
 												{workspace.role.name}
 											</span>
@@ -268,12 +265,100 @@ function WorkspaceSwitcherMenu() {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname()
+	const { user } = useAuth()
+	
+	// Check if user is admin via tRPC
+	const { data: isAdmin = false } = trpc.user.isAdmin.useQuery(undefined, {
+		enabled: !!user,
+	})
+
+	const navSecondaryItems: Array<{
+		title: string
+		url: string
+		icon: typeof Settings2
+		isActive?: boolean
+		items?: Array<{ title: string; url: string }>
+	}> = [
+		{
+			title: 'Settings',
+			url: '/settings/profile',
+			icon: Settings2,
+			isActive: pathname.startsWith('/settings'),
+			items: [
+				{
+					title: 'Profile',
+					url: '/settings/profile',
+				},
+				{
+					title: 'Account',
+					url: '/settings/account',
+				},
+				{
+					title: 'Security',
+					url: '/settings/security',
+				},
+				{
+					title: 'Team',
+					url: '/settings/team',
+				},
+				{
+					title: 'Notifications',
+					url: '/settings/notifications',
+				},
+			],
+		},
+	]
+
+	// Only add Admin section if user is admin
+	if (isAdmin) {
+		navSecondaryItems.push({
+			title: 'Admin',
+			url: '/admin',
+			icon: Shield,
+			isActive: pathname.startsWith('/admin'),
+			items: [
+				{
+					title: 'Dashboard',
+					url: '/admin',
+				},
+				{
+					title: 'Users',
+					url: '/admin/users',
+				},
+				{
+					title: 'Audit Logs',
+					url: '/admin/audit',
+				},
+				{
+					title: 'Themes',
+					url: '/admin/themes',
+				},
+				{
+					title: 'Email Templates',
+					url: '/admin/emails',
+				},
+			],
+		})
+	}
+
+	navSecondaryItems.push(
+		{
+			title: 'Support',
+			url: EMAIL_URL_LINK,
+			icon: LifeBuoy,
+		},
+		{
+			title: 'Feedback',
+			url: EMAIL_URL_LINK,
+			icon: Send,
+		}
+	)
 
 	const data = {
 		user: {
-			name: NAME,
-			email: EMAIL_URL,
-			avatar: IMAGE_URL,
+			name: user?.name || NAME,
+			email: user?.email || EMAIL_URL,
+			avatar: user?.image || IMAGE_URL,
 		},
 		navMain: [
 			{
@@ -289,74 +374,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				isActive: pathname.startsWith('/features'),
 			},
 		],
-		navSecondary: [
-			{
-				title: 'Settings',
-				url: '/settings/profile',
-				icon: Settings2,
-				isActive: pathname.startsWith('/settings'),
-				items: [
-					{
-						title: 'Profile',
-						url: '/settings/profile',
-					},
-					{
-						title: 'Account',
-						url: '/settings/account',
-					},
-					{
-						title: 'Security',
-						url: '/settings/security',
-					},
-					{
-						title: 'Team',
-						url: '/settings/team',
-					},
-					{
-						title: 'Notifications',
-						url: '/settings/notifications',
-					},
-				],
-			},
-			{
-				title: 'Admin',
-				url: '/admin',
-				icon: Shield,
-				isActive: pathname.startsWith('/admin'),
-				items: [
-					{
-						title: 'Dashboard',
-						url: '/admin',
-					},
-					{
-						title: 'Users',
-						url: '/admin/users',
-					},
-					{
-						title: 'Audit Logs',
-						url: '/admin/audit',
-					},
-					{
-						title: 'Themes',
-						url: '/admin/themes',
-					},
-					{
-						title: 'Email Templates',
-						url: '/admin/emails',
-					},
-				],
-			},
-			{
-				title: 'Support',
-				url: EMAIL_URL_LINK,
-				icon: LifeBuoy,
-			},
-			{
-				title: 'Feedback',
-				url: EMAIL_URL_LINK,
-				icon: Send,
-			},
-		],
+		navSecondary: navSecondaryItems,
 	}
 
 	return (

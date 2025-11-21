@@ -43,8 +43,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	const [isInitialized, setIsInitialized] = useState(false)
 
 	// Fetch all workspaces
-	const { data: workspaces = [], isLoading: isLoadingWorkspaces, refetch: refetchWorkspaces } =
-		trpc.workspace.list.useQuery()
+	const {
+		data: workspaces = [],
+		isLoading: isLoadingWorkspaces,
+		refetch: refetchWorkspaces,
+	} = trpc.workspace.list.useQuery()
 
 	const ensureDefaultWorkspace = trpc.workspace.ensureDefault.useMutation({
 		onSuccess: () => {
@@ -83,7 +86,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				setIsInitialized(true)
 			}
 		}
-	}, [workspaces, isLoadingWorkspaces, isInitialized, ensureDefaultWorkspace, refetchWorkspaces])
+	}, [
+		workspaces,
+		isLoadingWorkspaces,
+		isInitialized,
+		ensureDefaultWorkspace,
+		refetchWorkspaces,
+	])
 
 	// Ensure current workspace is still valid when workspaces list changes
 	useEffect(() => {

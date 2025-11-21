@@ -7,7 +7,11 @@ import { prisma } from '@/lib/prisma'
 /**
  * Creates a default workspace for a new user
  */
-async function createDefaultWorkspace(user: { id: string; email: string; name?: string | null }) {
+async function createDefaultWorkspace(user: {
+	id: string
+	email: string
+	name?: string | null
+}) {
 	try {
 		console.log('🏗️ Creating default workspace for user:', user.id, user.email)
 
@@ -233,7 +237,7 @@ export const auth = betterAuth({
 					},
 					handler: async (ctx) => {
 						console.log('🚀 Signup handler running...')
-						
+
 						// Try multiple ways to get the user
 						let user = ctx.context.session?.user
 
@@ -242,7 +246,11 @@ export const auth = betterAuth({
 							console.log('⚠️ No user in session, checking response...')
 							// The response might have the user data
 							const response = ctx.response
-							if (response && typeof response === 'object' && 'user' in response) {
+							if (
+								response &&
+								typeof response === 'object' &&
+								'user' in response
+							) {
 								user = (response as any).user
 							}
 						}
@@ -250,7 +258,9 @@ export const auth = betterAuth({
 						// If still no user, try to find the most recently created user
 						// This is a fallback - not ideal but should work
 						if (!user) {
-							console.log('⚠️ Still no user, checking for recently created user...')
+							console.log(
+								'⚠️ Still no user, checking for recently created user...'
+							)
 							// Get email from request if possible (this might not work if body is already read)
 							try {
 								// Find the most recently created user (within last 5 seconds)
@@ -267,12 +277,16 @@ export const auth = betterAuth({
 
 								if (recentUser) {
 									// Check if this user already has a workspace
-									const hasWorkspace = await prisma.organizationMember.findFirst({
-										where: { userId: recentUser.id },
-									})
+									const hasWorkspace =
+										await prisma.organizationMember.findFirst({
+											where: { userId: recentUser.id },
+										})
 
 									if (!hasWorkspace) {
-										console.log('✅ Found recent user without workspace:', recentUser.id)
+										console.log(
+											'✅ Found recent user without workspace:',
+											recentUser.id
+										)
 										user = recentUser
 									}
 								}

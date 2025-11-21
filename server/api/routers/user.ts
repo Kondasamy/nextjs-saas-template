@@ -65,4 +65,14 @@ export const userRouter = createTRPCRouter({
 			where: { id: ctx.user.id },
 		})
 	}),
+
+	isAdmin: protectedProcedure.query(async ({ ctx }) => {
+		if (!ctx.user) {
+			return false
+		}
+
+		const adminEmails =
+			process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()) || []
+		return adminEmails.includes(ctx.user.email)
+	}),
 })

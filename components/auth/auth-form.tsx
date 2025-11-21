@@ -147,11 +147,16 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 				name: data.name,
 			})
 
-			// If signup was successful and user is logged in, ensure default workspace
+			// Reset form fields
+			signUpForm.reset()
+
+			// Check if email verification is required (production mode)
+			const requiresEmailVerification = process.env.NODE_ENV === 'production'
+
 			if (result && !result.error) {
 				// Wait a bit for session to be established
 				await new Promise((resolve) => setTimeout(resolve, 500))
-				
+
 				// Try to ensure default workspace exists
 				try {
 					await ensureDefaultWorkspace.mutateAsync()
@@ -159,12 +164,45 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 					// Don't fail signup if workspace creation fails
 					console.error('Failed to create default workspace:', error)
 				}
+
+				// Check if user is logged in (email verification not required)
+				if (!requiresEmailVerification) {
+					// Wait for session to be fully established
+					await new Promise((resolve) => setTimeout(resolve, 300))
+
+					// Refetch session to check if user is logged in
+					const updatedSession = await refetchSession()
+					const sessionData = updatedSession?.data ?? updatedSession
+
+					if (sessionData?.user) {
+						// User is logged in, redirect to dashboard
+						toast.success('Account created successfully!')
+
+						if (onSuccess) {
+							onSuccess()
+						} else {
+							const redirect = searchParams.get('redirect') || '/dashboard'
+							router.push(redirect)
+						}
+						return
+					}
+				}
 			}
 
-			toast.success('Account created! Please check your email to verify.')
+			// Email verification required or user not logged in
+			if (requiresEmailVerification) {
+				toast.success('Account created! Please check your email to verify.')
+			} else {
+				toast.success('Account created! Please sign in to continue.')
+			}
+
 			onSuccess?.()
-		} catch {
-			toast.error('Failed to create account. Please try again.')
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: 'Failed to create account. Please try again.'
+			toast.error(errorMessage)
 		} finally {
 			setIsLoading(false)
 		}

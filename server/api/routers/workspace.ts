@@ -39,8 +39,9 @@ export const workspaceRouter = createTRPCRouter({
 		}
 
 		// Create default workspace using a transaction
-		const workspaceName = ctx.user.name || `${ctx.user.email.split('@')[0]}'s Workspace`
-		
+		const workspaceName =
+			ctx.user.name || `${ctx.user.email.split('@')[0]}'s Workspace`
+
 		const result = await ctx.prisma.$transaction(async (tx) => {
 			// Create the organization
 			const organization = await tx.organization.create({
