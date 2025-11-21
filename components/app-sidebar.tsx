@@ -1,7 +1,6 @@
 'use client'
 
 import {
-	BookOpen,
 	Boxes,
 	Command,
 	LifeBuoy,
@@ -48,12 +47,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				url: '/features',
 				icon: Boxes,
 				isActive: pathname.startsWith('/features'),
-			},
-			{
-				title: 'Documentation',
-				url: '/docs',
-				icon: BookOpen,
-				isActive: pathname.startsWith('/docs'),
 			},
 		],
 		navSecondary: [
@@ -102,6 +95,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					{
 						title: 'Audit Logs',
 						url: '/admin/audit',
+					},
+					{
+						title: 'Email Templates',
+						url: '/admin/emails',
 					},
 				],
 			},
