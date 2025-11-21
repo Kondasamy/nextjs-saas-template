@@ -1,5 +1,4 @@
 import { ChevronRight, type LucideIcon } from 'lucide-react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import * as React from 'react'
 import {
@@ -32,6 +31,7 @@ import {
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
+import { ViewTransitionLink } from '@/components/view-transition-link'
 import { useMediaQuery } from '../hooks/use-media-query'
 
 export function NavSecondary({
@@ -98,12 +98,12 @@ export function NavSecondary({
 										tooltip={item.title}
 										isActive={item.isActive}
 									>
-										<Link href={item.url}>
+										<ViewTransitionLink href={item.url}>
 											<item.icon
 												className={item.isActive ? 'text-primary' : ''}
 											/>
 											<span>{item.title}</span>
-										</Link>
+										</ViewTransitionLink>
 									</SidebarMenuButton>
 									<CollapsibleTrigger asChild>
 										<SidebarMenuAction className="data-[state=open]:rotate-90">
@@ -116,9 +116,9 @@ export function NavSecondary({
 											{item.items.map((subItem) => (
 												<SidebarMenuSubItem key={subItem.title}>
 													<SidebarMenuSubButton asChild>
-														<Link href={subItem.url}>
+														<ViewTransitionLink href={subItem.url}>
 															<span>{subItem.title}</span>
-														</Link>
+														</ViewTransitionLink>
 													</SidebarMenuSubButton>
 												</SidebarMenuSubItem>
 											))}
@@ -178,12 +178,12 @@ export function NavSecondary({
 									)
 								) : (
 									<SidebarMenuButton asChild size="sm" isActive={item.isActive}>
-										<Link href={item.url}>
+										<ViewTransitionLink href={item.url}>
 											<item.icon
 												className={item.isActive ? 'text-primary' : ''}
 											/>
 											<span>{item.title}</span>
-										</Link>
+										</ViewTransitionLink>
 									</SidebarMenuButton>
 								)}
 							</SidebarMenuItem>

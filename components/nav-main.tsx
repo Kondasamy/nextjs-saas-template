@@ -2,7 +2,6 @@
 
 import { ChevronRight, type LucideIcon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-
 import { Badge } from '@/components/ui/badge'
 import {
 	Collapsible,
@@ -20,6 +19,7 @@ import {
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
+import { ViewTransitionLink } from '@/components/view-transition-link'
 
 export function NavMain({
 	items,
@@ -39,7 +39,7 @@ export function NavMain({
 
 	return (
 		<SidebarGroup>
-			<SidebarGroupLabel>World</SidebarGroupLabel>
+			<SidebarGroupLabel>SaaS feature</SidebarGroupLabel>
 			<SidebarMenu>
 				{items.map((item) => (
 					<Collapsible key={item.title} asChild defaultOpen={item.isActive}>
@@ -49,7 +49,7 @@ export function NavMain({
 								tooltip={item.title}
 								isActive={item.isActive}
 							>
-								<a href={item.url} className="relative">
+								<ViewTransitionLink href={item.url} className="relative">
 									<item.icon className={item.isActive ? 'text-primary' : ''} />
 									<span>{item.title}</span>
 									{item.url.includes('thing') && (
@@ -60,7 +60,7 @@ export function NavMain({
 											new
 										</Badge>
 									)}
-								</a>
+								</ViewTransitionLink>
 							</SidebarMenuButton>
 							{item.items?.length ? (
 								<>
@@ -75,9 +75,9 @@ export function NavMain({
 											{item.items?.map((subItem) => (
 												<SidebarMenuSubItem key={subItem.title}>
 													<SidebarMenuSubButton asChild>
-														<a href={subItem.url}>
+														<ViewTransitionLink href={subItem.url}>
 															<span>{subItem.title}</span>
-														</a>
+														</ViewTransitionLink>
 													</SidebarMenuSubButton>
 												</SidebarMenuSubItem>
 											))}
