@@ -1,11 +1,10 @@
 'use client'
 
 import { formatDistanceToNow } from 'date-fns'
-import { MoreHorizontal, Trash2, UserX } from 'lucide-react'
+import { MoreHorizontal, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
 	DropdownMenu,
@@ -106,7 +105,10 @@ export function TeamMembersTable({ organizationId }: TeamMembersTableProps) {
 				<TableBody>
 					{members.length === 0 ? (
 						<TableRow>
-							<TableCell colSpan={4} className="text-center text-muted-foreground">
+							<TableCell
+								colSpan={4}
+								className="text-center text-muted-foreground"
+							>
 								No team members yet
 							</TableCell>
 						</TableRow>
@@ -135,7 +137,9 @@ export function TeamMembersTable({ organizationId }: TeamMembersTableProps) {
 								<TableCell>
 									<Select
 										value={member.roleId}
-										onValueChange={(value) => handleRoleChange(member.userId, value)}
+										onValueChange={(value) =>
+											handleRoleChange(member.userId, value)
+										}
 										disabled={updatingMemberId === member.userId}
 									>
 										<SelectTrigger className="w-[120px]">

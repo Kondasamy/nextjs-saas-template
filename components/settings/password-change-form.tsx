@@ -123,7 +123,8 @@ export function PasswordChangeForm() {
 							</p>
 						)}
 						<p className="text-xs text-muted-foreground">
-							Must be at least 8 characters with uppercase, lowercase, and number
+							Must be at least 8 characters with uppercase, lowercase, and
+							number
 						</p>
 					</div>
 

@@ -94,9 +94,7 @@ export function NotificationPreferences() {
 		value: boolean
 	) => {
 		setPreferences((prev) =>
-			prev.map((pref) =>
-				pref.id === id ? { ...pref, [type]: value } : pref
-			)
+			prev.map((pref) => (pref.id === id ? { ...pref, [type]: value } : pref))
 		)
 		setHasChanges(true)
 	}
@@ -112,7 +110,7 @@ export function NotificationPreferences() {
 
 			toast.success('Notification preferences saved successfully')
 			setHasChanges(false)
-		} catch (error) {
+		} catch {
 			toast.error('Failed to save preferences')
 		} finally {
 			setIsSaving(false)
@@ -173,9 +171,7 @@ export function NotificationPreferences() {
 									</div>
 								</div>
 							</div>
-							{index < preferences.length - 1 && (
-								<Separator className="mt-6" />
-							)}
+							{index < preferences.length - 1 && <Separator className="mt-6" />}
 						</div>
 					))}
 				</CardContent>

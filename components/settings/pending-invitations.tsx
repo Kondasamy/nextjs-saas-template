@@ -45,9 +45,7 @@ export function PendingInvitations({
 	if (!invitations || invitations.length === 0) {
 		return (
 			<div className="rounded-md border p-8 text-center">
-				<p className="text-sm text-muted-foreground">
-					No pending invitations
-				</p>
+				<p className="text-sm text-muted-foreground">No pending invitations</p>
 			</div>
 		)
 	}
@@ -67,9 +65,7 @@ export function PendingInvitations({
 				<TableBody>
 					{invitations.map((invitation) => (
 						<TableRow key={invitation.id}>
-							<TableCell className="font-medium">
-								{invitation.email}
-							</TableCell>
+							<TableCell className="font-medium">{invitation.email}</TableCell>
 							<TableCell>
 								<Badge variant="outline">{invitation.role.name}</Badge>
 							</TableCell>
