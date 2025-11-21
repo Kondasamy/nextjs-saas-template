@@ -1,4 +1,5 @@
 import { createTRPCRouter } from '../trpc'
+import { adminRouter } from './admin'
 import { analyticsRouter } from './analytics'
 import { invitationsRouter } from './invitations'
 import { notificationsRouter } from './notifications'
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
 	notifications: notificationsRouter,
 	storage: storageRouter,
 	analytics: analyticsRouter,
+	admin: adminRouter,
 })
 
 export type AppRouter = typeof appRouter

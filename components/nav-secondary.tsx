@@ -1,4 +1,5 @@
-import { type LucideIcon } from 'lucide-react'
+import { ChevronRight, type LucideIcon } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import * as React from 'react'
 import {
 	Dialog,
@@ -15,11 +16,20 @@ import {
 	DrawerTrigger,
 } from '@/components/ui/drawer'
 import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarMenu,
+	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
 } from '@/components/ui/sidebar'
 import { useMediaQuery } from '../hooks/use-media-query'
 
@@ -31,8 +41,14 @@ export function NavSecondary({
 		title: string
 		url: string
 		icon: LucideIcon
+		isActive?: boolean
+		items?: {
+			title: string
+			url: string
+		}[]
 	}[]
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+	const pathname = usePathname()
 	const [open, setOpen] = React.useState(false)
 	const [activeItem, setActiveItem] = React.useState<(typeof items)[0] | null>(
 		null
@@ -72,64 +88,109 @@ export function NavSecondary({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => (
-						<SidebarMenuItem key={item.title}>
-							{item.title === 'Book a Call' && mounted ? (
-								isDesktop ? (
-									<Dialog open={open} onOpenChange={setOpen}>
-										<DialogTrigger asChild>
-											<SidebarMenuButton
-												asChild
-												size="sm"
-												onClick={() => handleItemClick(item)}
-											>
-												<button>
-													<item.icon />
-													<span>{item.title}</span>
-												</button>
-											</SidebarMenuButton>
-										</DialogTrigger>
-										<DialogContent className="sm:max-w-[80vw] lg:max-w-[80vw]">
-											<DialogHeader>
-												<DialogTitle>Book a Call</DialogTitle>
-											</DialogHeader>
-											<CalendarContent />
-										</DialogContent>
-									</Dialog>
-								) : (
-									<Drawer open={open} onOpenChange={setOpen}>
-										<DrawerTrigger asChild>
-											<SidebarMenuButton
-												asChild
-												size="sm"
-												onClick={() => handleItemClick(item)}
-											>
-												<button>
-													<item.icon />
-													<span>{item.title}</span>
-												</button>
-											</SidebarMenuButton>
-										</DrawerTrigger>
-										<DrawerContent>
-											<DrawerHeader>
-												<DrawerTitle className="text-center">
-													Book a Call
-												</DrawerTitle>
-											</DrawerHeader>
-											<div className="px-4 pb-4">
+						item.items?.length ? (
+							<Collapsible key={item.title} asChild defaultOpen={item.isActive}>
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										asChild
+										size="sm"
+										tooltip={item.title}
+										isActive={item.isActive}
+									>
+										<a href={item.url}>
+											<item.icon
+												className={item.isActive ? 'text-primary' : ''}
+											/>
+											<span>{item.title}</span>
+										</a>
+									</SidebarMenuButton>
+									<CollapsibleTrigger asChild>
+										<SidebarMenuAction className="data-[state=open]:rotate-90">
+											<ChevronRight />
+											<span className="sr-only">Toggle</span>
+										</SidebarMenuAction>
+									</CollapsibleTrigger>
+									<CollapsibleContent>
+										<SidebarMenuSub>
+											{item.items.map((subItem) => (
+												<SidebarMenuSubItem key={subItem.title}>
+													<SidebarMenuSubButton asChild>
+														<a href={subItem.url}>
+															<span>{subItem.title}</span>
+														</a>
+													</SidebarMenuSubButton>
+												</SidebarMenuSubItem>
+											))}
+										</SidebarMenuSub>
+									</CollapsibleContent>
+								</SidebarMenuItem>
+							</Collapsible>
+						) : (
+							<SidebarMenuItem key={item.title}>
+								{item.title === 'Book a Call' && mounted ? (
+									isDesktop ? (
+										<Dialog open={open} onOpenChange={setOpen}>
+											<DialogTrigger asChild>
+												<SidebarMenuButton
+													asChild
+													size="sm"
+													onClick={() => handleItemClick(item)}
+												>
+													<button>
+														<item.icon />
+														<span>{item.title}</span>
+													</button>
+												</SidebarMenuButton>
+											</DialogTrigger>
+											<DialogContent className="sm:max-w-[80vw] lg:max-w-[80vw]">
+												<DialogHeader>
+													<DialogTitle>Book a Call</DialogTitle>
+												</DialogHeader>
 												<CalendarContent />
-											</div>
-										</DrawerContent>
-									</Drawer>
-								)
-							) : (
-								<SidebarMenuButton asChild size="sm">
-									<a href={item.url}>
-										<item.icon />
-										<span>{item.title}</span>
-									</a>
-								</SidebarMenuButton>
-							)}
-						</SidebarMenuItem>
+											</DialogContent>
+										</Dialog>
+									) : (
+										<Drawer open={open} onOpenChange={setOpen}>
+											<DrawerTrigger asChild>
+												<SidebarMenuButton
+													asChild
+													size="sm"
+													onClick={() => handleItemClick(item)}
+												>
+													<button>
+														<item.icon />
+														<span>{item.title}</span>
+													</button>
+												</SidebarMenuButton>
+											</DrawerTrigger>
+											<DrawerContent>
+												<DrawerHeader>
+													<DrawerTitle className="text-center">
+														Book a Call
+													</DrawerTitle>
+												</DrawerHeader>
+												<div className="px-4 pb-4">
+													<CalendarContent />
+												</div>
+											</DrawerContent>
+										</Drawer>
+									)
+								) : (
+									<SidebarMenuButton
+										asChild
+										size="sm"
+										isActive={item.isActive}
+									>
+										<a href={item.url}>
+											<item.icon
+												className={item.isActive ? 'text-primary' : ''}
+											/>
+											<span>{item.title}</span>
+										</a>
+									</SidebarMenuButton>
+								)}
+							</SidebarMenuItem>
+						)
 					))}
 				</SidebarMenu>
 			</SidebarGroupContent>

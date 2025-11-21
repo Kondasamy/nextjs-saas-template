@@ -7,6 +7,7 @@ import {
 	LifeBuoy,
 	Send,
 	Settings2,
+	Shield,
 	SquareTerminal,
 } from 'lucide-react'
 import { usePathname } from 'next/navigation'
@@ -54,6 +55,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				icon: BookOpen,
 				isActive: pathname.startsWith('/docs'),
 			},
+		],
+		navSecondary: [
 			{
 				title: 'Settings',
 				url: '/settings/profile',
@@ -82,8 +85,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					},
 				],
 			},
-		],
-		navSecondary: [
+			{
+				title: 'Admin',
+				url: '/admin',
+				icon: Shield,
+				isActive: pathname.startsWith('/admin'),
+				items: [
+					{
+						title: 'Dashboard',
+						url: '/admin',
+					},
+					{
+						title: 'Users',
+						url: '/admin/users',
+					},
+					{
+						title: 'Audit Logs',
+						url: '/admin/audit',
+					},
+				],
+			},
 			{
 				title: 'Support',
 				url: EMAIL_URL_LINK,
