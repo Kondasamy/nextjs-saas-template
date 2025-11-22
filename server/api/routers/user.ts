@@ -40,7 +40,11 @@ export const userRouter = createTRPCRouter({
 		.input(
 			z.object({
 				name: z.string().min(1).max(100).optional(),
-				image: z.string().url().optional(),
+				image: z
+					.string()
+					.optional()
+					.transform((val) => (val === '' ? undefined : val))
+					.pipe(z.string().url().optional()),
 				bio: z.string().max(500).optional(),
 				timezone: z.string().optional(),
 				language: z.string().optional(),
