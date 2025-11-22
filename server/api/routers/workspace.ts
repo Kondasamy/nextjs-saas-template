@@ -52,8 +52,8 @@ export const workspaceRouter = createTRPCRouter({
 				},
 			})
 
-			// Create the Owner role
-			const role = await tx.role.create({
+			// Create default roles
+			const ownerRole = await tx.role.create({
 				data: {
 					organizationId: organization.id,
 					name: 'Owner',
@@ -63,12 +63,50 @@ export const workspaceRouter = createTRPCRouter({
 				},
 			})
 
-			// Create the membership
+			await tx.role.create({
+				data: {
+					organizationId: organization.id,
+					name: 'Admin',
+					description: 'Can manage members and settings',
+					permissions: [
+						'member:read',
+						'member:create',
+						'member:update',
+						'member:delete',
+						'role:read',
+						'workspace:read',
+						'workspace:update',
+					],
+					isSystem: true,
+				},
+			})
+
+			await tx.role.create({
+				data: {
+					organizationId: organization.id,
+					name: 'Member',
+					description: 'Can create and edit resources',
+					permissions: ['member:read', 'workspace:read'],
+					isSystem: true,
+				},
+			})
+
+			await tx.role.create({
+				data: {
+					organizationId: organization.id,
+					name: 'Viewer',
+					description: 'Read-only access',
+					permissions: ['member:read', 'workspace:read'],
+					isSystem: true,
+				},
+			})
+
+			// Create the membership with Owner role
 			await tx.organizationMember.create({
 				data: {
 					organizationId: organization.id,
 					userId: ctx.user.id,
-					roleId: role.id,
+					roleId: ownerRole.id,
 				},
 			})
 
@@ -216,8 +254,8 @@ export const workspaceRouter = createTRPCRouter({
 					},
 				})
 
-				// Create the Owner role
-				const role = await tx.role.create({
+				// Create default roles
+				const ownerRole = await tx.role.create({
 					data: {
 						organizationId: org.id,
 						name: 'Owner',
@@ -227,12 +265,50 @@ export const workspaceRouter = createTRPCRouter({
 					},
 				})
 
-				// Create the membership
+				await tx.role.create({
+					data: {
+						organizationId: org.id,
+						name: 'Admin',
+						description: 'Can manage members and settings',
+						permissions: [
+							'member:read',
+							'member:create',
+							'member:update',
+							'member:delete',
+							'role:read',
+							'workspace:read',
+							'workspace:update',
+						],
+						isSystem: true,
+					},
+				})
+
+				await tx.role.create({
+					data: {
+						organizationId: org.id,
+						name: 'Member',
+						description: 'Can create and edit resources',
+						permissions: ['member:read', 'workspace:read'],
+						isSystem: true,
+					},
+				})
+
+				await tx.role.create({
+					data: {
+						organizationId: org.id,
+						name: 'Viewer',
+						description: 'Read-only access',
+						permissions: ['member:read', 'workspace:read'],
+						isSystem: true,
+					},
+				})
+
+				// Create the membership with Owner role
 				await tx.organizationMember.create({
 					data: {
 						organizationId: org.id,
 						userId: ctx.user.id,
-						roleId: role.id,
+						roleId: ownerRole.id,
 					},
 				})
 
@@ -1161,6 +1237,8 @@ export const workspaceRouter = createTRPCRouter({
 
 				// Clone roles
 				const roleMapping: Record<string, string> = {}
+				let ownerRole = null
+
 				for (const role of sourceRoles) {
 					const newRole = await tx.role.create({
 						data: {
@@ -1172,16 +1250,14 @@ export const workspaceRouter = createTRPCRouter({
 						},
 					})
 					roleMapping[role.id] = newRole.id
+
+					// Track the Owner role if we cloned it
+					if (role.name === 'Owner' || role.permissions.includes('*')) {
+						ownerRole = newRole
+					}
 				}
 
-				// Find or create Owner role for current user
-				let ownerRole = await tx.role.findFirst({
-					where: {
-						organizationId: organization.id,
-						permissions: { has: '*' },
-					},
-				})
-
+				// If no Owner role was cloned, create one
 				if (!ownerRole) {
 					ownerRole = await tx.role.create({
 						data: {

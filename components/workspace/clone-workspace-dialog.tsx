@@ -21,18 +21,32 @@ import { useWorkspace } from '@/lib/workspace/workspace-context'
 
 export function CloneWorkspaceDialog() {
 	const router = useRouter()
-	const { currentWorkspace } = useWorkspace()
+	const { currentWorkspace, switchWorkspace } = useWorkspace()
 	const [open, setOpen] = useState(false)
 	const [newName, setNewName] = useState('')
 	const [newSlug, setNewSlug] = useState('')
+	const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
+	const utils = trpc.useUtils()
 
 	const cloneWorkspace = trpc.workspace.cloneWorkspace.useMutation({
-		onSuccess: () => {
+		onSuccess: async (data) => {
 			toast.success('Workspace cloned successfully!')
 			setOpen(false)
 			setNewName('')
 			setNewSlug('')
-			router.push(`/`)
+			setIsSlugManuallyEdited(false)
+
+			// Wait for workspace list to refetch first
+			await utils.workspace.list.refetch()
+
+			// Now switch to the newly cloned workspace (it's in the list now)
+			if (data.workspace?.id) {
+				switchWorkspace(data.workspace.id)
+			}
+
+			// Invalidate all other queries and refresh
+			void utils.invalidate()
+			router.refresh()
 		},
 		onError: (error) => {
 			toast.error(error.message || 'Failed to clone workspace')
@@ -57,10 +71,10 @@ export function CloneWorkspaceDialog() {
 		})
 	}
 
-	// Auto-generate slug from name
+	// Auto-generate slug from name (only if not manually edited)
 	const handleNameChange = (value: string) => {
 		setNewName(value)
-		if (!newSlug) {
+		if (!isSlugManuallyEdited) {
 			const slug = value
 				.toLowerCase()
 				.replace(/[^a-z0-9]+/g, '-')
@@ -70,12 +84,28 @@ export function CloneWorkspaceDialog() {
 		}
 	}
 
+	// Handle manual slug changes
+	const handleSlugChange = (value: string) => {
+		setNewSlug(value)
+		setIsSlugManuallyEdited(true)
+	}
+
 	if (!currentWorkspace) {
 		return null
 	}
 
+	const handleOpenChange = (isOpen: boolean) => {
+		setOpen(isOpen)
+		if (!isOpen) {
+			// Reset form when closing
+			setNewName('')
+			setNewSlug('')
+			setIsSlugManuallyEdited(false)
+		}
+	}
+
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
 				<Button variant="outline">
 					<Copy className="mr-2 h-4 w-4" />
@@ -119,8 +149,8 @@ export function CloneWorkspaceDialog() {
 							id="slug"
 							placeholder="my-workspace"
 							value={newSlug}
-							onChange={(e) => setNewSlug(e.target.value)}
-							pattern="[a-z0-9-]+"
+							onChange={(e) => handleSlugChange(e.target.value)}
+							pattern="[a-z0-9\-]+"
 						/>
 						<p className="text-xs text-muted-foreground">
 							Only lowercase letters, numbers, and hyphens allowed

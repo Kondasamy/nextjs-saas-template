@@ -27,6 +27,8 @@ interface RoleEditorDialogProps {
 	roleDescription?: string
 	rolePermissions?: string[]
 	onSuccess?: () => void
+	open?: boolean
+	onOpenChange?: (open: boolean) => void
 }
 
 export function RoleEditorDialog({
@@ -36,14 +38,23 @@ export function RoleEditorDialog({
 	roleDescription: initialDescription,
 	rolePermissions: initialPermissions,
 	onSuccess,
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange,
 }: RoleEditorDialogProps) {
 	const { currentWorkspace } = useWorkspace()
-	const [open, setOpen] = useState(false)
+	const [internalOpen, setInternalOpen] = useState(false)
 	const [name, setName] = useState(initialName || '')
 	const [description, setDescription] = useState(initialDescription || '')
 	const [permissions, setPermissions] = useState<string[]>(
 		initialPermissions || []
 	)
+
+	// Use controlled state if provided, otherwise use internal state
+	const open = controlledOpen !== undefined ? controlledOpen : internalOpen
+	const setOpen =
+		controlledOnOpenChange !== undefined
+			? controlledOnOpenChange
+			: setInternalOpen
 
 	const createRole = trpc.permissions.createRole.useMutation({
 		onSuccess: () => {

@@ -110,6 +110,13 @@ export const permissionsRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'NOT_FOUND' })
 			}
 
+			if (role.isSystem) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Cannot modify system role',
+				})
+			}
+
 			const membership = role.organization.members[0]
 			if (!membership) {
 				throw new TRPCError({ code: 'FORBIDDEN' })

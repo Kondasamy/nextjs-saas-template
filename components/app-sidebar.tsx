@@ -69,13 +69,19 @@ function WorkspaceSwitcherMenu() {
 	const utils = trpc.useUtils()
 
 	const createWorkspace = trpc.workspace.create.useMutation({
-		onSuccess: (data) => {
+		onSuccess: async (data) => {
 			toast.success('Workspace created successfully')
 			setShowCreateDialog(false)
 			setNewWorkspaceName('')
 			setNewWorkspaceSlug('')
-			void utils.workspace.list.invalidate()
+
+			// Wait for workspace list to refetch first
+			await utils.workspace.list.refetch()
+
+			// Now switch to the newly created workspace (it's in the list now)
 			switchWorkspace(data.id)
+
+			// Invalidate all other queries and refresh
 			void utils.invalidate()
 			router.refresh()
 		},

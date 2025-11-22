@@ -43,11 +43,16 @@ export function InviteMemberDialog({
 }: InviteMemberDialogProps) {
 	const [open, setOpen] = useState(false)
 
+	// Fetch roles from database
+	const { data: roles = [] } = trpc.permissions.listRoles.useQuery({
+		organizationId,
+	})
+
 	const form = useForm<InviteFormData>({
 		resolver: zodResolver(inviteSchema),
 		defaultValues: {
 			email: '',
-			roleId: 'member',
+			roleId: '',
 		},
 	})
 
@@ -112,42 +117,22 @@ export function InviteMemberDialog({
 							value={form.watch('roleId')}
 							onValueChange={(value) => form.setValue('roleId', value)}
 						>
-							<SelectTrigger>
+							<SelectTrigger className="min-h-[45px]">
 								<SelectValue placeholder="Select a role" />
 							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="owner">
-									<div className="flex flex-col items-start">
-										<span className="font-medium">Owner</span>
-										<span className="text-xs text-muted-foreground">
-											Full access to everything
-										</span>
-									</div>
-								</SelectItem>
-								<SelectItem value="admin">
-									<div className="flex flex-col items-start">
-										<span className="font-medium">Admin</span>
-										<span className="text-xs text-muted-foreground">
-											Can manage members and settings
-										</span>
-									</div>
-								</SelectItem>
-								<SelectItem value="member">
-									<div className="flex flex-col items-start">
-										<span className="font-medium">Member</span>
-										<span className="text-xs text-muted-foreground">
-											Can create and edit resources
-										</span>
-									</div>
-								</SelectItem>
-								<SelectItem value="viewer">
-									<div className="flex flex-col items-start">
-										<span className="font-medium">Viewer</span>
-										<span className="text-xs text-muted-foreground">
-											Read-only access
-										</span>
-									</div>
-								</SelectItem>
+							<SelectContent position="popper" sideOffset={5}>
+								{roles.map((role) => (
+									<SelectItem key={role.id} value={role.id}>
+										<div className="flex flex-col items-start">
+											<span className="font-medium">{role.name}</span>
+											{role.description && (
+												<span className="text-xs text-muted-foreground">
+													{role.description}
+												</span>
+											)}
+										</div>
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 						{form.formState.errors.roleId && (

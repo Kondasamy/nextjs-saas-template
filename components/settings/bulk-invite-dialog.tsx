@@ -31,7 +31,7 @@ interface BulkInviteDialogProps {
 export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 	const [open, setOpen] = useState(false)
 	const [emailsText, setEmailsText] = useState('')
-	const [roleId, setRoleId] = useState('member')
+	const [roleId, setRoleId] = useState('')
 	const [parsedEmails, setParsedEmails] = useState<string[]>([])
 	const [showResults, setShowResults] = useState(false)
 	const [results, setResults] = useState<{
@@ -102,17 +102,24 @@ export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 		})
 	}
 
+	const handleOpenChange = (isOpen: boolean) => {
+		setOpen(isOpen)
+		if (!isOpen) {
+			// Only reset when closing
+			setEmailsText('')
+			setParsedEmails([])
+			setResults(null)
+			setShowResults(false)
+			setRoleId('')
+		}
+	}
+
 	const handleClose = () => {
 		setOpen(false)
-		setEmailsText('')
-		setParsedEmails([])
-		setResults(null)
-		setShowResults(false)
-		setRoleId('member')
 	}
 
 	return (
-		<Dialog open={open} onOpenChange={handleClose}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
 				<Button variant="outline">
 					<Users className="mr-2 h-4 w-4" />
@@ -169,10 +176,10 @@ or one email per line"
 								Role <span className="text-destructive">*</span>
 							</Label>
 							<Select value={roleId} onValueChange={setRoleId}>
-								<SelectTrigger>
+								<SelectTrigger className="min-h-[45px]">
 									<SelectValue placeholder="Select a role" />
 								</SelectTrigger>
-								<SelectContent>
+								<SelectContent position="popper" sideOffset={5}>
 									{roles.map((role) => (
 										<SelectItem key={role.id} value={role.id}>
 											<div className="flex flex-col items-start">
