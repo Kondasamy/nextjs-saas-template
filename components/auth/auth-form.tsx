@@ -124,7 +124,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 				onSuccess()
 			} else {
 				// Default redirect: check for redirect query param or go to dashboard
-				const redirect = searchParams.get('redirect') || '/dashboard'
+				const redirect = searchParams.get('redirect') || '/'
 				router.push(redirect)
 			}
 		} catch (error) {
@@ -181,7 +181,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 						if (onSuccess) {
 							onSuccess()
 						} else {
-							const redirect = searchParams.get('redirect') || '/dashboard'
+							const redirect = searchParams.get('redirect') || '/'
 							router.push(redirect)
 						}
 						return

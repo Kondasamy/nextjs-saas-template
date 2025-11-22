@@ -13,9 +13,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
 	const { token } = await params
 	const session = await auth()
 
-	// If not authenticated, redirect to sign-in with redirect back to invite page
+	// If not authenticated, redirect to login with redirect back to invite page
 	if (!session) {
-		redirect(`/auth/signin?redirect=/invite/${token}`)
+		redirect(`/login?redirect=/invite/${token}`)
 	}
 
 	// Fetch invitation details

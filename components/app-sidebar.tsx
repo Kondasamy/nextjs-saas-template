@@ -53,8 +53,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { useAuth } from '@/hooks/use-auth'
-import { EMAIL_URL, EMAIL_URL_LINK, IMAGE_URL, NAME } from '@/lib/constants'
+import { EMAIL_URL_LINK } from '@/lib/constants'
 import { trpc } from '@/lib/trpc/client'
 import { useWorkspace } from '@/lib/workspace/workspace-context'
 
@@ -265,12 +264,13 @@ function WorkspaceSwitcherMenu() {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname()
-	const { user } = useAuth()
+
+	// Get full user data from database via tRPC
+	// No need to check authUser first - tRPC handles authentication
+	const { data: user } = trpc.user.getCurrent.useQuery()
 
 	// Check if user is admin via tRPC
-	const { data: isAdmin = false } = trpc.user.isAdmin.useQuery(undefined, {
-		enabled: !!user,
-	})
+	const { data: isAdmin = false } = trpc.user.isAdmin.useQuery()
 
 	const navSecondaryItems: Array<{
 		title: string
@@ -280,22 +280,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		items?: Array<{ title: string; url: string }>
 	}> = [
 		{
-			title: 'Workspace',
-			url: '/workspace/settings',
-			icon: CommandIcon,
-			isActive: pathname.startsWith('/workspace'),
-			items: [
-				{
-					title: 'Settings',
-					url: '/workspace/settings',
-				},
-			],
-		},
-		{
 			title: 'Settings',
 			url: '/settings/profile',
 			icon: Settings2,
-			isActive: pathname.startsWith('/settings'),
+			isActive:
+				pathname.startsWith('/settings') || pathname.startsWith('/workspace'),
 			items: [
 				{
 					title: 'Profile',
@@ -316,6 +305,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				{
 					title: 'Notifications',
 					url: '/settings/notifications',
+				},
+				{
+					title: 'Workspace Settings',
+					url: '/workspace/settings',
+				},
+				{
+					title: 'Roles & Permissions',
+					url: '/workspace/roles',
+				},
+				{
+					title: 'API Keys',
+					url: '/workspace/api-keys',
 				},
 			],
 		},
@@ -368,9 +369,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const data = {
 		user: {
-			name: user?.name || NAME,
-			email: user?.email || EMAIL_URL,
-			avatar: user?.image || IMAGE_URL,
+			name: user?.name || 'User',
+			email: user?.email || 'user@example.com',
+			avatar: user?.image || '',
 		},
 		navMain: [
 			{

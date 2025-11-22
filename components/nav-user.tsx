@@ -1,11 +1,14 @@
 'use client'
 
-import { ChevronsUpDown } from 'lucide-react'
+import { ChevronsUpDown, LogOut, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -14,6 +17,7 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from '@/components/ui/sidebar'
+import { signOut } from '@/lib/auth/client'
 
 export function NavUser({
 	user,
@@ -25,6 +29,13 @@ export function NavUser({
 	}
 }) {
 	const { isMobile } = useSidebar()
+	const router = useRouter()
+
+	const handleSignOut = async () => {
+		await signOut()
+		router.push('/login')
+		router.refresh()
+	}
 
 	return (
 		<SidebarMenu>
@@ -51,7 +62,7 @@ export function NavUser({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-						side={isMobile ? 'bottom' : 'right'}
+						side={isMobile ? 'bottom' : 'top'}
 						align="end"
 						sideOffset={4}
 					>
@@ -69,6 +80,21 @@ export function NavUser({
 								</div>
 							</div>
 						</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							onClick={() => router.push('/settings/profile')}
+							className="cursor-pointer"
+						>
+							<User className="mr-2 h-4 w-4" />
+							<span>Profile Settings</span>
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={handleSignOut}
+							className="cursor-pointer"
+						>
+							<LogOut className="mr-2 h-4 w-4" />
+							<span>Log out</span>
+						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</SidebarMenuItem>
