@@ -1,5 +1,7 @@
 'use client'
 
+import { BulkInviteDialog } from '@/components/settings/bulk-invite-dialog'
+import { InviteLinksTable } from '@/components/settings/invite-links-table'
 import { InviteMemberDialog } from '@/components/settings/invite-member-dialog'
 import { PendingInvitations } from '@/components/settings/pending-invitations'
 import { TeamMembersTable } from '@/components/settings/team-members-table'
@@ -48,7 +50,10 @@ export function TeamSettingsContent() {
 						Manage team members for {currentWorkspace.name}
 					</p>
 				</div>
-				<InviteMemberDialog organizationId={currentWorkspace.id} />
+				<div className="flex gap-2">
+					<BulkInviteDialog organizationId={currentWorkspace.id} />
+					<InviteMemberDialog organizationId={currentWorkspace.id} />
+				</div>
 			</div>
 
 			<Card>
@@ -72,6 +77,18 @@ export function TeamSettingsContent() {
 				</CardHeader>
 				<CardContent>
 					<PendingInvitations organizationId={currentWorkspace.id} />
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Invitation Links</CardTitle>
+					<CardDescription>
+						Create shareable links that anyone can use to join your workspace
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<InviteLinksTable />
 				</CardContent>
 			</Card>
 		</div>

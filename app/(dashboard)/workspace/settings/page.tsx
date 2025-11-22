@@ -5,6 +5,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
+import { ArchiveWorkspaceDialog } from '@/components/workspace/archive-workspace-dialog'
+import { CloneWorkspaceDialog } from '@/components/workspace/clone-workspace-dialog'
+import { UsageDashboard } from '@/components/workspace/usage-dashboard'
 import { WorkspaceLogoUpload } from '@/components/workspace/workspace-logo-upload'
 import { WorkspaceSettings } from '@/components/workspace/workspace-settings'
 import { requireAuth } from '@/lib/auth/auth-helpers'
@@ -20,6 +23,8 @@ export default async function WorkspaceSettingsPage() {
 					Manage your workspace details and branding
 				</p>
 			</div>
+
+			<UsageDashboard />
 
 			<Card>
 				<CardHeader>
@@ -43,6 +48,40 @@ export default async function WorkspaceSettingsPage() {
 				</CardHeader>
 				<CardContent>
 					<WorkspaceSettings />
+				</CardContent>
+			</Card>
+
+			<Card className="border-destructive/50">
+				<CardHeader>
+					<CardTitle className="text-destructive">Danger Zone</CardTitle>
+					<CardDescription>
+						Advanced actions that can affect your workspace
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="flex items-center justify-between rounded-lg border p-4">
+						<div className="space-y-1">
+							<h3 className="text-sm font-medium">Clone this workspace</h3>
+							<p className="text-sm text-muted-foreground">
+								Create a copy with all roles and settings. Members will not be
+								copied.
+							</p>
+						</div>
+						<CloneWorkspaceDialog />
+					</div>
+
+					<div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
+						<div className="space-y-1">
+							<h3 className="text-sm font-medium text-destructive">
+								Archive this workspace
+							</h3>
+							<p className="text-sm text-muted-foreground">
+								Hide this workspace from your workspace switcher. You can
+								restore it later.
+							</p>
+						</div>
+						<ArchiveWorkspaceDialog />
+					</div>
 				</CardContent>
 			</Card>
 		</div>

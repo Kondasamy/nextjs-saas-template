@@ -94,9 +94,9 @@ export function ProfileSettingsForm() {
 			form.reset({
 				name: user.name ?? '',
 				image: user.image ?? '',
-				bio: (user as any).bio ?? '',
-				timezone: (user as any).timezone ?? '',
-				language: (user as any).language ?? 'en',
+				bio: user.bio ?? '',
+				timezone: user.timezone ?? '',
+				language: user.language ?? 'en',
 			})
 			setPreviewImage(user.image ?? null)
 		}

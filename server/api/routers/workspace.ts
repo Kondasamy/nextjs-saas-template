@@ -84,7 +84,12 @@ export const workspaceRouter = createTRPCRouter({
 		}
 
 		const memberships = await ctx.prisma.organizationMember.findMany({
-			where: { userId: ctx.user.id },
+			where: {
+				userId: ctx.user.id,
+				organization: {
+					archived: false, // Exclude archived workspaces
+				},
+			},
 			include: {
 				organization: true,
 				role: true,
@@ -97,6 +102,38 @@ export const workspaceRouter = createTRPCRouter({
 			slug: m.organization.slug,
 			description: m.organization.description,
 			logo: m.organization.logo,
+			role: m.role,
+			joinedAt: m.joinedAt,
+		}))
+	}),
+
+	listArchived: protectedProcedure.query(async ({ ctx }) => {
+		if (!ctx.user) {
+			throw new TRPCError({ code: 'UNAUTHORIZED' })
+		}
+
+		const memberships = await ctx.prisma.organizationMember.findMany({
+			where: {
+				userId: ctx.user.id,
+				organization: {
+					archived: true, // Only archived workspaces
+				},
+			},
+			include: {
+				organization: true,
+				role: true,
+			},
+		})
+
+		return memberships.map((m) => ({
+			id: m.organization.id,
+			name: m.organization.name,
+			slug: m.organization.slug,
+			description: m.organization.description,
+			logo: m.organization.logo,
+			archived: m.organization.archived,
+			archivedAt: m.organization.archivedAt,
+			archivedBy: m.organization.archivedBy,
 			role: m.role,
 			joinedAt: m.joinedAt,
 		}))
@@ -675,5 +712,611 @@ export const workspaceRouter = createTRPCRouter({
 			// TODO: Send email notifications to both users
 
 			return result
+		}),
+
+	// Bulk Operations
+	bulkUpdateMemberRoles: protectedProcedure
+		.input(
+			z.object({
+				organizationId: z.string(),
+				updates: z.array(
+					z.object({
+						userId: z.string(),
+						roleId: z.string(),
+					})
+				),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check permissions
+			const membership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!membership) {
+				throw new TRPCError({ code: 'FORBIDDEN' })
+			}
+
+			const hasPermission =
+				membership.role.permissions.includes('*') ||
+				membership.role.permissions.includes('member:manage')
+
+			if (!hasPermission) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions to manage members',
+				})
+			}
+
+			// Process all updates
+			const results = await Promise.allSettled(
+				input.updates.map(async (update) => {
+					// Verify target member exists
+					const targetMember = await ctx.prisma.organizationMember.findFirst({
+						where: {
+							organizationId: input.organizationId,
+							userId: update.userId,
+						},
+						include: {
+							user: true,
+							role: true,
+						},
+					})
+
+					if (!targetMember) {
+						throw new Error(`Member ${update.userId} not found`)
+					}
+
+					// Verify role exists
+					const role = await ctx.prisma.role.findUnique({
+						where: { id: update.roleId },
+					})
+
+					if (!role || role.organizationId !== input.organizationId) {
+						throw new Error('Invalid role')
+					}
+
+					// Prevent changing your own role
+					if (update.userId === ctx.user.id) {
+						throw new Error('Cannot change your own role')
+					}
+
+					// Update role
+					return ctx.prisma.organizationMember.update({
+						where: { id: targetMember.id },
+						data: { roleId: update.roleId },
+					})
+				})
+			)
+
+			// Create audit log
+			await ctx.prisma.auditLog.create({
+				data: {
+					userId: ctx.user.id,
+					organizationId: input.organizationId,
+					action: 'bulk_members_role_updated',
+					metadata: JSON.stringify({
+						totalUpdates: input.updates.length,
+						successCount: results.filter((r) => r.status === 'fulfilled')
+							.length,
+						failCount: results.filter((r) => r.status === 'rejected').length,
+					}),
+				},
+			})
+
+			// Format results
+			const successful = results
+				.filter((r) => r.status === 'fulfilled')
+				.map((r) => r.status === 'fulfilled' && r.value)
+
+			const failed = results
+				.map((r, i) =>
+					r.status === 'rejected'
+						? {
+								userId: input.updates[i].userId,
+								reason: (r as any).reason.message,
+							}
+						: undefined
+				)
+				.filter(Boolean)
+
+			return {
+				success: true,
+				totalCount: input.updates.length,
+				successCount: successful.length,
+				failCount: failed.length,
+				failed,
+			}
+		}),
+
+	bulkRemoveMembers: protectedProcedure
+		.input(
+			z.object({
+				organizationId: z.string(),
+				userIds: z.array(z.string()),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check permissions
+			const membership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!membership) {
+				throw new TRPCError({ code: 'FORBIDDEN' })
+			}
+
+			const hasPermission =
+				membership.role.permissions.includes('*') ||
+				membership.role.permissions.includes('member:remove')
+
+			if (!hasPermission) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Insufficient permissions to remove members',
+				})
+			}
+
+			// Check if trying to remove self
+			if (input.userIds.includes(ctx.user.id)) {
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Cannot remove yourself from the workspace',
+				})
+			}
+
+			// Process all removals
+			const results = await Promise.allSettled(
+				input.userIds.map(async (userId) => {
+					// Verify member exists
+					const targetMember = await ctx.prisma.organizationMember.findFirst({
+						where: {
+							organizationId: input.organizationId,
+							userId,
+						},
+						include: {
+							user: true,
+							role: true,
+						},
+					})
+
+					if (!targetMember) {
+						throw new Error(`Member ${userId} not found`)
+					}
+
+					// Check if removing the last owner
+					if (targetMember.role.permissions.includes('*')) {
+						const ownerCount = await ctx.prisma.organizationMember.count({
+							where: {
+								organizationId: input.organizationId,
+								role: {
+									permissions: {
+										has: '*',
+									},
+								},
+							},
+						})
+
+						if (ownerCount === 1) {
+							throw new Error('Cannot remove the last owner')
+						}
+					}
+
+					// Remove member
+					return ctx.prisma.organizationMember.delete({
+						where: { id: targetMember.id },
+					})
+				})
+			)
+
+			// Create audit log
+			await ctx.prisma.auditLog.create({
+				data: {
+					userId: ctx.user.id,
+					organizationId: input.organizationId,
+					action: 'bulk_members_removed',
+					metadata: JSON.stringify({
+						totalRemovals: input.userIds.length,
+						successCount: results.filter((r) => r.status === 'fulfilled')
+							.length,
+						failCount: results.filter((r) => r.status === 'rejected').length,
+					}),
+				},
+			})
+
+			// Format results
+			const successful = results
+				.filter((r) => r.status === 'fulfilled')
+				.map((r) => r.status === 'fulfilled' && r.value)
+
+			const failed = results
+				.map((r, i) =>
+					r.status === 'rejected'
+						? { userId: input.userIds[i], reason: (r as any).reason.message }
+						: undefined
+				)
+				.filter(Boolean)
+
+			return {
+				success: true,
+				totalCount: input.userIds.length,
+				successCount: successful.length,
+				failCount: failed.length,
+				failed,
+			}
+		}),
+
+	// Workspace Usage Metrics
+	getWorkspaceUsage: protectedProcedure
+		.input(z.object({ organizationId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check if user is member
+			const membership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+			})
+
+			if (!membership) {
+				throw new TRPCError({ code: 'FORBIDDEN' })
+			}
+
+			// Get workspace info
+			const organization = await ctx.prisma.organization.findUnique({
+				where: { id: input.organizationId },
+			})
+
+			if (!organization) {
+				throw new TRPCError({ code: 'NOT_FOUND' })
+			}
+
+			// Calculate metrics
+			const [
+				memberCount,
+				pendingInvitationsCount,
+				activeInviteLinksCount,
+				recentActivityCount,
+				activeMembersCount,
+			] = await Promise.all([
+				// Total members
+				ctx.prisma.organizationMember.count({
+					where: { organizationId: input.organizationId },
+				}),
+
+				// Pending invitations
+				ctx.prisma.invitation.count({
+					where: {
+						organizationId: input.organizationId,
+						status: 'pending',
+						type: 'email',
+					},
+				}),
+
+				// Active invite links
+				ctx.prisma.invitation.count({
+					where: {
+						organizationId: input.organizationId,
+						status: 'pending',
+						type: 'link',
+					},
+				}),
+
+				// Activity in last 30 days
+				ctx.prisma.auditLog.count({
+					where: {
+						organizationId: input.organizationId,
+						createdAt: {
+							gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+						},
+					},
+				}),
+
+				// Active members (had session in last 30 days)
+				ctx.prisma.organizationMember.count({
+					where: {
+						organizationId: input.organizationId,
+						user: {
+							sessions: {
+								some: {
+									lastActiveAt: {
+										gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+									},
+								},
+							},
+						},
+					},
+				}),
+			])
+
+			return {
+				workspace: {
+					id: organization.id,
+					name: organization.name,
+					createdAt: organization.createdAt,
+				},
+				metrics: {
+					memberCount,
+					pendingInvitationsCount,
+					activeInviteLinksCount,
+					recentActivityCount,
+					activeMembersCount,
+					activePercentage:
+						memberCount > 0
+							? Math.round((activeMembersCount / memberCount) * 100)
+							: 0,
+				},
+			}
+		}),
+
+	// Workspace Cloning (Templates)
+	cloneWorkspace: protectedProcedure
+		.input(
+			z.object({
+				organizationId: z.string(),
+				newName: z.string().min(1).max(100),
+				newSlug: z
+					.string()
+					.min(1)
+					.max(50)
+					.regex(/^[a-z0-9-]+$/),
+			})
+		)
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check if user is member of source workspace
+			const membership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+			})
+
+			if (!membership) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Not a member of source workspace',
+				})
+			}
+
+			// Get source organization
+			const sourceOrg = await ctx.prisma.organization.findUnique({
+				where: { id: input.organizationId },
+			})
+
+			if (!sourceOrg) {
+				throw new TRPCError({ code: 'NOT_FOUND' })
+			}
+
+			// Check if new slug is available
+			const existingOrg = await ctx.prisma.organization.findUnique({
+				where: { slug: input.newSlug },
+			})
+
+			if (existingOrg) {
+				throw new TRPCError({
+					code: 'CONFLICT',
+					message: 'Workspace slug already exists',
+				})
+			}
+
+			// Get all roles from source workspace
+			const sourceRoles = await ctx.prisma.role.findMany({
+				where: { organizationId: input.organizationId },
+			})
+
+			// Clone workspace using transaction
+			const newOrg = await ctx.prisma.$transaction(async (tx) => {
+				// Create new organization with copied settings
+				const organization = await tx.organization.create({
+					data: {
+						name: input.newName,
+						slug: input.newSlug,
+						description: sourceOrg.description,
+						logo: sourceOrg.logo,
+					},
+				})
+
+				// Clone roles
+				const roleMapping: Record<string, string> = {}
+				for (const role of sourceRoles) {
+					const newRole = await tx.role.create({
+						data: {
+							organizationId: organization.id,
+							name: role.name,
+							description: role.description,
+							permissions: role.permissions,
+							isSystem: role.isSystem,
+						},
+					})
+					roleMapping[role.id] = newRole.id
+				}
+
+				// Find or create Owner role for current user
+				let ownerRole = await tx.role.findFirst({
+					where: {
+						organizationId: organization.id,
+						permissions: { has: '*' },
+					},
+				})
+
+				if (!ownerRole) {
+					ownerRole = await tx.role.create({
+						data: {
+							organizationId: organization.id,
+							name: 'Owner',
+							description: 'Workspace owner with full access',
+							permissions: ['*'],
+							isSystem: true,
+						},
+					})
+				}
+
+				// Add current user as owner
+				await tx.organizationMember.create({
+					data: {
+						organizationId: organization.id,
+						userId: ctx.user.id,
+						roleId: ownerRole.id,
+					},
+				})
+
+				// Create audit log
+				await tx.auditLog.create({
+					data: {
+						userId: ctx.user.id,
+						organizationId: organization.id,
+						action: 'workspace_created',
+						metadata: JSON.stringify({
+							clonedFrom: sourceOrg.id,
+							clonedFromName: sourceOrg.name,
+							rolesCloned: sourceRoles.length,
+						}),
+					},
+				})
+
+				return organization
+			})
+
+			return {
+				success: true,
+				workspace: newOrg,
+				message: 'Workspace cloned successfully',
+			}
+		}),
+
+	// Workspace Archiving
+	archiveWorkspace: protectedProcedure
+		.input(z.object({ organizationId: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check if user is owner
+			const membership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!membership || !membership.role.permissions.includes('*')) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Only owners can archive workspaces',
+				})
+			}
+
+			// Archive the workspace
+			const archivedWorkspace = await ctx.prisma.organization.update({
+				where: { id: input.organizationId },
+				data: {
+					archived: true,
+					archivedAt: new Date(),
+					archivedBy: ctx.user.id,
+				},
+			})
+
+			// Create audit log
+			await ctx.prisma.auditLog.create({
+				data: {
+					userId: ctx.user.id,
+					organizationId: input.organizationId,
+					action: 'workspace_archived',
+					metadata: JSON.stringify({
+						workspaceName: archivedWorkspace.name,
+						archivedAt: archivedWorkspace.archivedAt,
+					}),
+				},
+			})
+
+			return {
+				success: true,
+				message: 'Workspace archived successfully',
+			}
+		}),
+
+	unarchiveWorkspace: protectedProcedure
+		.input(z.object({ organizationId: z.string() }))
+		.mutation(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Check if user is owner
+			const membership = await ctx.prisma.organizationMember.findFirst({
+				where: {
+					organizationId: input.organizationId,
+					userId: ctx.user.id,
+				},
+				include: {
+					role: true,
+				},
+			})
+
+			if (!membership || !membership.role.permissions.includes('*')) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Only owners can unarchive workspaces',
+				})
+			}
+
+			// Unarchive the workspace
+			const unarchivedWorkspace = await ctx.prisma.organization.update({
+				where: { id: input.organizationId },
+				data: {
+					archived: false,
+					archivedAt: null,
+					archivedBy: null,
+				},
+			})
+
+			// Create audit log
+			await ctx.prisma.auditLog.create({
+				data: {
+					userId: ctx.user.id,
+					organizationId: input.organizationId,
+					action: 'workspace_unarchived',
+					metadata: JSON.stringify({
+						workspaceName: unarchivedWorkspace.name,
+					}),
+				},
+			})
+
+			return {
+				success: true,
+				message: 'Workspace unarchived successfully',
+			}
 		}),
 })

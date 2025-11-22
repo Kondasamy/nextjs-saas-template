@@ -113,6 +113,7 @@
 		"postcss": "^8",
 		"react-email": "^5.0.5",
 		"tailwindcss": "^4.0.0",
+		"ts-prune": "^0.10.3",
 		"typescript": "^5"
 	}
 }

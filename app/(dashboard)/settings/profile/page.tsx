@@ -1,3 +1,4 @@
+import { ProfileCompleteness } from '@/components/settings/profile-completeness'
 import { ProfileSettingsForm } from '@/components/settings/profile-settings-form'
 import { requireAuth } from '@/lib/auth/auth-helpers'
 
@@ -10,6 +11,7 @@ export default async function ProfileSettingsPage() {
 				<h1 className="text-3xl font-bold">Profile Settings</h1>
 				<p className="text-muted-foreground">Manage your profile information</p>
 			</div>
+			<ProfileCompleteness />
 			<ProfileSettingsForm />
 		</div>
 	)

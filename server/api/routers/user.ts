@@ -41,6 +41,9 @@ export const userRouter = createTRPCRouter({
 			z.object({
 				name: z.string().min(1).max(100).optional(),
 				image: z.string().url().optional(),
+				bio: z.string().max(500).optional(),
+				timezone: z.string().optional(),
+				language: z.string().optional(),
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -53,6 +56,9 @@ export const userRouter = createTRPCRouter({
 				data: {
 					name: input.name,
 					image: input.image,
+					bio: input.bio,
+					timezone: input.timezone,
+					language: input.language,
 				},
 			})
 		}),
@@ -780,6 +786,158 @@ export const userRouter = createTRPCRouter({
 			return {
 				success: true,
 				message: 'Passkey removed successfully',
+			}
+		}),
+
+	// GDPR: Export account data
+	exportAccountData: protectedProcedure.mutation(async ({ ctx }) => {
+		if (!ctx.user) {
+			throw new Error('Unauthorized')
+		}
+
+		// Gather all user data
+		const [profile, organizations, notifications, auditLogs, sessions] =
+			await Promise.all([
+				// Profile data
+				ctx.prisma.user.findUnique({
+					where: { id: ctx.user.id },
+					select: {
+						id: true,
+						email: true,
+						name: true,
+						image: true,
+						bio: true,
+						timezone: true,
+						language: true,
+						emailVerified: true,
+						createdAt: true,
+						updatedAt: true,
+					},
+				}),
+
+				// Organization memberships
+				ctx.prisma.organizationMember.findMany({
+					where: { userId: ctx.user.id },
+					include: {
+						organization: {
+							select: {
+								id: true,
+								name: true,
+								slug: true,
+								description: true,
+								createdAt: true,
+							},
+						},
+						role: {
+							select: {
+								id: true,
+								name: true,
+								permissions: true,
+							},
+						},
+					},
+				}),
+
+				// Notifications
+				ctx.prisma.notification.findMany({
+					where: { userId: ctx.user.id },
+					orderBy: { createdAt: 'desc' },
+					take: 100, // Limit to recent 100 notifications
+				}),
+
+				// Audit logs
+				ctx.prisma.auditLog.findMany({
+					where: { userId: ctx.user.id },
+					orderBy: { createdAt: 'desc' },
+					take: 100, // Limit to recent 100 audit logs
+				}),
+
+				// Active sessions
+				ctx.prisma.session.findMany({
+					where: { userId: ctx.user.id },
+					select: {
+						id: true,
+						deviceName: true,
+						ipAddress: true,
+						userAgent: true,
+						createdAt: true,
+						lastActiveAt: true,
+						expiresAt: true,
+					},
+				}),
+			])
+
+		// Format export data
+		const exportData = {
+			exportDate: new Date().toISOString(),
+			profile,
+			organizations: organizations.map((membership) => ({
+				organization: membership.organization,
+				role: membership.role,
+				joinedAt: membership.createdAt,
+			})),
+			notifications,
+			auditLogs: auditLogs.map((log) => ({
+				action: log.action,
+				metadata: log.metadata,
+				createdAt: log.createdAt,
+			})),
+			sessions,
+		}
+
+		// Create audit log for export request
+		await ctx.prisma.auditLog.create({
+			data: {
+				userId: ctx.user.id,
+				action: 'account_data_exported',
+				metadata: JSON.stringify({
+					timestamp: new Date().toISOString(),
+					recordCount: {
+						notifications: notifications.length,
+						auditLogs: auditLogs.length,
+						sessions: sessions.length,
+						organizations: organizations.length,
+					},
+				}),
+			},
+		})
+
+		return {
+			success: true,
+			data: exportData,
+			message: 'Account data exported successfully',
+		}
+	}),
+
+	// User Activity History
+	getUserActivityLog: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().min(1).max(100).default(50),
+				offset: z.number().min(0).default(0),
+			})
+		)
+		.query(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new Error('Unauthorized')
+			}
+
+			const [logs, total] = await Promise.all([
+				ctx.prisma.auditLog.findMany({
+					where: { userId: ctx.user.id },
+					orderBy: { createdAt: 'desc' },
+					take: input.limit,
+					skip: input.offset,
+				}),
+				ctx.prisma.auditLog.count({
+					where: { userId: ctx.user.id },
+				}),
+			])
+
+			return {
+				logs,
+				total,
+				hasMore: input.offset + input.limit < total,
 			}
 		}),
 })

@@ -18,6 +18,9 @@ model User {
 	name          String?
 	emailVerified Boolean   @default(false)
 	image         String?
+	bio           String?
+	timezone      String?   @default("UTC")
+	language      String?   @default("en")
 	createdAt     DateTime  @default(now())
 	updatedAt     DateTime  @updatedAt
 
@@ -33,6 +36,7 @@ model User {
 	auditLogs          AuditLog[]
 	twoFactorAuth      TwoFactorAuth?
 	passkeys           Passkey[]
+	apiKeys            APIKey[]
 
 	@@index([email])
 	@@map("users")
@@ -89,18 +93,22 @@ model Verification {
 }
 
 model Organization {
-	id          String   @id @default(cuid())
+	id          String    @id @default(cuid())
 	name        String
-	slug        String   @unique
+	slug        String    @unique
 	description String?
 	logo        String?
-	createdAt   DateTime @default(now())
-	updatedAt   DateTime @updatedAt
+	archived    Boolean   @default(false)
+	archivedAt  DateTime?
+	archivedBy  String?
+	createdAt   DateTime  @default(now())
+	updatedAt   DateTime  @updatedAt
 
 	// Relations
 	members     OrganizationMember[]
 	invitations Invitation[]
 	roles       Role[]
+	apiKeys     APIKey[]
 
 	@@index([slug])
 	@@map("organizations")
@@ -146,12 +154,15 @@ model Invitation {
 	id             String   @id @default(cuid())
 	organizationId String
 	organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-	email          String
+	email          String?
 	invitedById    String
 	invitedBy      User     @relation(fields: [invitedById], references: [id])
 	roleId         String
 	role           Role     @relation(fields: [roleId], references: [id])
 	token          String   @unique
+	type           String   @default("email") // email, link
+	maxUses        Int?     // null = unlimited for link type
+	usedCount      Int      @default(0)
 	status         String   @default("pending") // pending, accepted, expired
 	expiresAt      DateTime
 	acceptedAt     DateTime?
@@ -232,5 +243,24 @@ model SystemSettings {
 	updatedBy String?  // User ID who last updated the settings
 
 	@@map("system_settings")
+}
+
+model APIKey {
+	id             String        @id @default(cuid())
+	organizationId String
+	organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+	name           String
+	key            String        @unique
+	hashedKey      String        // Store hashed version for security
+	lastUsedAt     DateTime?
+	expiresAt      DateTime?
+	createdById    String
+	createdBy      User          @relation(fields: [createdById], references: [id], onDelete: Cascade)
+	createdAt      DateTime      @default(now())
+
+	@@index([organizationId])
+	@@index([key])
+	@@index([createdById])
+	@@map("api_keys")
 }
 

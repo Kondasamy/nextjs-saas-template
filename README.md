@@ -22,7 +22,23 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - Realtime subscriptions
   - Edge Functions support
 - **RBAC System** with 6-30+ permission levels
-- **Workspace Management** with multi-tenant architecture
+- **Workspace Management** with multi-tenant architecture:
+  - Workspace templates (clone workspaces with roles/permissions)
+  - Workspace archiving (archive/restore with audit logging)
+  - Invitation links (shareable links with usage limits)
+  - Bulk member operations (invite/update/remove multiple members)
+  - User activity history (paginated audit logs)
+  - Workspace usage metrics (member activity, invitations, analytics)
+- **Advanced Permission Management**:
+  - Permission browser with categorized permissions
+  - Role editor for custom roles
+  - Granular permission system (workspace, member, role, content, settings)
+  - Permission checker utilities
+- **API Key Management**:
+  - Secure API key generation with SHA-256 hashing
+  - Key expiration (7, 30, 90, 365 days, or never)
+  - Usage tracking (last used timestamp)
+  - One-time key display on creation
 - **Admin Dashboard**:
   - User management (search, ban/unban, delete)
   - User impersonation with audit logging
@@ -235,15 +251,16 @@ See `.env.local.example` for all required environment variables. Key variables:
 The project uses Prisma as the ORM. The schema includes:
 
 - Users (integrated with Better Auth)
-- Organizations/Workspaces
+- Organizations/Workspaces (with archiving support)
 - OrganizationMembers (many-to-many with roles)
 - Roles & Permissions (RBAC)
 - Sessions (device tracking)
-- Invitations
+- Invitations (email and link types with usage limits)
 - Notifications
 - AuditLogs
 - TwoFactorAuth
 - Passkeys
+- APIKeys (secure key management with SHA-256 hashing)
 
 ### Commands
 

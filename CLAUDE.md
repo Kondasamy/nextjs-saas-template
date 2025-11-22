@@ -118,14 +118,15 @@ export function Component() {
 ```
 
 **Available Routers**:
-- `user` - User operations (getCurrent, update)
-- `workspace` - Workspace/organization management
-- `permissions` - RBAC permission checks
-- `invitations` - Team invitations
+- `user` - User operations (getCurrent, update, exportAccountData, getUserActivityLog)
+- `workspace` - Workspace/organization management (cloneWorkspace, archiveWorkspace, unarchiveWorkspace, getWorkspaceUsage, bulkUpdateMemberRoles, bulkRemoveMembers)
+- `permissions` - RBAC permission checks (listRoles, createRole, updateRole, deleteRole)
+- `invitations` - Team invitations (createInviteLink, listInviteLinks, revokeInviteLink, acceptInviteLink, bulkInviteMembers)
 - `notifications` - Notification management
 - `storage` - File upload/download
 - `analytics` - Dashboard analytics (getStats, getUserGrowth, getActivityMetrics, getRecentActivities)
 - `admin` - Admin operations (getAllUsers, getSystemStats, getAuditLogs, deleteUser, updateUserStatus)
+- `apiKeys` - API key management (list, create, revoke, validate)
 
 ### Admin Dashboard Pattern
 
@@ -365,18 +366,107 @@ These are reusable motion components built with Framer Motion for enhanced UI in
 - **react-markdown + remark-gfm**: Markdown rendering
 - **Vercel Analytics**: User analytics integration
 
+## Advanced Workspace Features
+
+### Workspace Templates (Cloning)
+
+Clone workspaces with all settings, roles, and permissions:
+- `/workspace/settings` - "Clone Workspace" button in Danger Zone
+- `workspace.cloneWorkspace` tRPC procedure
+- Copies: workspace settings (name, description, logo), all roles with permissions
+- Does NOT copy: members, invitations, activity history
+- Creates audit log entry with metadata
+
+### Workspace Archiving
+
+Archive and restore workspaces:
+- `/workspace/settings` - "Archive Workspace" button in Danger Zone
+- `/settings/workspaces/archived` - View and restore archived workspaces
+- `workspace.archiveWorkspace` / `workspace.unarchiveWorkspace` procedures
+- `workspace.listArchived` - Lists user's archived workspaces
+- Archived workspaces are hidden from workspace switcher
+- Requires workspace name confirmation before archiving
+- Creates audit log entries for archive/unarchive actions
+
+### Advanced Permission Management
+
+Granular permission system with visual management:
+- `/workspace/roles` - Roles & Permissions management page
+- `lib/permissions/constants.ts` - Permission definitions grouped by category
+- `lib/permissions/checker.ts` - Permission checking utilities
+- Permission categories: Admin, Workspace, Members, Roles, Content, Settings
+- `PermissionBrowser` component - Visual permission selector with categories
+- `RoleEditorDialog` - Create/edit custom roles with permission selection
+- Supports wildcard `*` permission for full access
+
+### API Key Management
+
+Secure API key generation and management:
+- `/workspace/api-keys` - API Keys management page
+- `apiKeys` tRPC router with procedures: list, create, revoke, validate
+- Keys are SHA-256 hashed for secure storage
+- Only last 8 characters stored in plaintext for identification
+- Full key shown only once on creation
+- Support for expiration dates (7, 30, 90, 365 days, or never)
+- Usage tracking with `lastUsedAt` timestamp
+- Audit logging for all key operations
+
+### Invitation Links
+
+Shareable workspace invitation links:
+- `invitations.createInviteLink` - Generate shareable link with optional usage limits
+- `invitations.listInviteLinks` - View all active invitation links
+- `invitations.revokeInviteLink` - Revoke a link
+- `invitations.acceptInviteLink` - Accept invitation via link
+- `/invite/[token]` - Public invitation acceptance page
+- Supports unlimited or limited uses (maxUses)
+- Tracks usage count for link-type invitations
+- Expires after configurable days
+
+### Bulk Member Operations
+
+Efficient bulk operations for team management:
+- `invitations.bulkInviteMembers` - Invite multiple members via email list
+- `workspace.bulkUpdateMemberRoles` - Update multiple member roles
+- `workspace.bulkRemoveMembers` - Remove multiple members
+- Uses `Promise.allSettled` for partial success handling
+- Returns detailed results with successful and failed operations
+- Creates audit log entries with operation summary
+- Email parsing supports newlines, commas, semicolons, spaces
+
+### User Activity History
+
+Paginated activity log for users:
+- `user.getUserActivityLog` - Retrieve user's audit log with pagination
+- `/settings/account` - Activity Log section
+- Displays action labels, timestamps, IP addresses
+- Expandable metadata for detailed information
+- Pagination controls (Previous/Next)
+- Tracks workspace operations, security events, bulk actions
+
+### Workspace Usage Metrics
+
+Comprehensive workspace analytics:
+- `workspace.getWorkspaceUsage` - Calculate workspace metrics
+- `/workspace/settings` - Usage Dashboard at top of page
+- Metrics: member count, active members (30d), pending invitations
+- Active invite links count, recent activity count (30d)
+- Activity rate percentage with progress bar
+- Member engagement insights
+
 ## Database & Prisma Patterns
 
 **Schema Structure** (`prisma/schema.prisma`):
-- Users (integrated with Better Auth)
-- Organizations/Workspaces with multi-tenant support
+- Users (integrated with Better Auth, includes bio, timezone, language)
+- Organizations/Workspaces with multi-tenant support (includes archived, archivedAt, archivedBy)
 - OrganizationMembers (many-to-many with roles)
 - Roles & Permissions (RBAC)
 - Sessions with device tracking
-- Invitations for team members
+- Invitations for team members (supports email and link types with usage limits: type, maxUses, usedCount)
 - Notifications (in-app)
 - AuditLogs for activity tracking
 - TwoFactorAuth, Passkeys
+- APIKeys (secure key management with hashedKey, lastUsedAt, expiresAt)
 
 **Common Patterns**:
 ```typescript

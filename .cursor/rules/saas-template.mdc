@@ -18,7 +18,23 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - Enterprise SSO (SAML, OKTA)
 - **tRPC** for end-to-end type safety with React Query
 - **RBAC System** with 6-30+ permission levels (Owner, Admin, Member, Viewer roles)
-- **Workspace Management** with multi-tenant architecture
+- **Workspace Management** with multi-tenant architecture:
+  - Workspace templates (clone workspaces with roles/permissions)
+  - Workspace archiving (archive/restore with audit logging)
+  - Invitation links (shareable links with usage limits)
+  - Bulk member operations (invite/update/remove multiple members)
+  - User activity history (paginated audit logs)
+  - Workspace usage metrics (member activity, invitations, analytics)
+- **Advanced Permission Management**:
+  - Permission browser with categorized permissions
+  - Role editor for custom roles
+  - Granular permission system (workspace, member, role, content, settings)
+  - Permission checker utilities
+- **API Key Management**:
+  - Secure API key generation with SHA-256 hashing
+  - Key expiration (7, 30, 90, 365 days, or never)
+  - Usage tracking (last used timestamp)
+  - One-time key display on creation
 - **Admin Dashboard**:
   - User management (search, ban/unban, delete)
   - User impersonation with audit logging (1-hour sessions)
@@ -132,20 +148,28 @@ pnpm dev
 │   │   ├── login/, signup/, forgot-password/, etc.
 │   ├── (dashboard)/               # Protected dashboard routes
 │   │   ├── page.tsx               # Dashboard with analytics
+│   │   ├── workspace/             # Workspace-specific routes
+│   │   │   ├── settings/          # Workspace settings page
+│   │   │   ├── roles/             # Roles & Permissions management
+│   │   │   └── api-keys/          # API Keys management
 │   │   ├── workspaces/
 │   │   ├── notifications/
 │   │   └── settings/              # Settings pages (5 pages)
 │   │       ├── profile/
-│   │       ├── account/
+│   │       ├── account/           # Account settings with activity log
 │   │       ├── security/
 │   │       ├── team/
-│   │       └── notifications/
+│   │       ├── notifications/
+│   │       └── workspaces/        # Archived workspaces management
+│   │           └── archived/
 │   ├── (admin)/                   # Admin route group
 │   │   └── admin/
 │   │       ├── layout.tsx         # Admin layout with access control
 │   │       ├── page.tsx           # Admin dashboard
 │   │       ├── users/             # User management
 │   │       └── audit/             # Audit logs
+│   ├── invite/                    # Public invitation routes
+│   │   └── [token]/               # Accept invite link
 │   ├── features/                  # Features/Products section
 │   │   ├── [slug]/               # Dynamic feature pages
 │   │   └── data.ts               # Features data
@@ -181,7 +205,18 @@ pnpm dev
 │   │   └── notification-preferences.tsx
 │   ├── auth/                      # Authentication components
 │   ├── workspace/                 # Workspace management
+│   │   ├── api-keys-table.tsx
+│   │   ├── create-api-key-dialog.tsx
+│   │   ├── clone-workspace-dialog.tsx
+│   │   ├── archive-workspace-dialog.tsx
+│   │   ├── archived-workspaces.tsx
+│   │   ├── usage-dashboard.tsx
+│   │   ├── activity-log.tsx
+│   │   └── workspace-settings-form.tsx
 │   ├── rbac/                      # RBAC components
+│   │   ├── permission-browser.tsx
+│   │   ├── role-editor-dialog.tsx
+│   │   └── roles-table.tsx
 │   ├── notifications/             # Notification components
 │   ├── upload/                    # File upload components
 │   ├── user/                      # User components
@@ -208,8 +243,11 @@ pnpm dev
 │       ├── trpc.ts                # tRPC setup
 │       └── routers/               # tRPC routers
 │           ├── _app.ts            # Router aggregation
-│           ├── user.ts
-│           ├── workspace.ts
+│           ├── user.ts            # User operations, activity log
+│           ├── workspace.ts       # Workspace CRUD, cloning, archiving, usage
+│           ├── permissions.ts     # RBAC, roles, permissions
+│           ├── invitations.ts     # Invites, bulk operations, invite links
+│           ├── api-keys.ts        # API key management
 │           ├── analytics.ts       # Analytics router
 │           └── admin.ts           # Admin router
 ├── lib/                           # Utility functions
@@ -220,6 +258,9 @@ pnpm dev
 │   │   └── impersonation.ts       # User impersonation system
 │   ├── trpc/                      # tRPC client/server
 │   ├── rbac/                      # RBAC utilities
+│   ├── permissions/               # Permission system
+│   │   ├── constants.ts           # Permission definitions by category
+│   │   └── checker.ts             # Permission checking utilities
 │   ├── email/                     # Email utilities
 │   │   └── service.ts             # EmailService class
 │   ├── supabase/                  # Supabase clients

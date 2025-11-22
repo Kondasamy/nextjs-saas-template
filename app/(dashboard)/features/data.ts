@@ -150,9 +150,81 @@ export const FEATURES: Feature[] = [
 		category: 'workspace',
 		tags: ['RBAC', 'Access Control', 'UI'],
 	},
-	// Communication
 	{
 		uid: 'feature--15',
+		title: 'Workspace Templates (Cloning)',
+		description:
+			'Clone workspaces with all settings, roles, and permissions. Perfect for replicating workspace structures across teams.',
+		cover: 'https://placehold.co/800x450/4F46E5/FFFFFF?text=Cloning',
+		category: 'workspace',
+		tags: ['Workspaces', 'Templates', 'Productivity'],
+	},
+	{
+		uid: 'feature--16',
+		title: 'Workspace Archiving',
+		description:
+			'Archive and restore workspaces with audit logging. Keeps your workspace list clean while preserving historical data.',
+		cover: 'https://placehold.co/800x450/7C3AED/FFFFFF?text=Archiving',
+		category: 'workspace',
+		tags: ['Workspaces', 'Organization', 'Data Management'],
+	},
+	{
+		uid: 'feature--17',
+		title: 'Advanced Permission Management',
+		description:
+			'Visual permission browser with categories, custom role editor, and granular permission control across all workspace resources.',
+		cover: 'https://placehold.co/800x450/8B5CF6/FFFFFF?text=Permissions',
+		category: 'workspace',
+		tags: ['RBAC', 'Permissions', 'Advanced'],
+	},
+	{
+		uid: 'feature--18',
+		title: 'API Key Management',
+		description:
+			'Secure API key generation with SHA-256 hashing, expiration dates, usage tracking, and one-time display on creation.',
+		cover: 'https://placehold.co/800x450/6366F1/FFFFFF?text=API+Keys',
+		category: 'workspace',
+		tags: ['API', 'Security', 'Integration'],
+	},
+	{
+		uid: 'feature--19',
+		title: 'Invitation Links',
+		description:
+			'Generate shareable invitation links with optional usage limits. Perfect for bulk onboarding and public workspace access.',
+		cover: 'https://placehold.co/800x450/818CF8/FFFFFF?text=Invite+Links',
+		category: 'workspace',
+		tags: ['Invitations', 'Onboarding', 'Collaboration'],
+	},
+	{
+		uid: 'feature--20',
+		title: 'Bulk Member Operations',
+		description:
+			'Invite, update roles, or remove multiple members at once. Supports email lists and provides detailed operation results.',
+		cover: 'https://placehold.co/800x450/A5B4FC/FFFFFF?text=Bulk+Operations',
+		category: 'workspace',
+		tags: ['Team', 'Productivity', 'Management'],
+	},
+	{
+		uid: 'feature--21',
+		title: 'User Activity History',
+		description:
+			'Paginated activity logs showing all user actions, security events, and workspace operations with expandable metadata.',
+		cover: 'https://placehold.co/800x450/C7D2FE/FFFFFF?text=Activity+Log',
+		category: 'workspace',
+		tags: ['Audit', 'History', 'Transparency'],
+	},
+	{
+		uid: 'feature--22',
+		title: 'Workspace Usage Metrics',
+		description:
+			'Comprehensive workspace analytics: member counts, active members (30d), pending invitations, activity rates, and engagement insights.',
+		cover: 'https://placehold.co/800x450/DDD6FE/FFFFFF?text=Usage+Metrics',
+		category: 'workspace',
+		tags: ['Analytics', 'Metrics', 'Insights'],
+	},
+	// Communication
+	{
+		uid: 'feature--23',
 		title: 'Email Infrastructure with Resend',
 		description:
 			'Complete email system with Resend integration, React Email templates, and automatic email sending for all auth flows.',
@@ -161,7 +233,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Email', 'Resend', 'Templates'],
 	},
 	{
-		uid: 'feature--16',
+		uid: 'feature--24',
 		title: 'React Email Templates',
 		description:
 			'Six beautiful email templates: welcome, verification, password-reset, magic-link, invitation, and 2FA codes.',
@@ -170,7 +242,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Email', 'Templates', 'React Email'],
 	},
 	{
-		uid: 'feature--17',
+		uid: 'feature--25',
 		title: 'In-App Notifications',
 		description:
 			'Real-time in-app notifications with polling support and Supabase-ready architecture for live updates.',
@@ -179,7 +251,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Notifications', 'Realtime', 'UI'],
 	},
 	{
-		uid: 'feature--18',
+		uid: 'feature--26',
 		title: 'Notification Preferences',
 		description:
 			'Granular notification preferences with 7 categories and email/in-app toggles for each notification type.',
@@ -189,7 +261,7 @@ export const FEATURES: Feature[] = [
 	},
 	// Storage & Files
 	{
-		uid: 'feature--19',
+		uid: 'feature--27',
 		title: 'File Upload & Storage',
 		description:
 			'Supabase Storage integration for file uploads with image optimization, file type validation, and size limits.',
@@ -198,7 +270,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Storage', 'Uploads', 'Files'],
 	},
 	{
-		uid: 'feature--20',
+		uid: 'feature--28',
 		title: 'Image Upload with Preview',
 		description:
 			'Image upload component with real-time preview, cropping support, and automatic optimization for avatars and media.',
@@ -208,7 +280,7 @@ export const FEATURES: Feature[] = [
 	},
 	// Analytics & Admin
 	{
-		uid: 'feature--21',
+		uid: 'feature--29',
 		title: 'Analytics Dashboard',
 		description:
 			'Comprehensive analytics dashboard with user growth charts (Recharts), activity metrics, and customizable time ranges.',
@@ -217,7 +289,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Analytics', 'Charts', 'Metrics'],
 	},
 	{
-		uid: 'feature--22',
+		uid: 'feature--30',
 		title: 'Admin Dashboard',
 		description:
 			'Full-featured admin dashboard with user management, system statistics, audit logs, and environment-based access control.',
@@ -226,7 +298,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Admin', 'Management', 'Dashboard'],
 	},
 	{
-		uid: 'feature--23',
+		uid: 'feature--31',
 		title: 'User Impersonation',
 		description:
 			'Secure user impersonation for support purposes with 1-hour session expiry, audit logging, and visual indicators.',
@@ -235,7 +307,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Admin', 'Support', 'Security'],
 	},
 	{
-		uid: 'feature--24',
+		uid: 'feature--32',
 		title: 'Audit Logs',
 		description:
 			'Complete audit trail with filtering, CSV export, user tracking, IP addresses, and comprehensive action logging.',
@@ -245,7 +317,7 @@ export const FEATURES: Feature[] = [
 	},
 	// UI & Developer Experience
 	{
-		uid: 'feature--25',
+		uid: 'feature--33',
 		title: 'ShadCN UI (50+ Components)',
 		description:
 			'Comprehensive UI component library with 50+ accessible components built on Radix UI primitives.',
@@ -254,7 +326,7 @@ export const FEATURES: Feature[] = [
 		tags: ['UI', 'Components', 'Accessibility'],
 	},
 	{
-		uid: 'feature--26',
+		uid: 'feature--34',
 		title: 'Tailwind CSS 4',
 		description:
 			'Modern utility-first CSS framework with Tailwind CSS 4 for rapid UI development and consistent design.',
@@ -263,7 +335,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Styling', 'CSS', 'Design System'],
 	},
 	{
-		uid: 'feature--27',
+		uid: 'feature--35',
 		title: 'Motion Primitives (10 Components)',
 		description:
 			'Ten custom animation components including magnetic effects, text morphing, spotlight, and progressive blur.',
@@ -272,7 +344,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Animations', 'Motion', 'UX'],
 	},
 	{
-		uid: 'feature--28',
+		uid: 'feature--36',
 		title: 'Dark/Light Mode',
 		description:
 			'System-aware dark and light mode with next-themes, CSS variables, and seamless theme switching.',
@@ -281,7 +353,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Theming', 'Dark Mode', 'UX'],
 	},
 	{
-		uid: 'feature--29',
+		uid: 'feature--37',
 		title: 'Internationalization (i18n)',
 		description:
 			'Full internationalization support with next-intl, locale detection, and translation management for global apps.',
@@ -290,7 +362,7 @@ export const FEATURES: Feature[] = [
 		tags: ['i18n', 'Localization', 'Translations'],
 	},
 	{
-		uid: 'feature--30',
+		uid: 'feature--38',
 		title: 'Settings Pages (5 Complete)',
 		description:
 			'Five comprehensive settings pages: Profile, Account, Security, Team, and Notifications with full functionality.',
@@ -300,7 +372,7 @@ export const FEATURES: Feature[] = [
 	},
 	// Production Ready
 	{
-		uid: 'feature--31',
+		uid: 'feature--39',
 		title: 'Error Boundaries',
 		description:
 			'Multi-level error boundaries (global, root, dashboard, admin) with user-friendly messages and recovery actions.',
@@ -309,7 +381,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Error Handling', 'Resilience', 'UX'],
 	},
 	{
-		uid: 'feature--32',
+		uid: 'feature--40',
 		title: 'Loading States & Skeletons',
 		description:
 			'Comprehensive loading states with React Suspense, loading skeletons, and progressive content loading.',
@@ -318,7 +390,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Loading', 'Suspense', 'UX'],
 	},
 	{
-		uid: 'feature--33',
+		uid: 'feature--41',
 		title: 'Rate Limiting (3 Tiers)',
 		description:
 			'Three-tier rate limiting system: default (100/15min), strict (10/15min), and auth (5/15min) with IP tracking.',
@@ -327,7 +399,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Security', 'Rate Limiting', 'Performance'],
 	},
 	{
-		uid: 'feature--34',
+		uid: 'feature--42',
 		title: 'Security Headers',
 		description:
 			'Comprehensive security headers: HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and more for production.',
@@ -336,7 +408,7 @@ export const FEATURES: Feature[] = [
 		tags: ['Security', 'Headers', 'Production'],
 	},
 	{
-		uid: 'feature--35',
+		uid: 'feature--43',
 		title: 'Code Quality Tools',
 		description:
 			'Biome for formatting and import organization, Oxlint for fast linting, and Husky for pre-commit hooks.',
