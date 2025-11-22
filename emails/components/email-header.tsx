@@ -3,7 +3,7 @@ import { NAME } from '@/lib/constants'
 
 export function EmailHeader() {
 	const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-	const logoUrl = `${appUrl}/images/logo.png`
+	const logoUrl = `${appUrl}/logo.svg`
 
 	return (
 		<Section className="mt-8">

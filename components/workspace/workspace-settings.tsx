@@ -22,6 +22,7 @@ type WorkspaceSettingsFormData = z.infer<typeof workspaceSettingsSchema>
 
 export function WorkspaceSettings() {
 	const { currentWorkspace, refetchWorkspaces } = useWorkspace()
+	const utils = trpc.useUtils()
 
 	const form = useForm<WorkspaceSettingsFormData>({
 		resolver: zodResolver(workspaceSettingsSchema),
@@ -45,6 +46,8 @@ export function WorkspaceSettings() {
 		onSuccess: () => {
 			toast.success('Workspace settings updated successfully')
 			refetchWorkspaces()
+			// Invalidate workspace usage query to update the dashboard
+			void utils.workspace.getWorkspaceUsage.invalidate()
 		},
 		onError: (error) => {
 			toast.error(error.message || 'Failed to update workspace settings')

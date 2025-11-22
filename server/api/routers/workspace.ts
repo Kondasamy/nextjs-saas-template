@@ -205,34 +205,49 @@ export const workspaceRouter = createTRPCRouter({
 				})
 			}
 
-			// Create organization with owner role
-			const organization = await ctx.prisma.organization.create({
-				data: {
-					name: input.name,
-					slug: input.slug,
-					description: input.description,
-					members: {
-						create: {
-							userId: ctx.user.id,
-							role: {
-								create: {
-									name: 'Owner',
-									description: 'Workspace owner with full access',
-									permissions: ['*'], // All permissions
-									isSystem: true,
-								},
+			// Create organization with owner role using transaction
+			const organization = await ctx.prisma.$transaction(async (tx) => {
+				// Create the organization
+				const org = await tx.organization.create({
+					data: {
+						name: input.name,
+						slug: input.slug,
+						description: input.description,
+					},
+				})
+
+				// Create the Owner role
+				const role = await tx.role.create({
+					data: {
+						organizationId: org.id,
+						name: 'Owner',
+						description: 'Workspace owner with full access',
+						permissions: ['*'], // All permissions
+						isSystem: true,
+					},
+				})
+
+				// Create the membership
+				await tx.organizationMember.create({
+					data: {
+						organizationId: org.id,
+						userId: ctx.user.id,
+						roleId: role.id,
+					},
+				})
+
+				// Return organization with members included
+				return tx.organization.findUnique({
+					where: { id: org.id },
+					include: {
+						members: {
+							include: {
+								user: true,
+								role: true,
 							},
 						},
 					},
-				},
-				include: {
-					members: {
-						include: {
-							user: true,
-							role: true,
-						},
-					},
-				},
+				})
 			})
 
 			return organization
