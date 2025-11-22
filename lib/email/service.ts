@@ -1,7 +1,10 @@
 import { render } from '@react-email/components'
 import { Resend } from 'resend'
+import { EmailChangeNotification } from '@/emails/email-change-notification'
+import { EmailChangeVerification } from '@/emails/email-change-verification'
 import { InvitationEmail } from '@/emails/invitation'
 import MagicLinkEmail from '@/emails/magic-link'
+import { PasswordChanged } from '@/emails/password-changed'
 import PasswordResetEmail from '@/emails/password-reset'
 import TwoFactorEmail from '@/emails/two-factor'
 import { VerificationEmail } from '@/emails/verification'
@@ -136,6 +139,71 @@ export class EmailService {
 		return sendEmail({
 			to,
 			subject: 'Your two-factor authentication code',
+			html,
+		})
+	}
+
+	/**
+	 * Send email change verification
+	 */
+	static async sendEmailChangeVerification(
+		to: string,
+		name: string,
+		verificationUrl: string
+	) {
+		const html = await render(
+			EmailChangeVerification({ verificationUrl, name })
+		)
+
+		return sendEmail({
+			to,
+			subject: 'Verify your new email address',
+			html,
+		})
+	}
+
+	/**
+	 * Send email change notification to old email
+	 */
+	static async sendEmailChangeNotification(
+		to: string,
+		name: string,
+		newEmail: string
+	) {
+		const securityUrl = `${process.env.NEXT_PUBLIC_APP_URL}/settings/security`
+		const html = await render(
+			EmailChangeNotification({ name, newEmail, securityUrl })
+		)
+
+		return sendEmail({
+			to,
+			subject: 'Email change request on your account',
+			html,
+		})
+	}
+
+	/**
+	 * Send password changed confirmation email
+	 */
+	static async sendPasswordChanged(
+		to: string,
+		name: string,
+		device?: string,
+		location?: string
+	) {
+		const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`
+		const timestamp = new Date().toLocaleString('en-US', {
+			dateStyle: 'full',
+			timeStyle: 'long',
+		})
+
+		const html = await render(
+			PasswordChanged({ name, resetUrl, timestamp, device, location })
+		)
+
+		return sendEmail({
+			to,
+			subject: 'Your password was changed',
 			html,
 		})
 	}

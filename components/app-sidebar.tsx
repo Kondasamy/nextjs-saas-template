@@ -280,6 +280,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		items?: Array<{ title: string; url: string }>
 	}> = [
 		{
+			title: 'Workspace',
+			url: '/workspace/settings',
+			icon: CommandIcon,
+			isActive: pathname.startsWith('/workspace'),
+			items: [
+				{
+					title: 'Settings',
+					url: '/workspace/settings',
+				},
+			],
+		},
+		{
 			title: 'Settings',
 			url: '/settings/profile',
 			icon: Settings2,

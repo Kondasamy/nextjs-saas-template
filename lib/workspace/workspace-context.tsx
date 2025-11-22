@@ -27,6 +27,7 @@ interface WorkspaceContextType {
 	currentWorkspace: Organization | null
 	workspaces: Organization[]
 	switchWorkspace: (id: string) => void
+	refetchWorkspaces: () => void
 	isLoading: boolean
 }
 
@@ -130,6 +131,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		currentWorkspace,
 		workspaces,
 		switchWorkspace,
+		refetchWorkspaces: () => void refetchWorkspaces(),
 		isLoading: isLoadingWorkspaces || !isInitialized,
 	}
 

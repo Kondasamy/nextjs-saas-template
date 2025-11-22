@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -16,10 +15,10 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { trpc } from '@/lib/trpc/client'
 
 const emailChangeSchema = z.object({
 	newEmail: z.string().email('Please enter a valid email address'),
-	password: z.string().min(1, 'Password is required'),
 })
 
 type EmailChangeFormData = z.infer<typeof emailChangeSchema>
@@ -29,48 +28,27 @@ interface EmailChangeFormProps {
 }
 
 export function EmailChangeForm({ currentEmail }: EmailChangeFormProps) {
-	const [isSubmitting, setIsSubmitting] = useState(false)
-
 	const form = useForm<EmailChangeFormData>({
 		resolver: zodResolver(emailChangeSchema),
 		defaultValues: {
 			newEmail: '',
-			password: '',
 		},
 	})
 
-	const handleSubmit = async (data: EmailChangeFormData) => {
-		try {
-			setIsSubmitting(true)
-
-			// Call Better Auth API to change email
-			const response = await fetch('/api/auth/update-email', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					newEmail: data.newEmail,
-					password: data.password,
-				}),
-			})
-
-			if (!response.ok) {
-				const error = await response.json()
-				throw new Error(error.message || 'Failed to change email')
-			}
-
+	const requestEmailChange = trpc.user.requestEmailChange.useMutation({
+		onSuccess: () => {
 			toast.success(
 				'Verification email sent! Please check your new email address to confirm the change.'
 			)
 			form.reset()
-		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : 'Failed to change email'
-			)
-		} finally {
-			setIsSubmitting(false)
-		}
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to request email change')
+		},
+	})
+
+	const handleSubmit = async (data: EmailChangeFormData) => {
+		requestEmailChange.mutate({ newEmail: data.newEmail })
 	}
 
 	return (
@@ -105,31 +83,14 @@ export function EmailChangeForm({ currentEmail }: EmailChangeFormProps) {
 						)}
 					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="password">
-							Confirm Password <span className="text-destructive">*</span>
-						</Label>
-						<Input
-							id="password"
-							type="password"
-							{...form.register('password')}
-							placeholder="Enter your password"
-						/>
-						{form.formState.errors.password && (
-							<p className="text-sm text-destructive">
-								{form.formState.errors.password.message}
-							</p>
-						)}
-					</div>
-
-					<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting ? (
+					<Button type="submit" disabled={requestEmailChange.isPending}>
+						{requestEmailChange.isPending ? (
 							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-								Changing Email...
+								Sending Verification...
 							</>
 						) : (
-							'Change Email'
+							'Send Verification Email'
 						)}
 					</Button>
 				</form>

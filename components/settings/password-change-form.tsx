@@ -16,6 +16,12 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { trpc } from '@/lib/trpc/client'
+import {
+	evaluatePasswordStrength,
+	getPasswordStrengthBgColor,
+	getPasswordStrengthColor,
+} from '@/lib/utils/password'
 
 const passwordChangeSchema = z
 	.object({
@@ -37,7 +43,11 @@ const passwordChangeSchema = z
 type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>
 
 export function PasswordChangeForm() {
-	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [passwordStrength, setPasswordStrength] = useState({
+		score: 0,
+		feedback: [],
+		isStrong: false,
+	})
 
 	const form = useForm<PasswordChangeFormData>({
 		resolver: zodResolver(passwordChangeSchema),
@@ -48,35 +58,32 @@ export function PasswordChangeForm() {
 		},
 	})
 
-	const handleSubmit = async (data: PasswordChangeFormData) => {
-		try {
-			setIsSubmitting(true)
-
-			// Call Better Auth API to change password
-			const response = await fetch('/api/auth/change-password', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					currentPassword: data.currentPassword,
-					newPassword: data.newPassword,
-				}),
-			})
-
-			if (!response.ok) {
-				const error = await response.json()
-				throw new Error(error.message || 'Failed to change password')
-			}
-
+	const changePassword = trpc.user.changePassword.useMutation({
+		onSuccess: () => {
 			toast.success('Password changed successfully!')
 			form.reset()
-		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : 'Failed to change password'
-			)
-		} finally {
-			setIsSubmitting(false)
+			setPasswordStrength({ score: 0, feedback: [], isStrong: false })
+		},
+		onError: (error) => {
+			toast.error(error.message || 'Failed to change password')
+		},
+	})
+
+	const handleSubmit = async (data: PasswordChangeFormData) => {
+		changePassword.mutate({
+			currentPassword: data.currentPassword,
+			newPassword: data.newPassword,
+		})
+	}
+
+	const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const password = e.target.value
+		form.setValue('newPassword', password)
+		if (password) {
+			const strength = evaluatePasswordStrength(password)
+			setPasswordStrength(strength)
+		} else {
+			setPasswordStrength({ score: 0, feedback: [], isStrong: false })
 		}
 	}
 
@@ -115,6 +122,7 @@ export function PasswordChangeForm() {
 							id="newPassword"
 							type="password"
 							{...form.register('newPassword')}
+							onChange={handlePasswordChange}
 							placeholder="Enter new password"
 						/>
 						{form.formState.errors.newPassword && (
@@ -122,10 +130,34 @@ export function PasswordChangeForm() {
 								{form.formState.errors.newPassword.message}
 							</p>
 						)}
-						<p className="text-xs text-muted-foreground">
-							Must be at least 8 characters with uppercase, lowercase, and
-							number
-						</p>
+
+						{/* Password Strength Indicator */}
+						{form.watch('newPassword') && (
+							<div className="space-y-2">
+								<div className="flex items-center gap-2">
+									<div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
+										<div
+											className={`h-full transition-all ${getPasswordStrengthBgColor(passwordStrength.score)}`}
+											style={{
+												width: `${(passwordStrength.score / 4) * 100}%`,
+											}}
+										/>
+									</div>
+									<span
+										className={`text-sm font-medium ${getPasswordStrengthColor(passwordStrength.score)}`}
+									>
+										{passwordStrength.feedback[0]}
+									</span>
+								</div>
+								{passwordStrength.feedback.length > 1 && (
+									<ul className="text-xs text-muted-foreground space-y-1">
+										{passwordStrength.feedback.slice(1).map((item, index) => (
+											<li key={index}>• {item}</li>
+										))}
+									</ul>
+								)}
+							</div>
+						)}
 					</div>
 
 					<div className="space-y-2">
@@ -145,8 +177,8 @@ export function PasswordChangeForm() {
 						)}
 					</div>
 
-					<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting ? (
+					<Button type="submit" disabled={changePassword.isPending}>
+						{changePassword.isPending ? (
 							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								Changing Password...

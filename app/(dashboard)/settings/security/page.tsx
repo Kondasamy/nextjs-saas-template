@@ -1,5 +1,6 @@
-import { TwoFactorSetup } from '@/components/auth/2fa-setup'
-import { DeviceList } from '@/components/auth/device-list'
+import { ActiveSessionsTable } from '@/components/settings/active-sessions-table'
+import { PasskeyList } from '@/components/settings/passkey-list'
+import { TwoFactorSettings } from '@/components/settings/two-factor-settings'
 import {
 	Card,
 	CardContent,
@@ -23,25 +24,39 @@ export default async function SecuritySettingsPage() {
 
 			<Card>
 				<CardHeader>
+					<CardTitle>Active Sessions</CardTitle>
+					<CardDescription>
+						Manage your active sessions and devices. You can revoke any session
+						to sign out from that device.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<ActiveSessionsTable />
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
 					<CardTitle>Two-Factor Authentication</CardTitle>
 					<CardDescription>
 						Add an extra layer of security to your account
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<TwoFactorSetup />
+					<TwoFactorSettings />
 				</CardContent>
 			</Card>
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Active Sessions</CardTitle>
+					<CardTitle>Passkeys</CardTitle>
 					<CardDescription>
-						Manage your active sessions and devices
+						Sign in securely using biometrics, security keys, or your device's
+						screen lock
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<DeviceList />
+					<PasskeyList />
 				</CardContent>
 			</Card>
 		</div>
