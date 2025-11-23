@@ -62,7 +62,7 @@ export async function requireAdmin() {
 					? 'Add your email to ADMIN_EMAILS in .env.local for initial setup'
 					: undefined,
 		})
-		redirect('/')
+		redirect('/unauthorized')
 	}
 
 	return user
