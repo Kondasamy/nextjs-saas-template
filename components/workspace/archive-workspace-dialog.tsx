@@ -1,9 +1,12 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Archive, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -21,17 +24,29 @@ import { Label } from '@/components/ui/label'
 import { trpc } from '@/lib/trpc/client'
 import { useWorkspace } from '@/lib/workspace/workspace-context'
 
+const archiveSchema = z.object({
+	confirmText: z.string(),
+})
+
+type ArchiveFormData = z.infer<typeof archiveSchema>
+
 export function ArchiveWorkspaceDialog() {
 	const router = useRouter()
 	const { currentWorkspace } = useWorkspace()
 	const [open, setOpen] = useState(false)
-	const [confirmText, setConfirmText] = useState('')
+
+	const form = useForm<ArchiveFormData>({
+		resolver: zodResolver(archiveSchema),
+		defaultValues: {
+			confirmText: '',
+		},
+	})
 
 	const archiveWorkspace = trpc.workspace.archiveWorkspace.useMutation({
 		onSuccess: () => {
 			toast.success('Workspace archived successfully')
 			setOpen(false)
-			setConfirmText('')
+			form.reset()
 			router.push('/')
 		},
 		onError: (error) => {
@@ -39,14 +54,16 @@ export function ArchiveWorkspaceDialog() {
 		},
 	})
 
-	const handleArchive = () => {
+	const handleArchive = (data: ArchiveFormData) => {
 		if (!currentWorkspace) {
 			toast.error('No workspace selected')
 			return
 		}
 
-		if (confirmText !== currentWorkspace.name) {
-			toast.error('Workspace name does not match')
+		if (data.confirmText !== currentWorkspace.name) {
+			form.setError('confirmText', {
+				message: 'Workspace name does not match',
+			})
 			return
 		}
 
@@ -82,7 +99,10 @@ export function ArchiveWorkspaceDialog() {
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
-				<div className="space-y-2">
+				<form
+					onSubmit={form.handleSubmit(handleArchive)}
+					className="space-y-2"
+				>
 					<Label htmlFor="confirm">
 						Type <span className="font-bold">{currentWorkspace.name}</span> to
 						confirm
@@ -90,25 +110,32 @@ export function ArchiveWorkspaceDialog() {
 					<Input
 						id="confirm"
 						placeholder={currentWorkspace.name}
-						value={confirmText}
-						onChange={(e) => setConfirmText(e.target.value)}
+						{...form.register('confirmText')}
 						onKeyDown={(e) => {
-							if (e.key === 'Enter' && confirmText === currentWorkspace.name) {
-								handleArchive()
+							if (
+								e.key === 'Enter' &&
+								form.getValues('confirmText') === currentWorkspace.name
+							) {
+								form.handleSubmit(handleArchive)()
 							}
 						}}
 					/>
-				</div>
+					{form.formState.errors.confirmText && (
+						<p className="text-sm text-destructive">
+							{form.formState.errors.confirmText.message}
+						</p>
+					)}
+				</form>
 
 				<AlertDialogFooter>
 					<AlertDialogCancel>Cancel</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={(e) => {
 							e.preventDefault()
-							handleArchive()
+							form.handleSubmit(handleArchive)()
 						}}
 						disabled={
-							confirmText !== currentWorkspace.name ||
+							form.watch('confirmText') !== currentWorkspace.name ||
 							archiveWorkspace.isPending
 						}
 						className="bg-destructive hover:bg-destructive/90"

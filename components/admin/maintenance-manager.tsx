@@ -1,8 +1,11 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertTriangle, CheckCircle2, Clock, Power } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
 	Card,
@@ -18,20 +21,34 @@ import { Textarea } from '@/components/ui/textarea'
 import type { MaintenanceStatus } from '@/lib/maintenance/server'
 import { trpc } from '@/lib/trpc/client'
 
+const maintenanceSchema = z.object({
+	message: z
+		.string()
+		.min(10, 'Message must be at least 10 characters')
+		.max(500, 'Message must not exceed 500 characters'),
+	useEndTime: z.boolean(),
+	endTime: z.string().optional(),
+})
+
+type MaintenanceFormData = z.infer<typeof maintenanceSchema>
+
 type MaintenanceManagerProps = {
 	initialStatus: MaintenanceStatus
 }
 
 export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
-	const [isEnabled, setIsEnabled] = useState(initialStatus.enabled)
-	const [message, setMessage] = useState(
-		initialStatus.message ||
-			'We are currently performing scheduled maintenance.'
-	)
-	const [endTime, setEndTime] = useState('')
-	const [useEndTime, setUseEndTime] = useState(false)
-
 	const utils = trpc.useUtils()
+
+	const form = useForm<MaintenanceFormData>({
+		resolver: zodResolver(maintenanceSchema),
+		defaultValues: {
+			message:
+				initialStatus.message ||
+				'We are currently performing scheduled maintenance.',
+			useEndTime: false,
+			endTime: '',
+		},
+	})
 
 	const enableMutation = trpc.maintenance.enable.useMutation({
 		onSuccess: () => {
@@ -39,7 +56,6 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 				description: 'A banner will now be displayed to all users.',
 			})
 			utils.maintenance.getStatus.invalidate()
-			setIsEnabled(true)
 
 			// Reload the page to show the banner
 			setTimeout(() => {
@@ -59,7 +75,6 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 				description: 'The maintenance banner has been removed.',
 			})
 			utils.maintenance.getStatus.invalidate()
-			setIsEnabled(false)
 
 			// Reload the page to hide the banner
 			setTimeout(() => {
@@ -73,13 +88,13 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 		},
 	})
 
-	const handleEnable = () => {
+	const handleEnable = (data: MaintenanceFormData) => {
 		const payload: { message?: string; endTime?: Date } = {
-			message: message.trim() || undefined,
+			message: data.message.trim() || undefined,
 		}
 
-		if (useEndTime && endTime) {
-			payload.endTime = new Date(endTime)
+		if (data.useEndTime && data.endTime) {
+			payload.endTime = new Date(data.endTime)
 		}
 
 		enableMutation.mutate(payload)
@@ -91,10 +106,13 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 
 	useEffect(() => {
 		if (initialStatus.endTime) {
-			setEndTime(new Date(initialStatus.endTime).toISOString().slice(0, 16))
-			setUseEndTime(true)
+			form.setValue(
+				'endTime',
+				new Date(initialStatus.endTime).toISOString().slice(0, 16)
+			)
+			form.setValue('useEndTime', true)
 		}
-	}, [initialStatus.endTime])
+	}, [initialStatus.endTime, form])
 
 	const isLoading = enableMutation.isPending || disableMutation.isPending
 
@@ -104,7 +122,7 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
-						{isEnabled ? (
+						{initialStatus.enabled ? (
 							<>
 								<AlertTriangle className="size-5 text-warning" />
 								Maintenance Mode Active
@@ -117,13 +135,13 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 						)}
 					</CardTitle>
 					<CardDescription>
-						{isEnabled
+						{initialStatus.enabled
 							? 'Users are currently seeing a maintenance banner.'
 							: 'No maintenance banner is displayed to users.'}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{isEnabled && initialStatus.message && (
+					{initialStatus.enabled && initialStatus.message && (
 						<div className="rounded-lg border bg-muted/50 p-4">
 							<p className="mb-2 text-sm font-medium">Current Message:</p>
 							<p className="text-sm text-muted-foreground">
@@ -152,19 +170,28 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 				</CardHeader>
 				<CardContent className="space-y-6">
 					{/* Enable/Disable Section */}
-					{!isEnabled ? (
-						<>
+					{!initialStatus.enabled ? (
+						<form
+							onSubmit={form.handleSubmit(handleEnable)}
+							className="space-y-6"
+						>
 							{/* Message Input */}
 							<div className="space-y-2">
-								<Label htmlFor="message">Maintenance Message</Label>
+								<Label htmlFor="message">
+									Maintenance Message <span className="text-destructive">*</span>
+								</Label>
 								<Textarea
 									id="message"
 									placeholder="We are currently performing scheduled maintenance. We'll be back shortly."
-									value={message}
-									onChange={(e) => setMessage(e.target.value)}
+									{...form.register('message')}
 									rows={3}
 									className="resize-none"
 								/>
+								{form.formState.errors.message && (
+									<p className="text-sm text-destructive">
+										{form.formState.errors.message.message}
+									</p>
+								)}
 								<p className="text-xs text-muted-foreground">
 									This message will be displayed in the banner to all users.
 								</p>
@@ -182,16 +209,17 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 									</div>
 									<Switch
 										id="use-end-time"
-										checked={useEndTime}
-										onCheckedChange={setUseEndTime}
+										checked={form.watch('useEndTime')}
+										onCheckedChange={(checked) =>
+											form.setValue('useEndTime', checked)
+										}
 									/>
 								</div>
 
-								{useEndTime && (
+								{form.watch('useEndTime') && (
 									<Input
 										type="datetime-local"
-										value={endTime}
-										onChange={(e) => setEndTime(e.target.value)}
+										{...form.register('endTime')}
 										className="max-w-sm"
 									/>
 								)}
@@ -199,14 +227,14 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 
 							{/* Enable Button */}
 							<Button
-								onClick={handleEnable}
+								type="submit"
 								disabled={isLoading}
 								className="w-full sm:w-auto"
 							>
 								<Power className="mr-2 size-4" />
 								{isLoading ? 'Enabling...' : 'Enable Maintenance Mode'}
 							</Button>
-						</>
+						</form>
 					) : (
 						<>
 							{/* Disable Button */}

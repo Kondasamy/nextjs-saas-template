@@ -1,8 +1,11 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, Copy, Key, Loader2, Plus } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
 	Dialog,
@@ -25,6 +28,16 @@ import {
 import { trpc } from '@/lib/trpc/client'
 import { useWorkspace } from '@/lib/workspace/workspace-context'
 
+const apiKeySchema = z.object({
+	name: z
+		.string()
+		.min(1, 'Name is required')
+		.max(100, 'Name must not exceed 100 characters'),
+	expiresInDays: z.string(),
+})
+
+type APIKeyFormData = z.infer<typeof apiKeySchema>
+
 interface CreateAPIKeyDialogProps {
 	onSuccess?: () => void
 }
@@ -32,10 +45,16 @@ interface CreateAPIKeyDialogProps {
 export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 	const { currentWorkspace } = useWorkspace()
 	const [open, setOpen] = useState(false)
-	const [name, setName] = useState('')
-	const [expiresInDays, setExpiresInDays] = useState<string>('never')
 	const [createdKey, setCreatedKey] = useState<string | null>(null)
 	const [copied, setCopied] = useState(false)
+
+	const form = useForm<APIKeyFormData>({
+		resolver: zodResolver(apiKeySchema),
+		defaultValues: {
+			name: '',
+			expiresInDays: 'never',
+		},
+	})
 
 	const createAPIKey = trpc.apiKeys.create.useMutation({
 		onSuccess: (data) => {
@@ -47,23 +66,20 @@ export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 		},
 	})
 
-	const handleCreate = () => {
+	const handleCreate = (data: APIKeyFormData) => {
 		if (!currentWorkspace) {
 			toast.error('No workspace selected')
 			return
 		}
 
-		if (!name.trim()) {
-			toast.error('Please provide a name for the API key')
-			return
-		}
-
 		const expiresInDaysNumber =
-			expiresInDays === 'never' ? undefined : Number.parseInt(expiresInDays)
+			data.expiresInDays === 'never'
+				? undefined
+				: Number.parseInt(data.expiresInDays)
 
 		createAPIKey.mutate({
 			organizationId: currentWorkspace.id,
-			name: name.trim(),
+			name: data.name.trim(),
 			expiresInDays: expiresInDaysNumber,
 		})
 	}
@@ -79,8 +95,7 @@ export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 
 	const handleClose = () => {
 		setOpen(false)
-		setName('')
-		setExpiresInDays('never')
+		form.reset()
 		setCreatedKey(null)
 		setCopied(false)
 	}
@@ -110,15 +125,24 @@ export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 				</DialogHeader>
 
 				{!createdKey ? (
-					<div className="space-y-4 py-4">
+					<form
+						onSubmit={form.handleSubmit(handleCreate)}
+						className="space-y-4 py-4"
+					>
 						<div className="space-y-2">
-							<Label htmlFor="key-name">Name</Label>
+							<Label htmlFor="key-name">
+								Name <span className="text-destructive">*</span>
+							</Label>
 							<Input
 								id="key-name"
 								placeholder="e.g., Production Server"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
+								{...form.register('name')}
 							/>
+							{form.formState.errors.name && (
+								<p className="text-sm text-destructive">
+									{form.formState.errors.name.message}
+								</p>
+							)}
 							<p className="text-xs text-muted-foreground">
 								A descriptive name to identify this API key
 							</p>
@@ -126,7 +150,10 @@ export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 
 						<div className="space-y-2">
 							<Label htmlFor="expires">Expiration</Label>
-							<Select value={expiresInDays} onValueChange={setExpiresInDays}>
+							<Select
+								value={form.watch('expiresInDays')}
+								onValueChange={(value) => form.setValue('expiresInDays', value)}
+							>
 								<SelectTrigger id="expires">
 									<SelectValue />
 								</SelectTrigger>
@@ -147,7 +174,7 @@ export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 							<strong>Security Notice:</strong> API keys provide full access to
 							your workspace. Keep them secure and never share them publicly.
 						</div>
-					</div>
+					</form>
 				) : (
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
@@ -176,12 +203,17 @@ export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 				<DialogFooter>
 					{!createdKey ? (
 						<>
-							<Button variant="outline" onClick={handleClose}>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={handleClose}
+							>
 								Cancel
 							</Button>
 							<Button
-								onClick={handleCreate}
-								disabled={createAPIKey.isPending || !name.trim()}
+								type="submit"
+								onClick={form.handleSubmit(handleCreate)}
+								disabled={createAPIKey.isPending}
 							>
 								{createAPIKey.isPending && (
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />

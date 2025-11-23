@@ -1,8 +1,11 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertTriangle } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +27,13 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { trpc } from '@/lib/trpc/client'
+
+const transferOwnershipSchema = z.object({
+	selectedUserId: z.string().min(1, 'Please select a member'),
+	confirmationText: z.string(),
+})
+
+type TransferOwnershipFormData = z.infer<typeof transferOwnershipSchema>
 
 interface TransferOwnershipDialogProps {
 	organizationId: string
@@ -56,8 +66,14 @@ export function TransferOwnershipDialog({
 }: TransferOwnershipDialogProps) {
 	const [open, setOpen] = useState(false)
 	const [step, setStep] = useState<'select' | 'confirm'>('select')
-	const [selectedUserId, setSelectedUserId] = useState<string>('')
-	const [confirmationText, setConfirmationText] = useState('')
+
+	const form = useForm<TransferOwnershipFormData>({
+		resolver: zodResolver(transferOwnershipSchema),
+		defaultValues: {
+			selectedUserId: '',
+			confirmationText: '',
+		},
+	})
 
 	const transferOwnership = trpc.workspace.transferOwnership.useMutation({
 		onSuccess: () => {
@@ -74,8 +90,7 @@ export function TransferOwnershipDialog({
 
 	const resetDialog = () => {
 		setStep('select')
-		setSelectedUserId('')
-		setConfirmationText('')
+		form.reset()
 	}
 
 	const handleOpenChange = (newOpen: boolean) => {
@@ -86,22 +101,27 @@ export function TransferOwnershipDialog({
 	}
 
 	const handleNext = () => {
+		const selectedUserId = form.getValues('selectedUserId')
 		if (!selectedUserId) {
-			toast.error('Please select a member')
+			form.setError('selectedUserId', {
+				message: 'Please select a member',
+			})
 			return
 		}
 		setStep('confirm')
 	}
 
-	const handleTransfer = () => {
-		if (confirmationText !== workspaceName) {
-			toast.error('Workspace name does not match')
+	const handleTransfer = (data: TransferOwnershipFormData) => {
+		if (data.confirmationText !== workspaceName) {
+			form.setError('confirmationText', {
+				message: 'Workspace name does not match',
+			})
 			return
 		}
 
 		transferOwnership.mutate({
 			organizationId,
-			newOwnerId: selectedUserId,
+			newOwnerId: data.selectedUserId,
 		})
 	}
 
@@ -111,7 +131,9 @@ export function TransferOwnershipDialog({
 			member.userId !== currentUserId && !member.role.permissions.includes('*')
 	)
 
-	const selectedMember = members.find((m) => m.userId === selectedUserId)
+	const selectedMember = members.find(
+		(m) => m.userId === form.watch('selectedUserId')
+	)
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
@@ -128,10 +150,14 @@ export function TransferOwnershipDialog({
 
 						<div className="space-y-4 py-4">
 							<div className="space-y-2">
-								<Label htmlFor="new-owner">New Owner</Label>
+								<Label htmlFor="new-owner">
+									New Owner <span className="text-destructive">*</span>
+								</Label>
 								<Select
-									value={selectedUserId}
-									onValueChange={setSelectedUserId}
+									value={form.watch('selectedUserId')}
+									onValueChange={(value) =>
+										form.setValue('selectedUserId', value)
+									}
 								>
 									<SelectTrigger>
 										<SelectValue placeholder="Select a team member" />
@@ -168,6 +194,11 @@ export function TransferOwnershipDialog({
 										)}
 									</SelectContent>
 								</Select>
+								{form.formState.errors.selectedUserId && (
+									<p className="text-sm text-destructive">
+										{form.formState.errors.selectedUserId.message}
+									</p>
+								)}
 							</div>
 
 							<div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950">
@@ -189,6 +220,7 @@ export function TransferOwnershipDialog({
 
 						<DialogFooter>
 							<Button
+								type="button"
 								variant="outline"
 								onClick={() => setOpen(false)}
 								disabled={transferOwnership.isPending}
@@ -196,8 +228,11 @@ export function TransferOwnershipDialog({
 								Cancel
 							</Button>
 							<Button
+								type="button"
 								onClick={handleNext}
-								disabled={!selectedUserId || transferOwnership.isPending}
+								disabled={
+									!form.watch('selectedUserId') || transferOwnership.isPending
+								}
 							>
 								Continue
 							</Button>
@@ -215,7 +250,10 @@ export function TransferOwnershipDialog({
 							</DialogDescription>
 						</DialogHeader>
 
-						<div className="space-y-4 py-4">
+						<form
+							onSubmit={form.handleSubmit(handleTransfer)}
+							className="space-y-4 py-4"
+						>
 							{selectedMember && (
 								<div className="rounded-lg border bg-muted/50 p-4">
 									<p className="mb-2 text-sm font-medium">New Owner:</p>
@@ -247,11 +285,15 @@ export function TransferOwnershipDialog({
 								</Label>
 								<Input
 									id="confirmation"
-									value={confirmationText}
-									onChange={(e) => setConfirmationText(e.target.value)}
+									{...form.register('confirmationText')}
 									placeholder={workspaceName}
 									autoComplete="off"
 								/>
+								{form.formState.errors.confirmationText && (
+									<p className="text-sm text-destructive">
+										{form.formState.errors.confirmationText.message}
+									</p>
+								)}
 							</div>
 
 							<div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
@@ -268,10 +310,11 @@ export function TransferOwnershipDialog({
 									</div>
 								</div>
 							</div>
-						</div>
+						</form>
 
 						<DialogFooter>
 							<Button
+								type="button"
 								variant="outline"
 								onClick={() => setStep('select')}
 								disabled={transferOwnership.isPending}
@@ -279,10 +322,11 @@ export function TransferOwnershipDialog({
 								Back
 							</Button>
 							<Button
+								type="submit"
 								variant="destructive"
-								onClick={handleTransfer}
+								onClick={form.handleSubmit(handleTransfer)}
 								disabled={
-									confirmationText !== workspaceName ||
+									form.watch('confirmationText') !== workspaceName ||
 									transferOwnership.isPending
 								}
 							>

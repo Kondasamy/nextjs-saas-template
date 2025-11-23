@@ -1,8 +1,11 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Users } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
 	Dialog,
@@ -24,14 +27,36 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { trpc } from '@/lib/trpc/client'
 
+const bulkInviteSchema = z.object({
+	emailsText: z
+		.string()
+		.min(1, 'Please enter at least one email address')
+		.refine(
+			(text) => {
+				// Parse emails and check if at least one valid email exists
+				const emails = text
+					.split(/[\n,;\s]+/)
+					.map((email) => email.trim())
+					.filter((email) => email.length > 0)
+					.filter((email) => {
+						const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+						return emailRegex.test(email)
+					})
+				return emails.length > 0
+			},
+			{ message: 'Please enter at least one valid email address' }
+		),
+	roleId: z.string().min(1, 'Please select a role'),
+})
+
+type BulkInviteFormData = z.infer<typeof bulkInviteSchema>
+
 interface BulkInviteDialogProps {
 	organizationId: string
 }
 
 export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 	const [open, setOpen] = useState(false)
-	const [emailsText, setEmailsText] = useState('')
-	const [roleId, setRoleId] = useState('')
 	const [parsedEmails, setParsedEmails] = useState<string[]>([])
 	const [showResults, setShowResults] = useState(false)
 	const [results, setResults] = useState<{
@@ -40,6 +65,14 @@ export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 		successful: string[]
 		failed: Array<{ email: string; reason: string }>
 	} | null>(null)
+
+	const form = useForm<BulkInviteFormData>({
+		resolver: zodResolver(bulkInviteSchema),
+		defaultValues: {
+			emailsText: '',
+			roleId: '',
+		},
+	})
 
 	const { data: roles = [] } = trpc.permissions.listRoles.useQuery({
 		organizationId,
@@ -78,27 +111,19 @@ export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 	}
 
 	const handleTextChange = (text: string) => {
-		setEmailsText(text)
+		form.setValue('emailsText', text)
 		const emails = parseEmails(text)
 		setParsedEmails(emails)
 		setShowResults(false)
 	}
 
-	const handleInvite = () => {
-		if (parsedEmails.length === 0) {
-			toast.error('Please enter at least one valid email address')
-			return
-		}
-
-		if (!roleId) {
-			toast.error('Please select a role')
-			return
-		}
+	const handleInvite = (data: BulkInviteFormData) => {
+		const emails = parseEmails(data.emailsText)
 
 		bulkInvite.mutate({
 			organizationId,
-			emails: parsedEmails,
-			roleId,
+			emails,
+			roleId: data.roleId,
 		})
 	}
 
@@ -106,11 +131,10 @@ export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 		setOpen(isOpen)
 		if (!isOpen) {
 			// Only reset when closing
-			setEmailsText('')
+			form.reset()
 			setParsedEmails([])
 			setResults(null)
 			setShowResults(false)
-			setRoleId('')
 		}
 	}
 
@@ -135,7 +159,10 @@ export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 				</DialogHeader>
 
 				{!showResults ? (
-					<div className="space-y-4 py-4">
+					<form
+						onSubmit={form.handleSubmit(handleInvite)}
+						className="space-y-4 py-4"
+					>
 						<div className="space-y-2">
 							<Label htmlFor="emails">
 								Email Addresses <span className="text-destructive">*</span>
@@ -145,9 +172,14 @@ export function BulkInviteDialog({ organizationId }: BulkInviteDialogProps) {
 								placeholder="colleague1@example.com, colleague2@example.com
 or one email per line"
 								rows={6}
-								value={emailsText}
+								{...form.register('emailsText')}
 								onChange={(e) => handleTextChange(e.target.value)}
 							/>
+							{form.formState.errors.emailsText && (
+								<p className="text-sm text-destructive">
+									{form.formState.errors.emailsText.message}
+								</p>
+							)}
 							<p className="text-xs text-muted-foreground">
 								Separate emails with commas, semicolons, spaces, or newlines
 							</p>
@@ -175,7 +207,10 @@ or one email per line"
 							<Label htmlFor="role">
 								Role <span className="text-destructive">*</span>
 							</Label>
-							<Select value={roleId} onValueChange={setRoleId}>
+							<Select
+								value={form.watch('roleId')}
+								onValueChange={(value) => form.setValue('roleId', value)}
+							>
 								<SelectTrigger className="min-h-[45px]">
 									<SelectValue placeholder="Select a role" />
 								</SelectTrigger>
@@ -194,8 +229,13 @@ or one email per line"
 									))}
 								</SelectContent>
 							</Select>
+							{form.formState.errors.roleId && (
+								<p className="text-sm text-destructive">
+									{form.formState.errors.roleId.message}
+								</p>
+							)}
 						</div>
-					</div>
+					</form>
 				) : (
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
@@ -238,6 +278,7 @@ or one email per line"
 					{!showResults ? (
 						<>
 							<Button
+								type="button"
 								variant="outline"
 								onClick={handleClose}
 								disabled={bulkInvite.isPending}
@@ -245,7 +286,8 @@ or one email per line"
 								Cancel
 							</Button>
 							<Button
-								onClick={handleInvite}
+								type="submit"
+								onClick={form.handleSubmit(handleInvite)}
 								disabled={bulkInvite.isPending || parsedEmails.length === 0}
 							>
 								{bulkInvite.isPending ? (
