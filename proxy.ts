@@ -24,6 +24,27 @@ export async function proxy(request: NextRequest) {
 	const supabaseResponse = await updateSession(request)
 
 	// Add security headers to response
+	const cspHeader = [
+		"default-src 'self'",
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://va.vercel-scripts.com",
+		"style-src 'self' 'unsafe-inline'",
+		"img-src 'self' data: blob: https: http:",
+		"font-src 'self' data:",
+		"connect-src 'self' https://api.github.com https://api.dicebear.com https://*.supabase.co https://*.googleapis.com wss://*.supabase.co",
+		"media-src 'self'",
+		"object-src 'none'",
+		"child-src 'self'",
+		"frame-src 'self' https://challenges.cloudflare.com",
+		"worker-src 'self' blob:",
+		"form-action 'self'",
+		"frame-ancestors 'self'",
+		"base-uri 'self'",
+		"manifest-src 'self'",
+		process.env.NODE_ENV === 'production' ? 'upgrade-insecure-requests' : '',
+	]
+		.filter(Boolean)
+		.join('; ')
+
 	const securityHeaders = {
 		'X-DNS-Prefetch-Control': 'on',
 		'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
@@ -33,6 +54,7 @@ export async function proxy(request: NextRequest) {
 		'Referrer-Policy': 'strict-origin-when-cross-origin',
 		'Permissions-Policy':
 			'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+		'Content-Security-Policy': cspHeader,
 	}
 
 	Object.entries(securityHeaders).forEach(([key, value]) => {

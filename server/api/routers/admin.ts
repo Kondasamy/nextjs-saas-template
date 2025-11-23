@@ -1,4 +1,6 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { isUserAdmin } from '@/lib/auth/admin-helpers'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const adminRouter = createTRPCRouter({
@@ -16,8 +18,13 @@ export const adminRouter = createTRPCRouter({
 		.query(async ({ ctx, input }) => {
 			const { limit, offset, search } = input
 
-			// TODO: Add admin check here
-			// if (!isAdmin(ctx.user)) throw new Error('Unauthorized')
+			// Verify admin access
+			if (!ctx.user || !(await isUserAdmin(ctx.user.email))) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Admin access required',
+				})
+			}
 
 			const where = search
 				? {
@@ -75,7 +82,13 @@ export const adminRouter = createTRPCRouter({
 	 * Get system statistics (admin only)
 	 */
 	getSystemStats: protectedProcedure.query(async ({ ctx }) => {
-		// TODO: Add admin check
+		// Verify admin access
+		if (!ctx.user || !(await isUserAdmin(ctx.user.email))) {
+			throw new TRPCError({
+				code: 'FORBIDDEN',
+				message: 'Admin access required',
+			})
+		}
 
 		const [
 			totalUsers,
@@ -138,7 +151,13 @@ export const adminRouter = createTRPCRouter({
 				endDate,
 			} = input
 
-			// TODO: Add admin check
+			// Verify admin access
+			if (!ctx.user || !(await isUserAdmin(ctx.user.email))) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Admin access required',
+				})
+			}
 
 			const where: any = {}
 
@@ -184,10 +203,20 @@ export const adminRouter = createTRPCRouter({
 	deleteUser: protectedProcedure
 		.input(z.object({ userId: z.string() }))
 		.mutation(async ({ ctx, input }) => {
-			// TODO: Add admin check
+			// Verify admin access
+			if (!ctx.user || !(await isUserAdmin(ctx.user.email))) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Admin access required',
+				})
+			}
+
 			// Prevent deleting yourself
 			if (input.userId === ctx.user.id) {
-				throw new Error('Cannot delete your own account')
+				throw new TRPCError({
+					code: 'BAD_REQUEST',
+					message: 'Cannot delete your own account',
+				})
 			}
 
 			return ctx.prisma.user.delete({
@@ -206,7 +235,13 @@ export const adminRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			// TODO: Add admin check
+			// Verify admin access
+			if (!ctx.user || !(await isUserAdmin(ctx.user.email))) {
+				throw new TRPCError({
+					code: 'FORBIDDEN',
+					message: 'Admin access required',
+				})
+			}
 
 			return ctx.prisma.user.update({
 				where: { id: input.userId },

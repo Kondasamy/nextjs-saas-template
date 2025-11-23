@@ -1,7 +1,10 @@
+import { jwtVerify, SignJWT } from 'jose'
 import { cookies } from 'next/headers'
+import { env } from '@/lib/env'
 import { prisma } from '@/lib/prisma'
 
 const IMPERSONATION_COOKIE = 'impersonation_session'
+const JWT_SECRET = new TextEncoder().encode(env.BETTER_AUTH_SECRET)
 
 interface ImpersonationSession {
 	adminId: string
@@ -41,12 +44,19 @@ export async function startImpersonation(
 		startedAt: Date.now(),
 	}
 
+	// Create signed JWT token
+	const token = await new SignJWT({ ...session })
+		.setProtectedHeader({ alg: 'HS256' })
+		.setIssuedAt()
+		.setExpirationTime('1h')
+		.sign(JWT_SECRET)
+
 	// Store in cookie
 	const cookieStore = await cookies()
-	cookieStore.set(IMPERSONATION_COOKIE, JSON.stringify(session), {
+	cookieStore.set(IMPERSONATION_COOKIE, token, {
 		httpOnly: true,
 		secure: process.env.NODE_ENV === 'production',
-		sameSite: 'lax',
+		sameSite: 'strict', // Stricter for admin functionality
 		maxAge: 60 * 60, // 1 hour
 	})
 
@@ -76,26 +86,33 @@ export async function stopImpersonation(): Promise<string | null> {
 		return null
 	}
 
-	const session: ImpersonationSession = JSON.parse(sessionCookie.value)
+	try {
+		const { payload } = await jwtVerify(sessionCookie.value, JWT_SECRET)
+		const session = payload as ImpersonationSession
 
-	// Log impersonation end in audit log
-	await prisma.auditLog.create({
-		data: {
-			action: 'IMPERSONATION_END',
-			userId: session.adminId,
-			details: {
-				targetUserId: session.userId,
-				duration: Date.now() - session.startedAt,
+		// Log impersonation end in audit log
+		await prisma.auditLog.create({
+			data: {
+				action: 'IMPERSONATION_END',
+				userId: session.adminId,
+				details: {
+					targetUserId: session.userId,
+					duration: Date.now() - session.startedAt,
+				},
+				ipAddress: 'system',
+				userAgent: 'impersonation',
 			},
-			ipAddress: 'system',
-			userAgent: 'impersonation',
-		},
-	})
+		})
 
-	// Clear cookie
-	cookieStore.delete(IMPERSONATION_COOKIE)
+		// Clear cookie
+		cookieStore.delete(IMPERSONATION_COOKIE)
 
-	return session.adminId
+		return session.adminId
+	} catch {
+		// Invalid token, clear cookie
+		cookieStore.delete(IMPERSONATION_COOKIE)
+		return null
+	}
 }
 
 /**
@@ -110,9 +127,12 @@ export async function getImpersonationSession(): Promise<ImpersonationSession | 
 	}
 
 	try {
-		const session: ImpersonationSession = JSON.parse(sessionCookie.value)
+		const { payload } = await jwtVerify(sessionCookie.value, JWT_SECRET, {
+			maxTokenAge: '1h',
+		})
+		const session = payload as ImpersonationSession
 
-		// Check if session expired (1 hour)
+		// JWT handles expiration, but double-check for safety
 		if (Date.now() - session.startedAt > 60 * 60 * 1000) {
 			await stopImpersonation()
 			return null
@@ -120,6 +140,8 @@ export async function getImpersonationSession(): Promise<ImpersonationSession | 
 
 		return session
 	} catch {
+		// Invalid or expired token
+		await stopImpersonation()
 		return null
 	}
 }

@@ -77,6 +77,15 @@ function getEnv(): Env {
 		return envSchema.parse(process.env)
 	} catch (error) {
 		if (error instanceof z.ZodError) {
+			// In production, don't expose specific variable names
+			if (process.env.NODE_ENV === 'production') {
+				console.error('Environment validation failed:', error.errors)
+				throw new Error(
+					'❌ Server configuration error. Please contact support.'
+				)
+			}
+
+			// In development, provide helpful error messages
 			const missingVars = error.errors
 				.map((err) => err.path.join('.'))
 				.join(', ')

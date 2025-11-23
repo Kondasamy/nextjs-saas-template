@@ -36,8 +36,9 @@ interface RateLimitStore {
 }
 
 // Configuration
-const MAX_STORE_SIZE = 10000 // Maximum number of entries to prevent memory leak
-const CLEANUP_INTERVAL = 60 * 1000 // Clean up every minute (more frequent than before)
+const MAX_STORE_SIZE = 5000 // Reduced maximum entries for better memory management
+const CLEANUP_INTERVAL = 30 * 1000 // Clean up every 30 seconds for aggressive cleanup
+const EMERGENCY_CLEANUP_THRESHOLD = 0.75 // Trigger emergency cleanup at 75% capacity
 
 // In-memory store for rate limiting (use Redis in production)
 const store: RateLimitStore = {}
@@ -110,17 +111,47 @@ export class RateLimiter {
 		const now = Date.now()
 		const key = `${this.keyPrefix}:${identifier}`
 
-		// Prevent store from growing too large (emergency brake)
+		// Early check for store size to prevent memory attacks
 		const storeSize = Object.keys(store).length
-		if (storeSize > MAX_STORE_SIZE * 1.5) {
-			// Emergency cleanup - remove oldest 25% of entries
-			const entriesToRemove = Math.floor(storeSize * 0.25)
-			const sorted = Object.entries(store)
-				.sort((a, b) => a[1].lastAccess - b[1].lastAccess)
-				.slice(0, entriesToRemove)
 
-			for (const [k] of sorted) {
+		// If we're at capacity, reject new IPs to prevent memory exhaustion
+		if (storeSize >= MAX_STORE_SIZE && !store[key]) {
+			// Log potential attack
+			if (process.env.NODE_ENV === 'development') {
+				console.warn(
+					`[RateLimiter] Store at capacity (${storeSize}), rejecting new identifier: ${identifier}`
+				)
+			}
+			return {
+				success: false,
+				limit: this.max,
+				remaining: 0,
+				reset: now + this.windowMs,
+			}
+		}
+
+		// Emergency cleanup if over threshold
+		if (storeSize > MAX_STORE_SIZE * EMERGENCY_CLEANUP_THRESHOLD) {
+			// Remove expired entries first
+			const expired = Object.entries(store)
+				.filter(([_, entry]) => entry.resetTime < now)
+				.map(([k]) => k)
+
+			for (const k of expired) {
 				delete store[k]
+			}
+
+			// If still too large, remove oldest entries
+			const currentSize = Object.keys(store).length
+			if (currentSize > MAX_STORE_SIZE * EMERGENCY_CLEANUP_THRESHOLD) {
+				const toRemove = currentSize - Math.floor(MAX_STORE_SIZE * 0.5) // Remove down to 50%
+				const sorted = Object.entries(store)
+					.sort((a, b) => a[1].lastAccess - b[1].lastAccess)
+					.slice(0, toRemove)
+
+				for (const [k] of sorted) {
+					delete store[k]
+				}
 			}
 		}
 

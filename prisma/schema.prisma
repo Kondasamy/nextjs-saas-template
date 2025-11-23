@@ -24,6 +24,10 @@ model User {
 	createdAt     DateTime  @default(now())
 	updatedAt     DateTime  @updatedAt
 
+	// Admin and security fields
+	isAdmin      Boolean   @default(false)
+	banned       Boolean   @default(false)
+
 	// Better Auth fields
 	betterAuthId String? @unique
 

@@ -4,6 +4,7 @@ import { magicLink } from 'better-auth/plugins/magic-link'
 import { passkey } from 'better-auth/plugins/passkey'
 import { EmailService } from '@/lib/email/service'
 import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -15,7 +16,10 @@ async function createDefaultWorkspace(user: {
 	name?: string | null
 }) {
 	try {
-		console.log('🏗️ Creating default workspace for user:', user.id, user.email)
+		logger.info('Creating default workspace for user', {
+			userId: user.id,
+			email: user.email,
+		})
 
 		// Check if user already has a workspace
 		const existingMembership = await prisma.organizationMember.findFirst({
@@ -23,7 +27,9 @@ async function createDefaultWorkspace(user: {
 		})
 
 		if (existingMembership) {
-			console.log('ℹ️ User already has a workspace, skipping creation')
+			logger.debug('User already has a workspace, skipping creation', {
+				userId: user.id,
+			})
 			return
 		}
 
@@ -49,7 +55,7 @@ async function createDefaultWorkspace(user: {
 
 		// Create default workspace
 		const workspaceName = user.name || `${user.email.split('@')[0]}'s Workspace`
-		console.log('📝 Creating workspace:', { name: workspaceName, slug })
+		logger.info('Creating workspace', { name: workspaceName, slug })
 
 		const workspace = await prisma.organization.create({
 			data: {
@@ -72,9 +78,11 @@ async function createDefaultWorkspace(user: {
 			},
 		})
 
-		console.log('✅ Default workspace created successfully:', workspace.id)
+		logger.info('Default workspace created successfully', {
+			workspaceId: workspace.id,
+		})
 	} catch (error) {
-		console.error('❌ Failed to create default workspace:', error)
+		logger.error('Failed to create default workspace', error)
 		// Don't fail signup if workspace creation fails
 	}
 }
@@ -101,13 +109,13 @@ export const auth = betterAuth({
 				if (env.RESEND_API_KEY) {
 					await EmailService.sendVerification(user.email, url)
 				} else {
-					console.log('📧 Verification email (RESEND_API_KEY not set):', {
+					logger.debug('Verification email (RESEND_API_KEY not set)', {
 						to: user.email,
 						url,
 					})
 				}
 			} catch (error) {
-				console.error('Failed to send verification email:', error)
+				logger.error('Failed to send verification email', error)
 			}
 		},
 		sendResetPassword: async ({ user, url }) => {
@@ -239,13 +247,12 @@ export const auth = betterAuth({
 					handler: async (ctx) => {
 						console.log('🚀 Signup handler running...')
 
-						// Try multiple ways to get the user
+						// Try to get the user from session or response
 						let user = ctx.context.session?.user
 
-						// If no user in session, try to get from response or find by checking recent users
+						// If no user in session, try to get from response
 						if (!user) {
 							console.log('⚠️ No user in session, checking response...')
-							// The response might have the user data
 							const response = ctx.response
 							if (
 								response &&
@@ -256,48 +263,15 @@ export const auth = betterAuth({
 							}
 						}
 
-						// If still no user, try to find the most recently created user
-						// This is a fallback - not ideal but should work
+						// Only proceed if we have a confirmed user context
+						// Never try to guess or find users by time - this is unsafe
 						if (!user) {
 							console.log(
-								'⚠️ Still no user, checking for recently created user...'
+								'❌ No user context available, skipping workspace creation'
 							)
-							// Get email from request if possible (this might not work if body is already read)
-							try {
-								// Find the most recently created user (within last 5 seconds)
-								const recentUser = await prisma.user.findFirst({
-									where: {
-										createdAt: {
-											gte: new Date(Date.now() - 5000), // Last 5 seconds
-										},
-									},
-									orderBy: {
-										createdAt: 'desc',
-									},
-								})
-
-								if (recentUser) {
-									// Check if this user already has a workspace
-									const hasWorkspace =
-										await prisma.organizationMember.findFirst({
-											where: { userId: recentUser.id },
-										})
-
-									if (!hasWorkspace) {
-										console.log(
-											'✅ Found recent user without workspace:',
-											recentUser.id
-										)
-										user = recentUser
-									}
-								}
-							} catch (error) {
-								console.error('Error finding recent user:', error)
-							}
-						}
-
-						if (!user) {
-							console.log('❌ Could not find user for workspace creation')
+							console.log(
+								'ℹ️ Workspace will be created on first authenticated access'
+							)
 							return
 						}
 

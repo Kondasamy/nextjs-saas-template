@@ -67,6 +67,27 @@ const nextConfig = {
 						value:
 							'camera=(), microphone=(), geolocation=(), interest-cohort=()',
 					},
+					{
+						key: 'Content-Security-Policy',
+						value: [
+							"default-src 'self'",
+							"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://va.vercel-scripts.com",
+							"style-src 'self' 'unsafe-inline'",
+							"img-src 'self' data: blob: https: http:",
+							"font-src 'self' data:",
+							"connect-src 'self' https://api.github.com https://api.dicebear.com https://*.supabase.co https://*.googleapis.com wss://*.supabase.co",
+							"media-src 'self'",
+							"object-src 'none'",
+							"child-src 'self'",
+							"frame-src 'self' https://challenges.cloudflare.com",
+							"worker-src 'self' blob:",
+							"form-action 'self'",
+							"frame-ancestors 'self'",
+							"base-uri 'self'",
+							"manifest-src 'self'",
+							'upgrade-insecure-requests',
+						].join('; '),
+					},
 				],
 			},
 		]
