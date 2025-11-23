@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import * as React from 'react'
 import { useEffect, useState } from 'react'
+import { NotificationsDropdown } from '@/components/notifications/notifications-dropdown'
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -149,6 +150,7 @@ export default function PageHeader() {
 			</div>
 
 			<div className="flex items-center gap-2 px-4">
+				<NotificationsDropdown />
 				<Button
 					ref={buttonRef}
 					variant="ghost"

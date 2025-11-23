@@ -64,7 +64,13 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - Automatic email sending for all authentication flows
   - Welcome emails sent automatically after signup
   - Marketing email support (Mailchimp, Loops, ConvertKit)
-- **In-app Notifications** with realtime updates (polling + Supabase-ready)
+- **In-app Notifications System**:
+  - Notifications bell dropdown in page header with unread count badge
+  - Real-time polling (30-second intervals) with toast alerts
+  - Mark as read/delete individual notifications
+  - Mark all as read functionality
+  - Automatic notification refresh
+  - Ready for Supabase Realtime upgrade
 - **Internationalization (i18n)** with next-intl
 - **ShadCN UI** component library (50+ components)
 - **Tailwind CSS 4** for styling
@@ -184,6 +190,8 @@ See `.env.local.example` for all required environment variables. Key variables:
 │   ├── admin/                     # Admin components
 │   │   ├── users-table.tsx        # User management table
 │   │   └── audit-log-table.tsx    # Audit log table
+│   ├── notifications/             # Notification components
+│   │   └── notifications-dropdown.tsx  # Bell icon dropdown with full management
 │   ├── analytics/                 # Analytics components
 │   │   ├── stats-card.tsx         # Statistics card
 │   │   ├── user-growth-chart.tsx  # User growth chart (Recharts)
@@ -239,8 +247,12 @@ See `.env.local.example` for all required environment variables. Key variables:
 │   ├── invitation.tsx             # Team invitation
 │   └── two-factor.tsx             # 2FA code email
 ├── hooks/                         # Custom React hooks
-│   ├── use-realtime-notifications.ts  # Realtime notifications
-│   └── use-presence.ts            # User presence tracking
+│   ├── use-auth.ts                # Combined session + user auth hook
+│   ├── use-session.ts             # Session-only hook (prefer use-auth)
+│   ├── use-notifications.ts       # Fetch unread notifications
+│   ├── use-realtime-notifications.ts  # Polling with toast alerts
+│   ├── use-realtime.ts            # Supabase Realtime hook (production-ready)
+│   └── use-presence.ts            # User presence tracking (Supabase-ready)
 └── middleware.ts                  # Next.js middleware
 ```
 
@@ -515,63 +527,184 @@ export default async function Page() {
 }
 ```
 
-## Supabase Storage
+## File Upload System
 
-File uploads are handled through Supabase Storage. **Note:** Supabase configuration is required for this feature.
+Comprehensive file upload system with reusable components:
+
+### ImageUpload Component
+
+Reusable image upload with preview and removal:
+
+```tsx
+import { ImageUpload } from '@/components/upload/image-upload'
+
+<ImageUpload
+  bucket="avatars"
+  path={`${userId}/avatar`}
+  value={currentImageUrl}
+  onChange={(url) => handleImageChange(url)}
+/>
+```
+
+**Features:**
+- Image preview with Next.js Image component
+- Remove button with confirmation
+- Automatic validation (max 5MB)
+- Supports: PNG, JPG, JPEG, GIF, WEBP
+- Used in:
+  - Profile settings (avatar upload)
+  - Workspace settings (logo upload)
+
+### FileUpload Component
+
+Generic file upload with drag-and-drop:
 
 ```tsx
 import { FileUpload } from '@/components/upload/file-upload'
 
 <FileUpload
-  bucket="avatars"
+  bucket="documents"
+  path="uploads/"
   onUploadComplete={(url) => console.log(url)}
+  maxSize={10 * 1024 * 1024}  // 10MB
+  accept={{ 'image/*': ['.png', '.jpg'], 'application/pdf': ['.pdf'] }}
 />
 ```
 
-To enable Supabase Storage, add the following environment variables:
+**Features:**
+- Drag and drop support
+- Upload progress bar
+- File size and type validation
+- Integrates with tRPC storage endpoints
+
+**Supabase Configuration (Optional):**
+To enable Supabase Storage, add environment variables:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-## Realtime Features
+## In-app Notifications System
 
-Supabase Realtime is integrated for live updates. **Note:** Supabase configuration is required for this feature.
+The template includes a complete notifications system with multiple hooks for different use cases:
 
-The template includes two realtime hooks:
+### Notifications Bell (Implemented)
 
-### Realtime Notifications
+Real-time notifications dropdown in the page header:
+
+```tsx
+import { NotificationsDropdown } from '@/components/notifications/notifications-dropdown'
+
+// Already integrated in PageHeader
+<NotificationsDropdown />
+```
+
+**Features:**
+- Bell icon with unread count badge (shows "9+" for 10+)
+- Dropdown with scrollable notification list
+- Mark individual notifications as read
+- Mark all as read button
+- Delete individual notifications
+- Time-relative timestamps (e.g., "2 hours ago")
+- Automatic refresh on interactions
+
+### Available Hooks
+
+#### 1. useNotifications
+Fetches unread notifications for display:
+
+```tsx
+import { useNotifications } from '@/hooks/use-notifications'
+
+export function Component() {
+  const { notifications, isLoading, unreadCount } = useNotifications()
+
+  return <Badge>{unreadCount}</Badge>
+}
+```
+
+#### 2. useRealtimeNotifications
+Polling with automatic toast alerts (currently active):
 
 ```tsx
 import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications'
 
-export function NotificationBell() {
+export function Component() {
   const { notifications, unreadCount, refresh } = useRealtimeNotifications()
-
-  return (
-    <Badge>{unreadCount}</Badge>
-  )
+  // Toast notifications appear automatically for new items
 }
 ```
 
-Currently uses polling (30-second intervals) with structure ready for Supabase Realtime upgrade.
+**Current Implementation:** Polls every 30 seconds and shows toast for new notifications.
+**Ready for Upgrade:** Can be replaced with `useRealtime` for true real-time updates.
 
-### User Presence
+#### 3. useRealtime (Production-Ready)
+Generic Supabase Realtime subscription hook:
+
+```tsx
+import { useRealtime } from '@/hooks/use-realtime'
+
+// Listen for new notifications
+const { isConnected } = useRealtime<Notification>(
+  'notifications',
+  'new-notification',
+  (notification) => {
+    toast.success(notification.title)
+    utils.notifications.list.invalidate()
+  }
+)
+
+// User presence tracking
+const { isConnected } = useRealtime<PresenceState>(
+  `workspace:${workspaceId}`,
+  'presence',
+  (state) => setOnlineUsers(state.users)
+)
+
+// Live collaboration
+const { isConnected } = useRealtime<DocumentUpdate>(
+  `document:${docId}`,
+  'content-change',
+  (update) => applyRemoteUpdate(update)
+)
+```
+
+**Prerequisites:**
+1. Set environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2. Enable Realtime in Supabase dashboard
+
+**Common Use Cases:**
+- Real-time notifications (upgrade from polling)
+- User presence tracking
+- Collaborative editing
+- Live chat
+- Activity feeds
+
+#### 4. useSessionData
+Lightweight session-only hook:
+
+```tsx
+import { useSessionData } from '@/hooks/use-session'
+
+const { session, isLoading } = useSessionData()
+```
+
+**Note:** Prefer `useAuth()` for most cases (provides both session + user data).
+
+#### 5. usePresence
+User presence tracking (ready for Supabase):
 
 ```tsx
 import { usePresence } from '@/hooks/use-presence'
 
 export function OnlineUsers() {
   const { onlineUsers, onlineCount } = usePresence(workspaceId)
-
   return <div>{onlineCount} users online</div>
 }
 ```
 
 Structure ready for Supabase Realtime Presence integration.
-
-To enable Supabase Realtime, add the following environment variables:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## Analytics Dashboard
 

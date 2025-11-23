@@ -8,6 +8,7 @@ export const notificationsRouter = createTRPCRouter({
 			z
 				.object({
 					read: z.boolean().optional(),
+					unreadOnly: z.boolean().optional(), // Alias for read: false
 					limit: z.number().min(1).max(100).default(50),
 					cursor: z.string().optional(),
 				})
@@ -22,7 +23,10 @@ export const notificationsRouter = createTRPCRouter({
 				userId: ctx.user.id,
 			}
 
-			if (input?.read !== undefined) {
+			// Handle both read and unreadOnly parameters
+			if (input?.unreadOnly) {
+				where.read = false
+			} else if (input?.read !== undefined) {
 				where.read = input.read
 			}
 
@@ -33,8 +37,17 @@ export const notificationsRouter = createTRPCRouter({
 				cursor: input?.cursor ? { id: input.cursor } : undefined,
 			})
 
+			// Get unread count for the user
+			const unreadCount = await ctx.prisma.notification.count({
+				where: {
+					userId: ctx.user.id,
+					read: false,
+				},
+			})
+
 			return {
 				notifications,
+				unreadCount,
 				nextCursor:
 					notifications.length === (input?.limit ?? 50)
 						? notifications[notifications.length - 1]?.id

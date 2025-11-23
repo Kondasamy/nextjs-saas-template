@@ -59,7 +59,12 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - EmailService class for centralized email sending
   - Email preview route for development
   - Welcome emails sent automatically after signup
-- **In-app Notifications** with realtime updates (polling + Supabase-ready)
+- **In-app Notifications System**:
+  - Notifications bell dropdown in header with unread count badge
+  - Real-time polling (30s) with toast alerts via `useRealtimeNotifications`
+  - Full notification management (read, delete, mark all as read)
+  - Five hooks: `useNotifications`, `useRealtimeNotifications`, `useRealtime`, `useSessionData`, `usePresence`
+  - Production-ready for Supabase Realtime upgrade
 - **Supabase** integration (optional):
   - PostgreSQL database
   - Storage for file uploads
@@ -218,15 +223,21 @@ pnpm dev
 │   │   ├── role-editor-dialog.tsx
 │   │   └── roles-table.tsx
 │   ├── notifications/             # Notification components
+│   │   └── notifications-dropdown.tsx  # Bell icon dropdown with full management
 │   ├── upload/                    # File upload components
+│   │   ├── image-upload.tsx       # Reusable image upload with preview
+│   │   └── file-upload.tsx        # Generic file upload with drag-and-drop
 │   ├── user/                      # User components
+│   │   └── user-avatar-menu.tsx   # User dropdown menu (in PageHeader)
 │   ├── ui/                        # shadcn/ui components (50+)
 │   ├── motion-primitives/         # Custom animation components (10)
 │   ├── app-sidebar.tsx            # Main navigation with settings & admin
 │   ├── nav-main.tsx               # Main navigation items
-│   ├── nav-secondary.tsx          # Secondary navigation
-│   ├── nav-user.tsx               # User navigation
-│   └── page-header.tsx            # Page header component
+│   ├── nav-secondary.tsx          # Secondary navigation (supports onClick)
+│   ├── nav-user.tsx               # User navigation (sidebar footer)
+│   ├── page-header.tsx            # Header: breadcrumbs, notifications, theme, user menu
+│   ├── feedback-dialog.tsx        # Feedback form dialog
+│   └── support-dialog.tsx         # Support request dialog
 ├── emails/                        # React Email templates
 │   ├── components/                # Email components
 │   │   ├── email-layout.tsx
@@ -247,9 +258,11 @@ pnpm dev
 │           ├── workspace.ts       # Workspace CRUD, cloning, archiving, usage
 │           ├── permissions.ts     # RBAC, roles, permissions
 │           ├── invitations.ts     # Invites, bulk operations, invite links
+│           ├── notifications.ts   # Notifications (list, read, delete)
 │           ├── api-keys.ts        # API key management
 │           ├── analytics.ts       # Analytics router
-│           └── admin.ts           # Admin router
+│           ├── admin.ts           # Admin router
+│           └── feedback.ts        # Feedback and support
 ├── lib/                           # Utility functions
 │   ├── auth/                      # Better Auth configuration
 │   │   ├── config.ts              # Better Auth + email hooks
@@ -272,8 +285,12 @@ pnpm dev
 ├── prisma/                        # Prisma schema
 │   └── schema.prisma              # Database schema
 ├── hooks/                         # Custom React hooks
-│   ├── use-realtime-notifications.ts
-│   ├── use-presence.ts
+│   ├── use-auth.ts                # Combined session + user (prefer this)
+│   ├── use-session.ts             # Session-only hook
+│   ├── use-notifications.ts       # Fetch unread notifications
+│   ├── use-realtime-notifications.ts  # Polling with toast alerts (active)
+│   ├── use-realtime.ts            # Supabase Realtime (production-ready)
+│   ├── use-presence.ts            # User presence (Supabase-ready)
 │   ├── use-media-query.ts
 │   ├── use-mobile.ts
 │   └── useClickOutside.tsx

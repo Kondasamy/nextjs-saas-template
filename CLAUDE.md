@@ -73,8 +73,15 @@ Content is managed through **TypeScript data files** rather than a CMS:
 - Client component using `usePathname()` for active state
 - Navigation data defined inline (not from data files)
 - Main nav: Dashboard, Features, Documentation, Settings (5 sub-pages), Admin (3 sub-pages)
-- Secondary nav: Support, Feedback
-- Uses constants from `lib/constants.ts`: `NAME`, `EMAIL_URL`, `IMAGE_URL`
+- Secondary nav: Support, Feedback (opens dialogs)
+- Uses constants from `lib/constants.ts`: `NAME`, `EMAIL_URL`
+- Footer: NavUser component with user dropdown
+
+**PageHeader** (`components/page-header.tsx`):
+- Left side: SidebarTrigger, Breadcrumbs with page icons
+- Right side: NotificationsDropdown, Theme toggle, UserAvatarMenu
+- Client component with theme toggle animation
+- Dynamic page title based on pathname
 
 ### Authentication & Authorization
 
@@ -118,15 +125,16 @@ export function Component() {
 ```
 
 **Available Routers**:
-- `user` - User operations (getCurrent, update, exportAccountData, getUserActivityLog)
-- `workspace` - Workspace/organization management (cloneWorkspace, archiveWorkspace, unarchiveWorkspace, getWorkspaceUsage, bulkUpdateMemberRoles, bulkRemoveMembers)
+- `user` - User operations (getCurrent, update, updateProfile, exportAccountData, getUserActivityLog)
+- `workspace` - Workspace/organization management (cloneWorkspace, archiveWorkspace, unarchiveWorkspace, getWorkspaceUsage, bulkUpdateMemberRoles, bulkRemoveMembers, update)
 - `permissions` - RBAC permission checks (listRoles, createRole, updateRole, deleteRole)
 - `invitations` - Team invitations (createInviteLink, listInviteLinks, revokeInviteLink, acceptInviteLink, bulkInviteMembers)
-- `notifications` - Notification management
-- `storage` - File upload/download
+- `notifications` - Notification management (list, markAsRead, markAllAsRead, delete)
+- `storage` - File upload/download (getUploadUrl, getPublicUrl)
 - `analytics` - Dashboard analytics (getStats, getUserGrowth, getActivityMetrics, getRecentActivities)
 - `admin` - Admin operations (getAllUsers, getSystemStats, getAuditLogs, deleteUser, updateUserStatus)
 - `apiKeys` - API key management (list, create, revoke, validate)
+- `feedback` - User feedback and support (submitFeedback, submitSupport)
 
 ### Admin Dashboard Pattern
 
@@ -178,10 +186,26 @@ export function Component() {
 
 **Settings Components**:
 - Form validation with React Hook Form + Zod schemas
-- Avatar upload with preview and size validation (max 5MB)
+- Avatar upload using `ImageUpload` component (reusable, max 5MB)
 - Password strength validation with regex
 - Confirmation dialogs for destructive actions (e.g., delete account requires typing "DELETE")
 - Role-based access control for team management
+
+**Upload Components** (`components/upload/`):
+- `ImageUpload` - Reusable image upload with preview and removal
+  - Used in: ProfileSettingsForm (avatar), WorkspaceLogoUpload (logo)
+  - Props: `bucket`, `path`, `value`, `onChange`
+  - Features: preview, remove button, 5MB validation, supports PNG/JPG/GIF/WEBP
+- `FileUpload` - Generic file upload with drag-and-drop
+  - Features: progress bar, validation, tRPC integration
+  - Props: `bucket`, `path`, `onUploadComplete`, `maxSize`, `accept`
+
+**User Components** (`components/user/`):
+- `UserAvatarMenu` - User dropdown menu in PageHeader
+  - Shows avatar, name, email
+  - Links to Profile and Settings
+  - Sign out functionality
+  - Uses `useAuth()` hook for user data
 
 ### Email System Pattern (✅ Fully Integrated)
 
@@ -211,18 +235,57 @@ await EmailService.send2FACode(email, name, code)
 - Access via `/api/email/preview?template=welcome`
 - Useful for testing email templates
 
-### Realtime Notifications Pattern
+### Notifications System (✅ Fully Implemented)
 
-**Polling Approach** (`hooks/use-realtime-notifications.ts`):
-- Uses `refetchInterval: 30000` (30 seconds) in tRPC query
-- Shows toast notifications for new items
-- Tracks `lastCheck` timestamp to filter new notifications
-- Structure ready for Supabase Realtime upgrade
+**NotificationsDropdown** (`components/notifications/notifications-dropdown.tsx`):
+- Bell icon in PageHeader with unread count badge
+- Dropdown with scrollable notification list (400px max height)
+- Mark as read/delete individual notifications
+- Mark all as read functionality
+- Time-relative timestamps with date-fns
+- Integrated with `useNotifications` hook
 
-**Presence Tracking** (`hooks/use-presence.ts`):
-- Placeholder structure for online user tracking
-- TODO comments for Supabase Realtime Presence integration
-- Returns `onlineUsers` and `onlineCount`
+**Available Hooks**:
+
+1. **useNotifications** (`hooks/use-notifications.ts`):
+   - Fetches unread notifications from tRPC
+   - Returns: `notifications`, `isLoading`, `unreadCount`
+   - Used in NotificationsDropdown component
+
+2. **useRealtimeNotifications** (`hooks/use-realtime-notifications.ts`):
+   - Polls every 30 seconds with `refetchInterval`
+   - Shows toast notifications for new items
+   - Tracks `lastCheck` timestamp to filter new notifications
+   - Ready for Supabase Realtime upgrade
+
+3. **useRealtime** (`hooks/use-realtime.ts`):
+   - Generic Supabase Realtime subscription hook
+   - Production-ready with comprehensive documentation
+   - Use cases: notifications, presence, collaboration, chat
+   - Requires Supabase environment variables
+
+4. **useSessionData** (`hooks/use-session.ts`):
+   - Lightweight session-only hook
+   - Documented to prefer `useAuth()` for most cases
+   - Returns: `session`, `isLoading`
+
+5. **usePresence** (`hooks/use-presence.ts`):
+   - Placeholder structure for online user tracking
+   - Ready for Supabase Realtime Presence integration
+   - Returns: `onlineUsers`, `onlineCount`
+
+**Notifications Router** (`server/api/routers/notifications.ts`):
+- `list` - Fetch notifications with `unreadOnly` and `read` filters
+- Returns `unreadCount` for badge display
+- `markAsRead` - Mark individual notification as read
+- `markAllAsRead` - Mark all user notifications as read
+- `delete` - Delete individual notification
+
+**PageHeader Integration**:
+- NotificationsDropdown positioned between sidebar and theme toggle
+- Bell icon with red badge for unread count
+- Shows "9+" for 10+ unread notifications
+- Dropdown aligned to right edge
 
 ### Production Ready Features (✅ Implemented)
 

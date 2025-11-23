@@ -11,6 +11,6 @@ export function useNotifications() {
 	return {
 		notifications: data?.notifications ?? [],
 		isLoading,
-		unreadCount: data?.notifications?.length ?? 0,
+		unreadCount: data?.unreadCount ?? 0,
 	}
 }
