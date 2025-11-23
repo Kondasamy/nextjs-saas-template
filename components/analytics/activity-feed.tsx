@@ -75,10 +75,7 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
 								// TypeScript now knows user is not null after type guard
 								const user = activity.user
 								return (
-									<div
-										key={activity.id}
-										className="flex items-start space-x-4"
-									>
+									<div key={activity.id} className="flex items-start space-x-4">
 										<Avatar className="h-8 w-8">
 											<AvatarImage src={user.image || undefined} />
 											<AvatarFallback>
