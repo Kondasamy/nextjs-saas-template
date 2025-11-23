@@ -25,7 +25,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
-import { UserAvatarMenu } from '@/components/user/user-avatar-menu'
 
 export default function PageHeader() {
 	const pathname = usePathname()
@@ -165,8 +164,7 @@ export default function PageHeader() {
 					)}
 					<span className="sr-only">Toggle theme</span>
 				</Button>
-				<UserAvatarMenu />
-			</div>
+				</div>
 		</header>
 	)
 }

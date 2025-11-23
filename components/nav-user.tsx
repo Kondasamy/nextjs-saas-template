@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronsUpDown, LogOut, User } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Settings, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -86,8 +86,16 @@ export function NavUser({
 							className="cursor-pointer"
 						>
 							<User className="mr-2 h-4 w-4" />
-							<span>Profile Settings</span>
+							<span>Profile</span>
 						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={() => router.push('/settings/account')}
+							className="cursor-pointer"
+						>
+							<Settings className="mr-2 h-4 w-4" />
+							<span>Settings</span>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							onClick={handleSignOut}
 							className="cursor-pointer"
