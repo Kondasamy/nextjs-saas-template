@@ -20,11 +20,7 @@ export async function verifyMembershipWithRole(
 			userId,
 		},
 		include: {
-			role: {
-				include: {
-					permissions: true,
-				},
-			},
+			role: true,
 		},
 	})
 
@@ -53,13 +49,16 @@ export async function hasPermission(
 		organizationId
 	)
 
+	// Permissions is a JSON field storing an array of permission strings
+	const permissions = membership.role.permissions as string[]
+
 	// Check for wildcard permission
-	if (membership.role.permissions.some((p) => p.name === '*')) {
+	if (permissions.includes('*')) {
 		return true
 	}
 
 	// Check for specific permission
-	return membership.role.permissions.some((p) => p.name === permission)
+	return permissions.includes(permission)
 }
 
 /**
@@ -89,11 +88,7 @@ export async function getOrganizationWithMembers(
 							banned: true,
 						},
 					},
-					role: {
-						include: {
-							permissions: true,
-						},
-					},
+					role: true,
 				},
 			},
 			invitations: {
@@ -165,7 +160,7 @@ export async function getOrganizationStats(
 				organizationId,
 				type: 'LINK',
 				status: 'PENDING',
-				OR: [{ expiresAt: { gte: new Date() } }, { expiresAt: null }],
+				expiresAt: { gte: new Date() },
 			},
 		}),
 	])

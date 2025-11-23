@@ -49,6 +49,11 @@ export const adminRouter = createTRPCRouter({
 						banned: true,
 						createdAt: true,
 						updatedAt: true,
+						_count: {
+							select: {
+								organizations: true,
+							},
+						},
 						organizations: {
 							include: {
 								organization: {
