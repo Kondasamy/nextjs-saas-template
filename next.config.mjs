@@ -72,9 +72,9 @@ const nextConfig = {
 						value: [
 							"default-src 'self'",
 							"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://va.vercel-scripts.com",
-							"style-src 'self' 'unsafe-inline'",
+							"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 							"img-src 'self' data: blob: https: http:",
-							"font-src 'self' data:",
+							"font-src 'self' data: https://fonts.gstatic.com",
 							"connect-src 'self' https://api.github.com https://api.dicebear.com https://*.supabase.co https://*.googleapis.com wss://*.supabase.co",
 							"media-src 'self'",
 							"object-src 'none'",
