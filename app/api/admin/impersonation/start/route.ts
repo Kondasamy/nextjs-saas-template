@@ -14,14 +14,14 @@ export async function POST(request: Request) {
 		await checkRateLimit(strictRateLimiter)
 
 		// Verify admin access
-		const session = await requireAdmin()
+		const admin = await requireAdmin()
 
 		// Parse and validate request body
 		const body = await request.json()
 		const { userId } = startImpersonationSchema.parse(body)
 
 		// Start impersonation
-		await startImpersonation(session.user.id, userId)
+		await startImpersonation(admin.id, userId)
 
 		return NextResponse.json({ success: true })
 	} catch (error) {

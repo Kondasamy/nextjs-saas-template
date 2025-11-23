@@ -43,8 +43,6 @@ export async function GET(request: Request) {
 				html = await render(
 					VerificationEmail({
 						verificationUrl: 'http://localhost:3000/verify-email?token=sample',
-						name: 'John Doe',
-						code: '123456',
 					})
 				)
 				break

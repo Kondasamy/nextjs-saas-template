@@ -14,13 +14,13 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 interface Activity {
 	id: string
 	action: string
-	userId: string
+	userId: string | null
 	createdAt: Date
 	user: {
 		name: string | null
 		email: string
 		image: string | null
-	}
+	} | null
 }
 
 interface ActivityFeedProps {
@@ -46,7 +46,17 @@ function getActionDescription(action: string): string {
 	return descriptions[action] || action
 }
 
+// Type guard to filter activities with users
+function hasUser(
+	activity: Activity
+): activity is Activity & { user: NonNullable<Activity['user']> } {
+	return activity.user !== null
+}
+
 export function ActivityFeed({ activities }: ActivityFeedProps) {
+	// Filter out activities without users (they can't be displayed)
+	const activitiesWithUsers = activities.filter(hasUser)
+
 	return (
 		<Card>
 			<CardHeader>
@@ -56,35 +66,42 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
 			<CardContent>
 				<ScrollArea className="h-[300px] pr-4">
 					<div className="space-y-4">
-						{activities.length === 0 ? (
+						{activitiesWithUsers.length === 0 ? (
 							<p className="text-sm text-muted-foreground">
 								No recent activity
 							</p>
 						) : (
-							activities.map((activity) => (
-								<div key={activity.id} className="flex items-start space-x-4">
-									<Avatar className="h-8 w-8">
-										<AvatarImage src={activity.user.image || undefined} />
-										<AvatarFallback>
-											{activity.user.name?.[0]?.toUpperCase() ||
-												activity.user.email[0]?.toUpperCase()}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex-1 space-y-1">
-										<p className="text-sm">
-											<span className="font-medium">
-												{activity.user.name || activity.user.email}
-											</span>{' '}
-											{getActionDescription(activity.action)}
-										</p>
-										<p className="text-xs text-muted-foreground">
-											{formatDistanceToNow(new Date(activity.createdAt), {
-												addSuffix: true,
-											})}
-										</p>
+							activitiesWithUsers.map((activity) => {
+								// TypeScript now knows user is not null after type guard
+								const user = activity.user
+								return (
+									<div
+										key={activity.id}
+										className="flex items-start space-x-4"
+									>
+										<Avatar className="h-8 w-8">
+											<AvatarImage src={user.image || undefined} />
+											<AvatarFallback>
+												{user.name?.[0]?.toUpperCase() ||
+													user.email[0]?.toUpperCase()}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex-1 space-y-1">
+											<p className="text-sm">
+												<span className="font-medium">
+													{user.name || user.email}
+												</span>{' '}
+												{getActionDescription(activity.action)}
+											</p>
+											<p className="text-xs text-muted-foreground">
+												{formatDistanceToNow(new Date(activity.createdAt), {
+													addSuffix: true,
+												})}
+											</p>
+										</div>
 									</div>
-								</div>
-							))
+								)
+							})
 						)}
 					</div>
 				</ScrollArea>
