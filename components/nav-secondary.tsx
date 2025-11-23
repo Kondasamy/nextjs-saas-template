@@ -40,9 +40,10 @@ export function NavSecondary({
 }: {
 	items: {
 		title: string
-		url: string
+		url?: string
 		icon: LucideIcon
 		isActive?: boolean
+		onClick?: () => void
 		items?: {
 			title: string
 			url: string
@@ -176,9 +177,20 @@ export function NavSecondary({
 											</DrawerContent>
 										</Drawer>
 									)
+								) : item.onClick ? (
+									<SidebarMenuButton
+										size="sm"
+										isActive={item.isActive}
+										onClick={item.onClick}
+									>
+										<item.icon
+											className={item.isActive ? 'text-primary' : ''}
+										/>
+										<span>{item.title}</span>
+									</SidebarMenuButton>
 								) : (
 									<SidebarMenuButton asChild size="sm" isActive={item.isActive}>
-										<ViewTransitionLink href={item.url}>
+										<ViewTransitionLink href={item.url!}>
 											<item.icon
 												className={item.isActive ? 'text-primary' : ''}
 											/>

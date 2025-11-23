@@ -2,10 +2,12 @@ import { render } from '@react-email/components'
 import { Resend } from 'resend'
 import { EmailChangeNotification } from '@/emails/email-change-notification'
 import { EmailChangeVerification } from '@/emails/email-change-verification'
+import FeedbackEmail from '@/emails/feedback'
 import { InvitationEmail } from '@/emails/invitation'
 import MagicLinkEmail from '@/emails/magic-link'
 import { PasswordChanged } from '@/emails/password-changed'
 import PasswordResetEmail from '@/emails/password-reset'
+import SupportEmail from '@/emails/support'
 import TwoFactorEmail from '@/emails/two-factor'
 import { VerificationEmail } from '@/emails/verification'
 import { WelcomeEmail } from '@/emails/welcome'
@@ -204,6 +206,49 @@ export class EmailService {
 		return sendEmail({
 			to,
 			subject: 'Your password was changed',
+			html,
+		})
+	}
+
+	/**
+	 * Send feedback email to admin
+	 */
+	static async sendFeedback(
+		adminEmail: string,
+		userName: string,
+		userEmail: string,
+		category: string,
+		message: string
+	) {
+		const html = await render(
+			FeedbackEmail({ userName, userEmail, category, message })
+		)
+
+		return sendEmail({
+			to: adminEmail,
+			subject: `New Feedback from ${userName}`,
+			html,
+		})
+	}
+
+	/**
+	 * Send support request email to admin
+	 */
+	static async sendSupport(
+		adminEmail: string,
+		userName: string,
+		userEmail: string,
+		subject: string,
+		priority: string,
+		message: string
+	) {
+		const html = await render(
+			SupportEmail({ userName, userEmail, subject, priority, message })
+		)
+
+		return sendEmail({
+			to: adminEmail,
+			subject: `[${priority} Priority] Support: ${subject}`,
 			html,
 		})
 	}

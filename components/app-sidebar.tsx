@@ -15,9 +15,11 @@ import {
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { FeedbackDialog } from '@/components/feedback-dialog'
 import { NavMain } from '@/components/nav-main'
 import { NavSecondary } from '@/components/nav-secondary'
 import { NavUser } from '@/components/nav-user'
+import { SupportDialog } from '@/components/support-dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -53,7 +55,6 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { EMAIL_URL_LINK } from '@/lib/constants'
 import { trpc } from '@/lib/trpc/client'
 import { useWorkspace } from '@/lib/workspace/workspace-context'
 
@@ -270,6 +271,8 @@ function WorkspaceSwitcherMenu() {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const pathname = usePathname()
+	const [showSupportDialog, setShowSupportDialog] = useState(false)
+	const [showFeedbackDialog, setShowFeedbackDialog] = useState(false)
 
 	// Get full user data from database via tRPC
 	// No need to check authUser first - tRPC handles authentication
@@ -280,9 +283,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const navSecondaryItems: Array<{
 		title: string
-		url: string
+		url?: string
 		icon: typeof Settings2
 		isActive?: boolean
+		onClick?: () => void
 		items?: Array<{ title: string; url: string }>
 	}> = [
 		{
@@ -363,13 +367,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	navSecondaryItems.push(
 		{
 			title: 'Support',
-			url: EMAIL_URL_LINK,
 			icon: LifeBuoy,
+			onClick: () => setShowSupportDialog(true),
 		},
 		{
 			title: 'Feedback',
-			url: EMAIL_URL_LINK,
 			icon: Send,
+			onClick: () => setShowFeedbackDialog(true),
 		}
 	)
 
@@ -397,21 +401,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	}
 
 	return (
-		<Sidebar variant="inset" {...props}>
-			<SidebarHeader>
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<WorkspaceSwitcherMenu />
-					</SidebarMenuItem>
-				</SidebarMenu>
-			</SidebarHeader>
-			<SidebarContent>
-				<NavMain items={data.navMain} />
-				<NavSecondary items={data.navSecondary} className="mt-auto" />
-			</SidebarContent>
-			<SidebarFooter>
-				<NavUser user={data.user} />
-			</SidebarFooter>
-		</Sidebar>
+		<>
+			<Sidebar variant="inset" {...props}>
+				<SidebarHeader>
+					<SidebarMenu>
+						<SidebarMenuItem>
+							<WorkspaceSwitcherMenu />
+						</SidebarMenuItem>
+					</SidebarMenu>
+				</SidebarHeader>
+				<SidebarContent>
+					<NavMain items={data.navMain} />
+					<NavSecondary items={data.navSecondary} className="mt-auto" />
+				</SidebarContent>
+				<SidebarFooter>
+					<NavUser user={data.user} />
+				</SidebarFooter>
+			</Sidebar>
+
+			<SupportDialog
+				open={showSupportDialog}
+				onOpenChange={setShowSupportDialog}
+			/>
+			<FeedbackDialog
+				open={showFeedbackDialog}
+				onOpenChange={setShowFeedbackDialog}
+			/>
+		</>
 	)
 }

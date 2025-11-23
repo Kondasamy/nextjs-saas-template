@@ -1,5 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { magicLink } from 'better-auth/plugins/magic-link'
+import { passkey } from 'better-auth/plugins/passkey'
 import { EmailService } from '@/lib/email/service'
 import { env } from '@/lib/env'
 import { prisma } from '@/lib/prisma'
@@ -108,7 +110,7 @@ export const auth = betterAuth({
 				console.error('Failed to send verification email:', error)
 			}
 		},
-		sendResetPasswordEmail: async ({ user, url }) => {
+		sendResetPassword: async ({ user, url }) => {
 			try {
 				if (env.RESEND_API_KEY) {
 					await EmailService.sendPasswordReset(
@@ -150,26 +152,25 @@ export const auth = betterAuth({
 					}
 				: undefined,
 	},
-	magicLink: {
-		enabled: true,
-		sendEmail: async ({ email, url }) => {
-			try {
-				if (env.RESEND_API_KEY) {
-					await EmailService.sendMagicLink(email, url)
-				} else {
-					console.log('📧 Magic link email (RESEND_API_KEY not set):', {
-						to: email,
-						url,
-					})
+	plugins: [
+		magicLink({
+			sendMagicLink: async ({ email, url }) => {
+				try {
+					if (env.RESEND_API_KEY) {
+						await EmailService.sendMagicLink(email, url)
+					} else {
+						console.log('📧 Magic link email (RESEND_API_KEY not set):', {
+							to: email,
+							url,
+						})
+					}
+				} catch (error) {
+					console.error('Failed to send magic link email:', error)
 				}
-			} catch (error) {
-				console.error('Failed to send magic link email:', error)
-			}
-		},
-	},
-	passkey: {
-		enabled: true,
-	},
+			},
+		}),
+		passkey(),
+	],
 	otp: {
 		enabled: true,
 		sendEmail: async ({ email, otp }) => {

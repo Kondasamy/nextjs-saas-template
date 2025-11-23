@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { authClient } from '@/lib/auth/client'
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -31,15 +32,30 @@ export default function ForgotPasswordPage() {
 		resolver: zodResolver(forgotPasswordSchema),
 	})
 
-	const handleSubmit = async (_data: ForgotPasswordFormData) => {
+	const handleSubmit = async (data: ForgotPasswordFormData) => {
 		setIsLoading(true)
 		try {
-			// This would call Better Auth's password reset
-			// await authClient.forgotPassword({ email: _data.email })
+			const result = await authClient.forgetPassword({
+				email: data.email,
+				redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`,
+			})
+
+			if (result?.error) {
+				toast.error(
+					result.error.message || 'Failed to send reset link. Please try again.'
+				)
+				setIsLoading(false)
+				return
+			}
+
 			toast.success('Password reset link sent! Check your email.')
 			setSent(true)
-		} catch {
-			toast.error('Failed to send reset link. Please try again.')
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: 'Failed to send reset link. Please try again.'
+			toast.error(errorMessage)
 		} finally {
 			setIsLoading(false)
 		}

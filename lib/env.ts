@@ -60,6 +60,9 @@ const envSchema = z.object({
 	OKTA_CLIENT_ID: z.string().optional(),
 	OKTA_CLIENT_SECRET: z.string().optional(),
 
+	// Admin
+	ADMIN_EMAILS: z.string().optional(),
+
 	// App
 	NEXT_PUBLIC_APP_URL: z.string().url(),
 	NODE_ENV: z
