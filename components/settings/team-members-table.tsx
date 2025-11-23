@@ -39,15 +39,14 @@ interface TeamMembersTableProps {
 export function TeamMembersTable({ organizationId }: TeamMembersTableProps) {
 	const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null)
 
-	const { data: organization, refetch } = trpc.workspace.getById.useQuery({
-		id: organizationId,
-	})
-
-	const { data: roles = [] } = trpc.permissions.listRoles.useQuery({
+	// Use batched query instead of 3 separate queries
+	const { data: teamData, refetch } = trpc.workspace.getTeamPanelData.useQuery({
 		organizationId,
 	})
 
-	const { data: currentUser } = trpc.user.getCurrent.useQuery()
+	const organization = teamData?.organization
+	const roles = teamData?.roles ?? []
+	const currentUser = teamData?.currentUser
 
 	const updateMemberRole = trpc.workspace.updateMemberRole?.useMutation({
 		onSuccess: () => {

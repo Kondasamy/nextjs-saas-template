@@ -41,11 +41,26 @@ export function AuditLogTable() {
 	const [modalOpen, setModalOpen] = useState(false)
 	const limit = 50
 
-	const { data } = trpc.admin.getAuditLogs.useQuery({
-		limit,
-		offset: page * limit,
-		action: actionFilter === 'all' ? undefined : actionFilter,
-	})
+	const { data } = trpc.admin.getAuditLogs.useQuery(
+		{
+			limit,
+			offset: page * limit,
+			action: actionFilter === 'all' ? undefined : actionFilter,
+		},
+		{
+			// Keep previous data while fetching new page
+			placeholderData: (previousData) => previousData,
+			// Cache audit logs for 2 minutes (they update more frequently)
+			staleTime: 2 * 60 * 1000,
+			// Keep cached data for 5 minutes
+			gcTime: 5 * 60 * 1000,
+			// Don't refetch on window focus
+			refetchOnWindowFocus: false,
+			// Refetch every 30 seconds if window is focused
+			refetchInterval: 30 * 1000,
+			refetchIntervalInBackground: false,
+		}
+	)
 
 	const handleExport = () => {
 		if (!data) return

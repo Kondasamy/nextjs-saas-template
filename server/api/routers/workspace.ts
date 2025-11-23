@@ -1,6 +1,11 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
+import {
+	getOrganizationStats,
+	getOrganizationWithMembers,
+	verifyMembershipWithRole,
+} from '../utils/db-helpers'
 
 export const workspaceRouter = createTRPCRouter({
 	ensureDefault: protectedProcedure.mutation(async ({ ctx }) => {
@@ -184,34 +189,21 @@ export const workspaceRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'UNAUTHORIZED' })
 			}
 
-			const membership = await ctx.prisma.organizationMember.findFirst({
-				where: {
-					organizationId: input.id,
-					userId: ctx.user.id,
-				},
-				include: {
-					organization: {
-						include: {
-							members: {
-								include: {
-									user: true,
-									role: true,
-								},
-							},
-						},
-					},
-					role: true,
-				},
-			})
+			// Use optimized helper that fetches only necessary fields
+			const organization = await getOrganizationWithMembers(
+				ctx.prisma,
+				input.id,
+				ctx.user.id
+			)
 
-			if (!membership) {
+			if (!organization) {
 				throw new TRPCError({
 					code: 'NOT_FOUND',
 					message: 'Workspace not found',
 				})
 			}
 
-			return membership.organization
+			return organization
 		}),
 
 	create: protectedProcedure
@@ -1057,6 +1049,87 @@ export const workspaceRouter = createTRPCRouter({
 			}
 		}),
 
+	// Batch query for team management panel
+	// Combines workspace, roles, and current user data in a single query
+	getTeamPanelData: protectedProcedure
+		.input(z.object({ organizationId: z.string() }))
+		.query(async ({ ctx, input }) => {
+			if (!ctx.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' })
+			}
+
+			// Verify membership and get organization data in parallel
+			const [membership, organization, roles, currentUser] = await Promise.all([
+				// Verify access
+				verifyMembershipWithRole(ctx.prisma, ctx.user.id, input.organizationId),
+				// Get organization with members (optimized fields)
+				ctx.prisma.organization.findUnique({
+					where: { id: input.organizationId },
+					include: {
+						members: {
+							include: {
+								user: {
+									select: {
+										id: true,
+										name: true,
+										email: true,
+										image: true,
+										createdAt: true,
+										banned: true,
+									},
+								},
+								role: {
+									include: {
+										permissions: true,
+									},
+								},
+							},
+						},
+						invitations: {
+							where: { status: 'PENDING' },
+							select: {
+								id: true,
+								email: true,
+								role: true,
+								expiresAt: true,
+							},
+						},
+					},
+				}),
+				// Get all roles for the organization
+				ctx.prisma.role.findMany({
+					where: { organizationId: input.organizationId },
+					include: { permissions: true },
+					orderBy: { name: 'asc' },
+				}),
+				// Get current user with minimal data
+				ctx.prisma.user.findUnique({
+					where: { id: ctx.user.id },
+					select: {
+						id: true,
+						name: true,
+						email: true,
+						image: true,
+						bio: true,
+					},
+				}),
+			])
+
+			if (!organization) {
+				throw new TRPCError({
+					code: 'NOT_FOUND',
+					message: 'Workspace not found',
+				})
+			}
+
+			return {
+				organization,
+				roles,
+				currentUser,
+				currentUserRole: membership.role,
+			}
+		}),
+
 	// Workspace Usage Metrics
 	getWorkspaceUsage: protectedProcedure
 		.input(z.object({ organizationId: z.string() }))
@@ -1065,17 +1138,12 @@ export const workspaceRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'UNAUTHORIZED' })
 			}
 
-			// Check if user is member
-			const membership = await ctx.prisma.organizationMember.findFirst({
-				where: {
-					organizationId: input.organizationId,
-					userId: ctx.user.id,
-				},
-			})
-
-			if (!membership) {
-				throw new TRPCError({ code: 'FORBIDDEN' })
-			}
+			// Verify membership and get optimized stats in one go
+			await verifyMembershipWithRole(
+				ctx.prisma,
+				ctx.user.id,
+				input.organizationId
+			)
 
 			// Get workspace info
 			const organization = await ctx.prisma.organization.findUnique({
@@ -1086,63 +1154,8 @@ export const workspaceRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'NOT_FOUND' })
 			}
 
-			// Calculate metrics
-			const [
-				memberCount,
-				pendingInvitationsCount,
-				activeInviteLinksCount,
-				recentActivityCount,
-				activeMembersCount,
-			] = await Promise.all([
-				// Total members
-				ctx.prisma.organizationMember.count({
-					where: { organizationId: input.organizationId },
-				}),
-
-				// Pending invitations
-				ctx.prisma.invitation.count({
-					where: {
-						organizationId: input.organizationId,
-						status: 'pending',
-						type: 'email',
-					},
-				}),
-
-				// Active invite links
-				ctx.prisma.invitation.count({
-					where: {
-						organizationId: input.organizationId,
-						status: 'pending',
-						type: 'link',
-					},
-				}),
-
-				// Activity in last 30 days
-				ctx.prisma.auditLog.count({
-					where: {
-						organizationId: input.organizationId,
-						createdAt: {
-							gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-						},
-					},
-				}),
-
-				// Active members (had session in last 30 days)
-				ctx.prisma.organizationMember.count({
-					where: {
-						organizationId: input.organizationId,
-						user: {
-							sessions: {
-								some: {
-									lastActiveAt: {
-										gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-									},
-								},
-							},
-						},
-					},
-				}),
-			])
+			// Use optimized stats helper that batches all counts
+			const stats = await getOrganizationStats(ctx.prisma, input.organizationId)
 
 			return {
 				workspace: {
@@ -1151,15 +1164,12 @@ export const workspaceRouter = createTRPCRouter({
 					createdAt: organization.createdAt,
 				},
 				metrics: {
-					memberCount,
-					pendingInvitationsCount,
-					activeInviteLinksCount,
-					recentActivityCount,
-					activeMembersCount,
-					activePercentage:
-						memberCount > 0
-							? Math.round((activeMembersCount / memberCount) * 100)
-							: 0,
+					memberCount: stats.memberCount,
+					pendingInvitationsCount: stats.pendingInvitations,
+					activeInviteLinksCount: stats.activeLinkCount,
+					recentActivityCount: stats.recentActivity,
+					activeMembersCount: stats.activeMembers,
+					activePercentage: stats.activityRate,
 				},
 			}
 		}),

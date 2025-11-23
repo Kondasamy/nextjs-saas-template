@@ -34,16 +34,29 @@ export const adminRouter = createTRPCRouter({
 					take: limit,
 					skip: offset,
 					orderBy: { createdAt: 'desc' },
-					include: {
+					select: {
+						id: true,
+						email: true,
+						name: true,
+						image: true,
+						banned: true,
+						createdAt: true,
+						updatedAt: true,
 						organizations: {
 							include: {
-								organization: true,
-								role: true,
-							},
-						},
-						_count: {
-							select: {
-								organizations: true,
+								organization: {
+									select: {
+										id: true,
+										name: true,
+										slug: true,
+									},
+								},
+								role: {
+									select: {
+										id: true,
+										name: true,
+									},
+								},
 							},
 						},
 					},

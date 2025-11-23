@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { DateRange } from 'react-day-picker'
 import {
 	Bar,
@@ -19,6 +19,7 @@ import {
 	CardTitle,
 } from '@/components/ui/card'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
+import { getChartColors } from '@/lib/chart-utils'
 import { trpc } from '@/lib/trpc/client'
 
 export function RevenueChart() {
@@ -32,25 +33,8 @@ export function RevenueChart() {
 		to: dateRange?.to,
 	})
 
-	const [colors, setColors] = useState({
-		chart: '#3b82f6',
-		muted: '#6b7280',
-		card: '#ffffff',
-		border: '#e5e7eb',
-	})
-
-	useEffect(() => {
-		// Get computed color values from CSS variables
-		const root = document.documentElement
-		const computedStyle = getComputedStyle(root)
-
-		setColors({
-			chart: computedStyle.getPropertyValue('--chart-2').trim(),
-			muted: computedStyle.getPropertyValue('--muted-foreground').trim(),
-			card: computedStyle.getPropertyValue('--card').trim(),
-			border: computedStyle.getPropertyValue('--border').trim(),
-		})
-	}, [])
+	// Use shared chart colors utility with caching
+	const colors = useMemo(() => getChartColors(), [])
 
 	return (
 		<Card>
@@ -68,8 +52,12 @@ export function RevenueChart() {
 					<BarChart data={data || []}>
 						<defs>
 							<linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="5%" stopColor={colors.chart} stopOpacity={0.8} />
-								<stop offset="95%" stopColor={colors.chart} stopOpacity={0.3} />
+								<stop offset="5%" stopColor={colors.chart2} stopOpacity={0.8} />
+								<stop
+									offset="95%"
+									stopColor={colors.chart2}
+									stopOpacity={0.3}
+								/>
 							</linearGradient>
 						</defs>
 						<CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

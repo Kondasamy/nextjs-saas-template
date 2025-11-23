@@ -13,7 +13,11 @@ interface PresenceUser {
 /**
  * Hook for tracking online users (presence)
  * In production, this would use Supabase Realtime Presence
- * For now, it's a placeholder that can be extended
+ *
+ * NOTE: This is a placeholder implementation kept for future use.
+ * Currently unused but ready for integration when Supabase Realtime is configured.
+ *
+ * @unused-export - Intentionally kept for future implementation
  */
 export function usePresence(workspaceId?: string) {
 	const [onlineUsers, _setOnlineUsers] = useState<PresenceUser[]>([])

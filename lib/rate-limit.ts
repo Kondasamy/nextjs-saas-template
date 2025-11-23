@@ -1,34 +1,93 @@
 import { headers } from 'next/headers'
 
+/**
+ * Rate Limiting Module
+ *
+ * Currently uses in-memory storage with protection against memory leaks.
+ * For production deployments, migrate to Redis:
+ *
+ * @example Redis Implementation
+ * ```typescript
+ * import { Redis } from 'ioredis'
+ * const redis = new Redis(process.env.REDIS_URL)
+ *
+ * // In check() method:
+ * const count = await redis.incr(key)
+ * if (count === 1) {
+ *   await redis.expire(key, Math.floor(this.windowMs / 1000))
+ * }
+ * ```
+ */
+
 interface RateLimitOptions {
 	windowMs: number // Time window in milliseconds
 	max: number // Max requests per window
 	keyPrefix?: string // Optional prefix for storage keys
 }
 
-interface RateLimitStore {
-	[key: string]: {
-		count: number
-		resetTime: number
-	}
+interface RateLimitEntry {
+	count: number
+	resetTime: number
+	lastAccess: number
 }
+
+interface RateLimitStore {
+	[key: string]: RateLimitEntry
+}
+
+// Configuration
+const MAX_STORE_SIZE = 10000 // Maximum number of entries to prevent memory leak
+const CLEANUP_INTERVAL = 60 * 1000 // Clean up every minute (more frequent than before)
 
 // In-memory store for rate limiting (use Redis in production)
 const store: RateLimitStore = {}
 
-// Clean up expired entries every 5 minutes
+// Track store size for monitoring
+let cleanupRunning = false
+
+// More aggressive cleanup to prevent memory leaks
 if (typeof setInterval !== 'undefined') {
-	setInterval(
-		() => {
+	setInterval(() => {
+		if (cleanupRunning) return // Prevent overlapping cleanups
+		cleanupRunning = true
+
+		try {
 			const now = Date.now()
-			for (const key in store) {
-				if (store[key].resetTime < now) {
+			const entries = Object.entries(store)
+
+			// Remove expired entries
+			let removed = 0
+			for (const [key, entry] of entries) {
+				if (entry.resetTime < now) {
 					delete store[key]
+					removed++
 				}
 			}
-		},
-		5 * 60 * 1000
-	)
+
+			// If store is still too large, remove oldest entries
+			const currentSize = Object.keys(store).length
+			if (currentSize > MAX_STORE_SIZE) {
+				const sortedEntries = Object.entries(store).sort(
+					(a, b) => a[1].lastAccess - b[1].lastAccess
+				)
+
+				const toRemove = currentSize - MAX_STORE_SIZE + 1000 // Remove extra 1000 for buffer
+				for (let i = 0; i < toRemove && i < sortedEntries.length; i++) {
+					delete store[sortedEntries[i][0]]
+					removed++
+				}
+			}
+
+			// Log cleanup stats in development
+			if (process.env.NODE_ENV === 'development' && removed > 0) {
+				console.log(
+					`[RateLimiter] Cleaned up ${removed} entries, current size: ${Object.keys(store).length}`
+				)
+			}
+		} finally {
+			cleanupRunning = false
+		}
+	}, CLEANUP_INTERVAL)
 }
 
 export class RateLimiter {
@@ -51,6 +110,20 @@ export class RateLimiter {
 		const now = Date.now()
 		const key = `${this.keyPrefix}:${identifier}`
 
+		// Prevent store from growing too large (emergency brake)
+		const storeSize = Object.keys(store).length
+		if (storeSize > MAX_STORE_SIZE * 1.5) {
+			// Emergency cleanup - remove oldest 25% of entries
+			const entriesToRemove = Math.floor(storeSize * 0.25)
+			const sorted = Object.entries(store)
+				.sort((a, b) => a[1].lastAccess - b[1].lastAccess)
+				.slice(0, entriesToRemove)
+
+			for (const [k] of sorted) {
+				delete store[k]
+			}
+		}
+
 		// Get or create rate limit entry
 		let entry = store[key]
 
@@ -59,9 +132,13 @@ export class RateLimiter {
 			entry = {
 				count: 0,
 				resetTime: now + this.windowMs,
+				lastAccess: now,
 			}
 			store[key] = entry
 		}
+
+		// Update last access time
+		entry.lastAccess = now
 
 		// Increment counter
 		entry.count++
@@ -137,17 +214,5 @@ export async function checkRateLimit(
 	}
 }
 
-/**
- * Helper to get rate limit headers for response
- */
-export function getRateLimitHeaders(result: {
-	limit: number
-	remaining: number
-	reset: number
-}) {
-	return {
-		'X-RateLimit-Limit': result.limit.toString(),
-		'X-RateLimit-Remaining': result.remaining.toString(),
-		'X-RateLimit-Reset': new Date(result.reset).toISOString(),
-	}
-}
+// Removed unused getRateLimitHeaders export
+// If needed in future, rate limit headers can be added in the response middleware

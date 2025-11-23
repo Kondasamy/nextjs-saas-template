@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
+import { getCachedMembership } from '../utils/db-helpers'
 
 export const analyticsRouter = createTRPCRouter({
 	/**
@@ -75,18 +76,9 @@ export const analyticsRouter = createTRPCRouter({
 			const { days, organizationId } = input
 			const userId = ctx.user.id
 
-			// Verify user has access to organization
+			// Verify user has access to organization using cached helper
 			if (organizationId) {
-				const membership = await ctx.prisma.organizationMember.findFirst({
-					where: {
-						userId,
-						organizationId,
-					},
-				})
-
-				if (!membership) {
-					throw new Error('Unauthorized')
-				}
+				await getCachedMembership(ctx.prisma, userId, organizationId)
 			}
 
 			const startDate = new Date()
@@ -183,18 +175,9 @@ export const analyticsRouter = createTRPCRouter({
 			const { days, organizationId } = input
 			const userId = ctx.user.id
 
-			// Verify user has access to organization
+			// Verify user has access to organization using cached helper
 			if (organizationId) {
-				const membership = await ctx.prisma.organizationMember.findFirst({
-					where: {
-						userId,
-						organizationId,
-					},
-				})
-
-				if (!membership) {
-					throw new Error('Unauthorized')
-				}
+				await getCachedMembership(ctx.prisma, userId, organizationId)
 			}
 
 			const startDate = new Date()
@@ -278,18 +261,9 @@ export const analyticsRouter = createTRPCRouter({
 			const { limit, organizationId } = input
 			const userId = ctx.user.id
 
-			// Verify user has access to organization
+			// Verify user has access to organization using cached helper
 			if (organizationId) {
-				const membership = await ctx.prisma.organizationMember.findFirst({
-					where: {
-						userId,
-						organizationId,
-					},
-				})
-
-				if (!membership) {
-					throw new Error('Unauthorized')
-				}
+				await getCachedMembership(ctx.prisma, userId, organizationId)
 			}
 
 			const activities = await ctx.prisma.auditLog.findMany({
@@ -333,18 +307,9 @@ export const analyticsRouter = createTRPCRouter({
 			const { from, to, organizationId } = input
 			const userId = ctx.user.id
 
-			// Verify user has access to organization
+			// Verify user has access to organization using cached helper
 			if (organizationId) {
-				const membership = await ctx.prisma.organizationMember.findFirst({
-					where: {
-						userId,
-						organizationId,
-					},
-				})
-
-				if (!membership) {
-					throw new Error('Unauthorized')
-				}
+				await getCachedMembership(ctx.prisma, userId, organizationId)
 			}
 
 			// Default to last 30 days if no dates provided
@@ -387,18 +352,9 @@ export const analyticsRouter = createTRPCRouter({
 			const { from, to, organizationId } = input
 			const userId = ctx.user.id
 
-			// Verify user has access to organization
+			// Verify user has access to organization using cached helper
 			if (organizationId) {
-				const membership = await ctx.prisma.organizationMember.findFirst({
-					where: {
-						userId,
-						organizationId,
-					},
-				})
-
-				if (!membership) {
-					throw new Error('Unauthorized')
-				}
+				await getCachedMembership(ctx.prisma, userId, organizationId)
 			}
 
 			// Default to last 30 days if no dates provided

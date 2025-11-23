@@ -34,29 +34,116 @@ export function UsersTable() {
 	const [impersonating, setImpersonating] = useState(false)
 	const limit = 50
 
-	const { data, refetch } = trpc.admin.getAllUsers.useQuery({
-		limit,
-		offset: page * limit,
-		search: search || undefined,
-	})
+	const { data } = trpc.admin.getAllUsers.useQuery(
+		{
+			limit,
+			offset: page * limit,
+			search: search || undefined,
+		},
+		{
+			// Keep previous data while fetching new page
+			placeholderData: (previousData) => previousData,
+			// Cache pages for 5 minutes
+			staleTime: 5 * 60 * 1000,
+			// Keep cached data for 10 minutes
+			gcTime: 10 * 60 * 1000,
+			// Don't refetch on window focus
+			refetchOnWindowFocus: false,
+			// Enable tracking for optimistic updates
+			refetchOnMount: 'always',
+		}
+	)
+
+	const utils = trpc.useUtils()
 
 	const deleteUser = trpc.admin.deleteUser.useMutation({
+		onMutate: async ({ userId }) => {
+			// Cancel outgoing refetches
+			await utils.admin.getAllUsers.cancel()
+
+			// Snapshot the previous value
+			const previousData = utils.admin.getAllUsers.getData({
+				limit,
+				offset: page * limit,
+				search: search || undefined,
+			})
+
+			// Optimistically update by removing the user
+			if (previousData) {
+				utils.admin.getAllUsers.setData(
+					{ limit, offset: page * limit, search: search || undefined },
+					{
+						...previousData,
+						users: previousData.users.filter((u) => u.id !== userId),
+						total: previousData.total - 1,
+					}
+				)
+			}
+
+			return { previousData }
+		},
+		onError: (error, _variables, context) => {
+			toast.error(error.message || 'Failed to delete user')
+			// Rollback on error
+			if (context?.previousData) {
+				utils.admin.getAllUsers.setData(
+					{ limit, offset: page * limit, search: search || undefined },
+					context.previousData
+				)
+			}
+		},
 		onSuccess: () => {
 			toast.success('User deleted successfully')
-			refetch()
 		},
-		onError: (error) => {
-			toast.error(error.message || 'Failed to delete user')
+		onSettled: () => {
+			// Invalidate and refetch
+			utils.admin.getAllUsers.invalidate()
 		},
 	})
 
 	const updateStatus = trpc.admin.updateUserStatus.useMutation({
+		onMutate: async ({ userId, banned }) => {
+			// Cancel outgoing refetches
+			await utils.admin.getAllUsers.cancel()
+
+			// Snapshot the previous value
+			const previousData = utils.admin.getAllUsers.getData({
+				limit,
+				offset: page * limit,
+				search: search || undefined,
+			})
+
+			// Optimistically update the user status
+			if (previousData) {
+				utils.admin.getAllUsers.setData(
+					{ limit, offset: page * limit, search: search || undefined },
+					{
+						...previousData,
+						users: previousData.users.map((u) =>
+							u.id === userId ? { ...u, banned } : u
+						),
+					}
+				)
+			}
+
+			return { previousData }
+		},
+		onError: (error, _variables, context) => {
+			toast.error(error.message || 'Failed to update user status')
+			// Rollback on error
+			if (context?.previousData) {
+				utils.admin.getAllUsers.setData(
+					{ limit, offset: page * limit, search: search || undefined },
+					context.previousData
+				)
+			}
+		},
 		onSuccess: () => {
 			toast.success('User status updated')
-			refetch()
 		},
-		onError: (error) => {
-			toast.error(error.message || 'Failed to update user status')
+		onSettled: () => {
+			// Invalidate and refetch in background
+			utils.admin.getAllUsers.invalidate()
 		},
 	})
 

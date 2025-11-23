@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import {
 	Area,
 	AreaChart,
@@ -17,6 +17,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
+import { getChartColors } from '@/lib/chart-utils'
 
 interface UserGrowthChartProps {
 	data: {
@@ -27,25 +28,8 @@ interface UserGrowthChartProps {
 }
 
 export function UserGrowthChart({ data }: UserGrowthChartProps) {
-	const [colors, setColors] = useState({
-		chart: '#3b82f6',
-		muted: '#6b7280',
-		card: '#ffffff',
-		border: '#e5e7eb',
-	})
-
-	useEffect(() => {
-		// Get computed color values from CSS variables
-		const root = document.documentElement
-		const computedStyle = getComputedStyle(root)
-
-		setColors({
-			chart: computedStyle.getPropertyValue('--chart-1').trim(),
-			muted: computedStyle.getPropertyValue('--muted-foreground').trim(),
-			card: computedStyle.getPropertyValue('--card').trim(),
-			border: computedStyle.getPropertyValue('--border').trim(),
-		})
-	}, [])
+	// Use shared chart colors utility with caching
+	const colors = useMemo(() => getChartColors(), [])
 
 	return (
 		<Card>
@@ -58,8 +42,8 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
 					<AreaChart data={data}>
 						<defs>
 							<linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-								<stop offset="5%" stopColor={colors.chart} stopOpacity={0.8} />
-								<stop offset="95%" stopColor={colors.chart} stopOpacity={0} />
+								<stop offset="5%" stopColor={colors.chart1} stopOpacity={0.8} />
+								<stop offset="95%" stopColor={colors.chart1} stopOpacity={0} />
 							</linearGradient>
 						</defs>
 						<CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -86,7 +70,7 @@ export function UserGrowthChart({ data }: UserGrowthChartProps) {
 						<Area
 							type="monotone"
 							dataKey="total"
-							stroke={colors.chart}
+							stroke={colors.chart1}
 							fillOpacity={1}
 							fill="url(#colorTotal)"
 						/>

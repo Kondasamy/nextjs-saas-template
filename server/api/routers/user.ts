@@ -25,11 +25,37 @@ export const userRouter = createTRPCRouter({
 
 		return ctx.prisma.user.findUnique({
 			where: { id: ctx.user.id },
-			include: {
+			select: {
+				id: true,
+				email: true,
+				emailVerified: true,
+				name: true,
+				image: true,
+				bio: true,
+				timezone: true,
+				language: true,
+				createdAt: true,
+				updatedAt: true,
+				banned: true,
 				organizations: {
-					include: {
-						organization: true,
-						role: true,
+					select: {
+						joinedAt: true,
+						organization: {
+							select: {
+								id: true,
+								name: true,
+								slug: true,
+								description: true,
+								logo: true,
+							},
+						},
+						role: {
+							select: {
+								id: true,
+								name: true,
+								permissions: true,
+							},
+						},
 					},
 				},
 			},
@@ -63,6 +89,16 @@ export const userRouter = createTRPCRouter({
 					bio: input.bio,
 					timezone: input.timezone,
 					language: input.language,
+				},
+				select: {
+					id: true,
+					email: true,
+					name: true,
+					image: true,
+					bio: true,
+					timezone: true,
+					language: true,
+					updatedAt: true,
 				},
 			})
 		}),
@@ -932,6 +968,15 @@ export const userRouter = createTRPCRouter({
 					orderBy: { createdAt: 'desc' },
 					take: input.limit,
 					skip: input.offset,
+					select: {
+						id: true,
+						action: true,
+						createdAt: true,
+						ipAddress: true,
+						userAgent: true,
+						metadata: true,
+						organizationId: true,
+					},
 				}),
 				ctx.prisma.auditLog.count({
 					where: { userId: ctx.user.id },

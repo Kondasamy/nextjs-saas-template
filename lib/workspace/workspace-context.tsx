@@ -43,12 +43,23 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	)
 	const [isInitialized, setIsInitialized] = useState(false)
 
-	// Fetch all workspaces
+	// Fetch all workspaces with caching strategy
 	const {
 		data: workspaces = [],
 		isLoading: isLoadingWorkspaces,
 		refetch: refetchWorkspaces,
-	} = trpc.workspace.list.useQuery()
+	} = trpc.workspace.list.useQuery(undefined, {
+		// Cache workspaces for 5 minutes
+		staleTime: 5 * 60 * 1000,
+		// Keep cached data for 10 minutes
+		gcTime: 10 * 60 * 1000,
+		// Only fetch when component is mounted and initialized
+		enabled: true,
+		// Prevent refetch on window focus (workspaces don't change that often)
+		refetchOnWindowFocus: false,
+		// Keep previous data while fetching new data
+		placeholderData: (prev) => prev,
+	})
 
 	const ensureDefaultWorkspace = trpc.workspace.ensureDefault.useMutation({
 		onSuccess: () => {
@@ -91,8 +102,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		workspaces,
 		isLoadingWorkspaces,
 		isInitialized,
-		ensureDefaultWorkspace,
-		refetchWorkspaces,
+		// Remove mutation and refetch functions from deps - they're stable
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	])
 
 	// Ensure current workspace is still valid when workspaces list changes

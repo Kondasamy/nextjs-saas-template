@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { DateRange } from 'react-day-picker'
 import {
 	Card,
@@ -26,6 +26,15 @@ export function ActivityHeatmap() {
 		from: dateRange?.from,
 		to: dateRange?.to,
 	})
+
+	// Convert data array to Map for O(1) lookups instead of O(n) Array.find()
+	const activityMap = useMemo(() => {
+		const map = new Map<string, number>()
+		data?.forEach((d) => {
+			map.set(`${d.dayOfWeek}-${d.hour}`, d.count)
+		})
+		return map
+	}, [data])
 
 	const getIntensityColor = (count: number, max: number) => {
 		if (count === 0) return 'bg-muted'
@@ -68,10 +77,8 @@ export function ActivityHeatmap() {
 								{day}
 							</div>
 							{HOURS.map((hour) => {
-								const dataPoint = data?.find(
-									(d) => d.dayOfWeek === dayIndex && d.hour === hour
-								)
-								const count = dataPoint?.count || 0
+								// Use Map lookup (O(1)) instead of Array.find (O(n))
+								const count = activityMap.get(`${dayIndex}-${hour}`) ?? 0
 								return (
 									<div
 										key={hour}
