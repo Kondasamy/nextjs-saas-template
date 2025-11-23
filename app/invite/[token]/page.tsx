@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { AcceptInvitation } from '@/components/invitations/accept-invitation'
-import { auth } from '@/lib/auth/auth'
+import { getAuthSession } from '@/lib/auth/auth-helpers'
 import { createServerCaller } from '@/lib/trpc/server'
 
 interface InvitePageProps {
@@ -11,7 +11,7 @@ interface InvitePageProps {
 
 export default async function InvitePage({ params }: InvitePageProps) {
 	const { token } = await params
-	const session = await auth()
+	const session = await getAuthSession()
 
 	// If not authenticated, redirect to login with redirect back to invite page
 	if (!session) {
