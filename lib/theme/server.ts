@@ -5,6 +5,7 @@
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { logger } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 import { DEFAULT_THEME, isValidTheme } from './config'
 
@@ -24,7 +25,7 @@ export async function getActiveTheme(): Promise<string> {
 
 		return DEFAULT_THEME
 	} catch (error) {
-		console.error('Error fetching active theme:', error)
+		logger.error('Error fetching active theme', error)
 		return DEFAULT_THEME
 	}
 }
@@ -69,13 +70,13 @@ export async function getThemeCSS(themeId: string): Promise<string> {
 		const css = await readFile(themePath, 'utf-8')
 		return css
 	} catch (error) {
-		console.error(`Error reading theme file for ${themeId}:`, error)
+		logger.error('Error reading theme file', { themeId, error })
 		// Fallback to default theme
 		try {
 			const defaultPath = join(process.cwd(), 'themes', `${DEFAULT_THEME}.css`)
 			return await readFile(defaultPath, 'utf-8')
 		} catch (fallbackError) {
-			console.error('Error reading default theme:', fallbackError)
+			logger.error('Error reading default theme', fallbackError)
 			return ''
 		}
 	}

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { EmailService } from '@/lib/email/service'
+import { logger } from '@/lib/logger'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 
 export const userRouter = createTRPCRouter({
@@ -167,7 +168,7 @@ export const userRouter = createTRPCRouter({
 					verificationUrl
 				)
 			} catch (error) {
-				console.error('Failed to send verification email:', error)
+				logger.error('Failed to send verification email', error)
 				// Continue anyway - user can still verify via URL
 			}
 
@@ -179,7 +180,7 @@ export const userRouter = createTRPCRouter({
 					input.newEmail
 				)
 			} catch (error) {
-				console.error('Failed to send notification email:', error)
+				logger.error('Failed to send notification email', error)
 				// Continue anyway - not critical
 			}
 
@@ -335,7 +336,7 @@ export const userRouter = createTRPCRouter({
 				const userName = ctx.user.name || ctx.user.email.split('@')[0]
 				await EmailService.sendPasswordChanged(ctx.user.email, userName)
 			} catch (error) {
-				console.error('Failed to send password changed email:', error)
+				logger.error('Failed to send password changed email', error)
 				// Continue anyway - password has been changed
 			}
 
@@ -461,7 +462,7 @@ export const userRouter = createTRPCRouter({
 			// TODO: Send session revoked notification email
 			// await EmailService.sendSessionsRevoked(ctx.user.email, userName, result.count)
 		} catch (error) {
-			console.error('Failed to send sessions revoked email:', error)
+			logger.error('Failed to send sessions revoked email', error)
 			// Continue anyway
 		}
 

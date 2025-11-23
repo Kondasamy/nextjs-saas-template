@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { logger } from '@/lib/logger'
 
 /**
  * Rate Limiting Module
@@ -80,10 +81,11 @@ if (typeof setInterval !== 'undefined') {
 			}
 
 			// Log cleanup stats in development
-			if (process.env.NODE_ENV === 'development' && removed > 0) {
-				console.log(
-					`[RateLimiter] Cleaned up ${removed} entries, current size: ${Object.keys(store).length}`
-				)
+			if (removed > 0) {
+				logger.debug('Rate limiter cleanup completed', {
+					removed,
+					currentSize: Object.keys(store).length,
+				})
 			}
 		} finally {
 			cleanupRunning = false
@@ -117,11 +119,10 @@ export class RateLimiter {
 		// If we're at capacity, reject new IPs to prevent memory exhaustion
 		if (storeSize >= MAX_STORE_SIZE && !store[key]) {
 			// Log potential attack
-			if (process.env.NODE_ENV === 'development') {
-				console.warn(
-					`[RateLimiter] Store at capacity (${storeSize}), rejecting new identifier: ${identifier}`
-				)
-			}
+			logger.warn('Rate limiter store at capacity, rejecting new identifier', {
+				storeSize,
+				identifier,
+			})
 			return {
 				success: false,
 				limit: this.max,

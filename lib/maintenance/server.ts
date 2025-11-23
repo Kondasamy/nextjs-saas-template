@@ -3,6 +3,7 @@
  * These functions run on the server and interact with the database
  */
 
+import { logger } from '@/lib/logger'
 import { prisma } from '@/lib/prisma'
 
 export interface MaintenanceStatus {
@@ -34,7 +35,7 @@ export async function getMaintenanceStatus(): Promise<MaintenanceStatus> {
 			endTime: settings?.maintenanceEndTime ?? null,
 		}
 	} catch (error) {
-		console.error('Error fetching maintenance status:', error)
+		logger.error('Error fetching maintenance status', error)
 		return {
 			enabled: false,
 			message: null,

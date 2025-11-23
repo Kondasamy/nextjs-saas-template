@@ -127,13 +127,15 @@ export const auth = betterAuth({
 						url
 					)
 				} else {
-					console.log('📧 Password reset email (RESEND_API_KEY not set):', {
-						to: user.email,
-						url,
-					})
+					logger.debug(
+						'Password reset email skipped (RESEND_API_KEY not set)',
+						{
+							to: user.email,
+						}
+					)
 				}
 			} catch (error) {
-				console.error('Failed to send password reset email:', error)
+				logger.error('Failed to send password reset email', error)
 			}
 		},
 	},
@@ -167,13 +169,12 @@ export const auth = betterAuth({
 					if (env.RESEND_API_KEY) {
 						await EmailService.sendMagicLink(email, url)
 					} else {
-						console.log('📧 Magic link email (RESEND_API_KEY not set):', {
+						logger.debug('Magic link email skipped (RESEND_API_KEY not set)', {
 							to: email,
-							url,
 						})
 					}
 				} catch (error) {
-					console.error('Failed to send magic link email:', error)
+					logger.error('Failed to send magic link email', error)
 				}
 			},
 		}),
@@ -190,13 +191,12 @@ export const auth = betterAuth({
 						otp // Pass OTP as code
 					)
 				} else {
-					console.log('📧 OTP email (RESEND_API_KEY not set):', {
+					logger.debug('OTP email skipped (RESEND_API_KEY not set)', {
 						to: email,
-						otp,
 					})
 				}
 			} catch (error) {
-				console.error('Failed to send OTP email:', error)
+				logger.error('Failed to send OTP email', error)
 			}
 		},
 	},
@@ -207,13 +207,12 @@ export const auth = betterAuth({
 				if (env.RESEND_API_KEY) {
 					await EmailService.send2FACode(email, user?.name || 'User', otp)
 				} else {
-					console.log('📧 2FA code email (RESEND_API_KEY not set):', {
+					logger.debug('2FA code email skipped (RESEND_API_KEY not set)', {
 						to: email,
-						otp,
 					})
 				}
 			} catch (error) {
-				console.error('Failed to send 2FA code email:', error)
+				logger.error('Failed to send 2FA code email', error)
 			}
 		},
 	},
@@ -235,7 +234,7 @@ export const auth = betterAuth({
 					matcher: (ctx) => {
 						const isSignup = ctx.path === '/api/auth/sign-up/email'
 						if (isSignup) {
-							console.log('🔍 Signup hook triggered:', {
+							logger.debug('Signup hook triggered', {
 								path: ctx.path,
 								method: ctx.req?.method,
 								hasSession: !!ctx.context.session,
@@ -245,14 +244,14 @@ export const auth = betterAuth({
 						return isSignup
 					},
 					handler: async (ctx) => {
-						console.log('🚀 Signup handler running...')
+						logger.debug('Signup handler running')
 
 						// Try to get the user from session or response
 						let user = ctx.context.session?.user
 
 						// If no user in session, try to get from response
 						if (!user) {
-							console.log('⚠️ No user in session, checking response...')
+							logger.debug('No user in session, checking response')
 							const response = ctx.response
 							if (
 								response &&
@@ -266,16 +265,16 @@ export const auth = betterAuth({
 						// Only proceed if we have a confirmed user context
 						// Never try to guess or find users by time - this is unsafe
 						if (!user) {
-							console.log(
-								'❌ No user context available, skipping workspace creation'
-							)
-							console.log(
-								'ℹ️ Workspace will be created on first authenticated access'
+							logger.debug(
+								'No user context available, workspace will be created on first authenticated access'
 							)
 							return
 						}
 
-						console.log('✅ User found:', user.id, user.email)
+						logger.debug('User found, creating workspace', {
+							userId: user.id,
+							email: user.email,
+						})
 						await createDefaultWorkspace(user)
 
 						// Send welcome email
@@ -283,10 +282,10 @@ export const auth = betterAuth({
 							try {
 								await EmailService.sendWelcome(user.email, user.name || 'there')
 							} catch (error) {
-								console.error('Failed to send welcome email:', error)
+								logger.error('Failed to send welcome email', error)
 							}
 						} else {
-							console.log('📧 Welcome email (RESEND_API_KEY not set):', {
+							logger.debug('Welcome email skipped (RESEND_API_KEY not set)', {
 								to: user.email,
 							})
 						}
@@ -297,7 +296,7 @@ export const auth = betterAuth({
 					matcher: (ctx) => {
 						const isOAuthCallback = ctx.path.startsWith('/api/auth/callback/')
 						if (isOAuthCallback) {
-							console.log('🔍 OAuth callback hook triggered:', {
+							logger.debug('OAuth callback hook triggered', {
 								path: ctx.path,
 								hasSession: !!ctx.context.session,
 								userId: ctx.context.session?.user?.id,
@@ -306,10 +305,10 @@ export const auth = betterAuth({
 						return isOAuthCallback && !!ctx.context.session?.user
 					},
 					handler: async (ctx) => {
-						console.log('🚀 OAuth callback handler running...')
+						logger.debug('OAuth callback handler running')
 						const user = ctx.context.session?.user
 						if (!user) {
-							console.log('❌ No user in OAuth callback session')
+							logger.debug('No user in OAuth callback session')
 							return
 						}
 
@@ -319,11 +318,13 @@ export const auth = betterAuth({
 							where: { userId: user.id },
 						})
 
-						console.log('📊 User workspace count:', membershipCount)
+						logger.debug('User workspace count', { count: membershipCount })
 
 						// If no workspaces exist, this is likely a new user
 						if (membershipCount === 0) {
-							console.log('✅ New OAuth user detected, creating workspace...')
+							logger.debug('New OAuth user detected, creating workspace', {
+								userId: user.id,
+							})
 							await createDefaultWorkspace(user)
 
 							// Send welcome email for new OAuth users
@@ -334,11 +335,11 @@ export const auth = betterAuth({
 										user.name || 'there'
 									)
 								} catch (error) {
-									console.error('Failed to send welcome email:', error)
+									logger.error('Failed to send welcome email', error)
 								}
 							}
 						} else {
-							console.log('ℹ️ Existing user, skipping workspace creation')
+							logger.debug('Existing user, skipping workspace creation')
 						}
 					},
 				},

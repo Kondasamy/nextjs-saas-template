@@ -12,6 +12,7 @@ import TwoFactorEmail from '@/emails/two-factor'
 import { VerificationEmail } from '@/emails/verification'
 import { WelcomeEmail } from '@/emails/welcome'
 import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 import { NAME } from '../constants'
 
 const resend = new Resend(env.RESEND_API_KEY)
@@ -37,13 +38,13 @@ async function sendEmail({ to, subject, html }: SendEmailOptions) {
 		})
 
 		if (error) {
-			console.error('Error sending email:', error)
+			logger.error('Error sending email', error)
 			throw new Error(`Failed to send email: ${error.message}`)
 		}
 
 		return data
 	} catch (error) {
-		console.error('Error sending email:', error)
+		logger.error('Error sending email', error)
 		throw error
 	}
 }

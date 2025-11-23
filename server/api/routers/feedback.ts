@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { EmailService } from '@/lib/email/service'
 import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const feedbackRouter = createTRPCRouter({
@@ -44,7 +45,7 @@ export const feedbackRouter = createTRPCRouter({
 					)
 				)
 			} catch (error) {
-				console.error('Failed to send feedback email:', error)
+				logger.error('Failed to send feedback email', error)
 				// Don't throw error - we still want to acknowledge the submission
 			}
 
@@ -90,7 +91,7 @@ export const feedbackRouter = createTRPCRouter({
 					)
 				)
 			} catch (error) {
-				console.error('Failed to send support email:', error)
+				logger.error('Failed to send support email', error)
 				// Don't throw error - we still want to acknowledge the submission
 			}
 

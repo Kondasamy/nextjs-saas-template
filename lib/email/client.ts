@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 
 export const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null
 
@@ -15,7 +16,7 @@ export async function sendEmail({
 	text?: string
 }) {
 	if (!resend) {
-		console.warn('Resend API key not configured. Email not sent.')
+		logger.warn('Resend API key not configured, email not sent')
 		return { success: false, error: 'Email service not configured' }
 	}
 
@@ -29,13 +30,13 @@ export async function sendEmail({
 		})
 
 		if (error) {
-			console.error('Failed to send email:', error)
+			logger.error('Failed to send email', error)
 			return { success: false, error }
 		}
 
 		return { success: true, data }
 	} catch (error) {
-		console.error('Error sending email:', error)
+		logger.error('Error sending email', error)
 		return { success: false, error }
 	}
 }
