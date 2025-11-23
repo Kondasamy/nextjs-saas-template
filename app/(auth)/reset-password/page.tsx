@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -30,7 +30,7 @@ const resetPasswordSchema = z
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const [isLoading, setIsLoading] = useState(false)
@@ -145,5 +145,24 @@ export default function ResetPasswordPage() {
 				</CardContent>
 			</Card>
 		</div>
+	)
+}
+
+export default function ResetPasswordPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="container mx-auto flex items-center justify-center min-h-screen py-12">
+					<Card className="w-full max-w-md">
+						<CardHeader>
+							<CardTitle>Loading...</CardTitle>
+							<CardDescription>Please wait</CardDescription>
+						</CardHeader>
+					</Card>
+				</div>
+			}
+		>
+			<ResetPasswordForm />
+		</Suspense>
 	)
 }
