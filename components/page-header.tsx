@@ -164,7 +164,7 @@ export default function PageHeader() {
 					)}
 					<span className="sr-only">Toggle theme</span>
 				</Button>
-				</div>
+			</div>
 		</header>
 	)
 }
