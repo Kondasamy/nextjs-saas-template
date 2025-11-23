@@ -418,18 +418,6 @@ export const FEATURES: Feature[] = [
 	},
 ]
 
-export const CATEGORIES = [
-	'All Features',
-	'Core Infrastructure',
-	'Authentication & Security',
-	'Workspace & RBAC',
-	'Communication',
-	'Storage & Files',
-	'Analytics & Admin',
-	'UI & Developer Experience',
-	'Production Ready',
-] as const
-
 export type Category =
 	| 'all'
 	| 'core'

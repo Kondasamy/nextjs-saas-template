@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import { UserAvatarMenu } from '@/components/user/user-avatar-menu'
 
 export default function PageHeader() {
 	const pathname = usePathname()
@@ -147,7 +148,7 @@ export default function PageHeader() {
 				</Breadcrumb>
 			</div>
 
-			<div className="flex items-center px-4">
+			<div className="flex items-center gap-2 px-4">
 				<Button
 					ref={buttonRef}
 					variant="ghost"
@@ -162,6 +163,7 @@ export default function PageHeader() {
 					)}
 					<span className="sr-only">Toggle theme</span>
 				</Button>
+				<UserAvatarMenu />
 			</div>
 		</header>
 	)

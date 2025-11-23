@@ -1,12 +1,11 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, Upload } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
 	Card,
@@ -25,6 +24,7 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { ImageUpload } from '@/components/upload/image-upload'
 import { trpc } from '@/lib/trpc/client'
 
 const profileSchema = z.object({
@@ -63,9 +63,6 @@ const LANGUAGES = [
 export function ProfileSettingsForm() {
 	const { data: user } = trpc.user.getCurrent.useQuery()
 	const utils = trpc.useUtils()
-	const [previewImage, setPreviewImage] = useState<string | null>(null)
-	const [isUploading, setIsUploading] = useState(false)
-	const fileInputRef = useRef<HTMLInputElement>(null)
 
 	const updateProfile = trpc.user.updateProfile.useMutation({
 		onSuccess: () => {
@@ -98,55 +95,16 @@ export function ProfileSettingsForm() {
 				timezone: user.timezone ?? '',
 				language: user.language ?? 'en',
 			})
-			setPreviewImage(user.image ?? null)
 		}
 	}, [user, form])
 
-	const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0]
-		if (!file) return
-
-		// Validate file size (max 5MB)
-		if (file.size > 5 * 1024 * 1024) {
-			toast.error('Image size must be less than 5MB')
-			return
-		}
-
-		// Validate file type
-		if (!file.type.startsWith('image/')) {
-			toast.error('Please upload an image file')
-			return
-		}
-
-		try {
-			setIsUploading(true)
-
-			// Create preview
-			const reader = new FileReader()
-			reader.onloadend = () => {
-				setPreviewImage(reader.result as string)
-			}
-			reader.readAsDataURL(file)
-
-			// TODO: Upload to storage (Supabase/S3)
-			// For now, using a placeholder. In production, you'd upload to your storage service
-			// const uploadUrl = await uploadToStorage(file)
-			// form.setValue('image', uploadUrl)
-
-			toast.info('Image upload will be implemented with storage backend')
-		} catch (error) {
-			toast.error('Failed to upload image')
-			console.error(error)
-		} finally {
-			setIsUploading(false)
-		}
+	const handleImageChange = (url: string) => {
+		form.setValue('image', url)
 	}
 
 	const handleSubmit = async (data: ProfileFormData) => {
 		updateProfile.mutate(data)
 	}
-
-	const userInitial = user?.name?.[0] || user?.email?.[0] || '?'
 
 	return (
 		<Card>
@@ -159,43 +117,17 @@ export function ProfileSettingsForm() {
 			<CardContent>
 				<form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
 					{/* Avatar Upload */}
-					<div className="flex items-center gap-4">
-						<Avatar className="h-20 w-20">
-							<AvatarImage src={previewImage || user?.image || undefined} />
-							<AvatarFallback className="text-2xl">
-								{userInitial.toUpperCase()}
-							</AvatarFallback>
-						</Avatar>
-						<div className="flex-1">
-							<input
-								ref={fileInputRef}
-								type="file"
-								accept="image/*"
-								className="hidden"
-								onChange={handleImageUpload}
-							/>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => fileInputRef.current?.click()}
-								disabled={isUploading}
-							>
-								{isUploading ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Uploading...
-									</>
-								) : (
-									<>
-										<Upload className="mr-2 h-4 w-4" />
-										Upload Photo
-									</>
-								)}
-							</Button>
-							<p className="mt-2 text-xs text-muted-foreground">
-								JPG, PNG or GIF. Max 5MB.
-							</p>
-						</div>
+					<div className="space-y-2">
+						<Label>Profile Photo</Label>
+						<ImageUpload
+							bucket="avatars"
+							path={`${user?.id}/avatar`}
+							value={form.watch('image')}
+							onChange={handleImageChange}
+						/>
+						<p className="text-xs text-muted-foreground">
+							JPG, PNG, GIF, or WEBP. Max 5MB.
+						</p>
 					</div>
 
 					{/* Name */}
