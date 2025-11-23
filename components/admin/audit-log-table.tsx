@@ -66,15 +66,13 @@ export function AuditLogTable() {
 		if (!data) return
 
 		const csv = [
-			['Timestamp', 'User', 'Action', 'Organization ID', 'IP Address'].join(
-				','
-			),
+			['Timestamp', 'User', 'Action', 'Organization', 'IP Address'].join(','),
 			...data.logs.map((log) =>
 				[
 					new Date(log.createdAt).toISOString(),
 					log.user?.email || 'N/A',
 					log.action,
-					log.organizationId || 'N/A',
+					log.organization?.name || 'N/A',
 					log.ipAddress || 'N/A',
 				].join(',')
 			),
@@ -176,7 +174,7 @@ export function AuditLogTable() {
 										</Badge>
 									</TableCell>
 									<TableCell className="text-sm">
-										{log.organizationId || '-'}
+										{log.organization?.name || '-'}
 									</TableCell>
 									<TableCell className="font-mono text-xs">
 										{log.ipAddress || '-'}

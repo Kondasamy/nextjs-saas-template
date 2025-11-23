@@ -113,6 +113,7 @@ model Organization {
 	invitations Invitation[]
 	roles       Role[]
 	apiKeys     APIKey[]
+	auditLogs   AuditLog[]
 
 	@@index([slug])
 	@@map("organizations")
@@ -194,17 +195,18 @@ model Notification {
 }
 
 model AuditLog {
-	id             String   @id @default(cuid())
+	id             String        @id @default(cuid())
 	userId         String?
-	user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+	user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
 	organizationId String?
+	organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
 	action         String
 	resource       String?
 	resourceId     String?
 	metadata       Json?
 	ipAddress      String?
 	userAgent      String?
-	createdAt      DateTime @default(now())
+	createdAt      DateTime      @default(now())
 
 	@@index([userId])
 	@@index([organizationId])

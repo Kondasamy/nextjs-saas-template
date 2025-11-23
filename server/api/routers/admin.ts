@@ -185,6 +185,13 @@ export const adminRouter = createTRPCRouter({
 								image: true,
 							},
 						},
+						organization: {
+							select: {
+								id: true,
+								name: true,
+								slug: true,
+							},
+						},
 					},
 				}),
 				ctx.prisma.auditLog.count({ where }),

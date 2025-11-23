@@ -27,6 +27,11 @@ interface AuditLog {
 		email: string
 		image: string | null
 	} | null
+	organization?: {
+		id: string
+		name: string
+		slug: string
+	} | null
 }
 
 interface ActivityDetailModalProps {
@@ -143,11 +148,18 @@ export function ActivityDetailModal({
 					)}
 
 					{/* Organization */}
-					{activity.organizationId && (
+					{activity.organization && (
 						<>
 							<div className="space-y-2">
 								<h3 className="text-sm font-medium">Organization</h3>
-								<p className="text-sm font-mono">{activity.organizationId}</p>
+								<div className="space-y-1">
+									<p className="text-sm font-medium">
+										{activity.organization.name}
+									</p>
+									<p className="text-xs text-muted-foreground font-mono">
+										{activity.organization.slug}
+									</p>
+								</div>
 							</div>
 							<Separator />
 						</>
