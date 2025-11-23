@@ -203,11 +203,7 @@ export function CreateAPIKeyDialog({ onSuccess }: CreateAPIKeyDialogProps) {
 				<DialogFooter>
 					{!createdKey ? (
 						<>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={handleClose}
-							>
+							<Button type="button" variant="outline" onClick={handleClose}>
 								Cancel
 							</Button>
 							<Button

@@ -178,7 +178,8 @@ export function MaintenanceManager({ initialStatus }: MaintenanceManagerProps) {
 							{/* Message Input */}
 							<div className="space-y-2">
 								<Label htmlFor="message">
-									Maintenance Message <span className="text-destructive">*</span>
+									Maintenance Message{' '}
+									<span className="text-destructive">*</span>
 								</Label>
 								<Textarea
 									id="message"

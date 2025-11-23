@@ -99,10 +99,7 @@ export function ArchiveWorkspaceDialog() {
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
-				<form
-					onSubmit={form.handleSubmit(handleArchive)}
-					className="space-y-2"
-				>
+				<form onSubmit={form.handleSubmit(handleArchive)} className="space-y-2">
 					<Label htmlFor="confirm">
 						Type <span className="font-bold">{currentWorkspace.name}</span> to
 						confirm
