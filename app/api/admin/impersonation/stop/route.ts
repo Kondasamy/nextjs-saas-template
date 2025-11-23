@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { stopImpersonation } from '@/lib/auth/impersonation'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST() {
 	try {
+		// Apply rate limiting
+		await checkRateLimit()
+
 		// Stop impersonation and get admin ID
 		const adminId = await stopImpersonation()
 

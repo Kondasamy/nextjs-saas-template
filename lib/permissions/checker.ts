@@ -16,7 +16,20 @@ export function hasPermission(
 	}
 
 	// Check for exact permission match
-	return userPermissions.includes(requiredPermission)
+	if (userPermissions.includes(requiredPermission)) {
+		return true
+	}
+
+	// Check for wildcard resource permissions (e.g., 'resource:*' matches 'resource:read')
+	const [resource, action] = requiredPermission.split(':')
+	if (resource && action) {
+		const resourceWildcard = `${resource}:*`
+		if (userPermissions.includes(resourceWildcard)) {
+			return true
+		}
+	}
+
+	return false
 }
 
 /**

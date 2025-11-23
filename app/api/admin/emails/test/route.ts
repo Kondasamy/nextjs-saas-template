@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth/admin-helpers'
 import { EmailService } from '@/lib/email/service'
 import { env } from '@/lib/env'
+import { checkRateLimit, strictRateLimiter } from '@/lib/rate-limit'
 
 const testEmailSchema = z.object({
 	template: z.enum([
@@ -18,6 +19,9 @@ const testEmailSchema = z.object({
 
 export async function POST(request: Request) {
 	try {
+		// Apply strict rate limiting to prevent email spam
+		await checkRateLimit(strictRateLimiter)
+
 		// Verify admin access
 		await requireAdmin()
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { usePermissions } from '@/hooks/use-permissions'
-import { hasPermission } from '@/lib/rbac/check-permission'
+import { hasPermission } from '@/lib/permissions/checker'
 import type { Permission } from '@/lib/rbac/permissions'
 
 interface PermissionGuardProps {
