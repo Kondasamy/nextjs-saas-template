@@ -133,6 +133,8 @@ export function Component() {
 - `storage` - File upload/download (getUploadUrl, getPublicUrl)
 - `analytics` - Dashboard analytics (getStats, getUserGrowth, getActivityMetrics, getRecentActivities)
 - `admin` - Admin operations (getAllUsers, getSystemStats, getAuditLogs, deleteUser, updateUserStatus)
+- `theme` - Theme management (getAvailableThemes, getActiveTheme, setActiveTheme)
+- `maintenance` - Maintenance mode (getStatus, enable, disable)
 - `apiKeys` - API key management (list, create, revoke, validate)
 - `feedback` - User feedback and support (submitFeedback, submitSupport)
 
@@ -140,7 +142,7 @@ export function Component() {
 
 **Route Group Structure**: `app/(admin)/admin/`
 - Protected by `requireAdmin()` in layout
-- Three main pages: dashboard (`/admin`), users (`/admin/users`), audit logs (`/admin/audit`)
+- Main pages: dashboard (`/admin`), users (`/admin/users`), audit logs (`/admin/audit`), themes (`/admin/themes`), maintenance (`/admin/maintenance`), emails (`/admin/emails`)
 - Admin warning banner in layout
 
 **Admin Features**:
@@ -148,10 +150,21 @@ export function Component() {
 - Impersonation banner component (`components/admin/impersonation-banner.tsx`)
 - Impersonation API routes (`app/api/admin/impersonation/`)
 - 1-hour session expiry for security
+- Maintenance mode banner system (site-wide notifications with scheduled end times)
+- Theme management (switch between available themes)
 
 **Admin Components** (`components/admin/`):
 - `users-table.tsx` - User management with search, ban/unban, delete
 - `audit-log-table.tsx` - Audit trail with filtering and CSV export
+- `impersonation-banner.tsx` - Impersonation warning banner
+- `theme-manager.tsx` - Theme selection and management
+- `maintenance-manager.tsx` - Maintenance mode controls with status, message, and end time
+
+**Maintenance Banner Components**:
+- `components/maintenance-banner.tsx` - Client component displaying maintenance warning
+- `components/maintenance-banner-wrapper.tsx` - Server component that fetches status and conditionally renders banner
+- Integrated into dashboard and admin layouts
+- Displays site-wide when maintenance mode is enabled
 
 **Admin tRPC Router** (`server/api/routers/admin.ts`):
 - All procedures require authentication (uses `protectedProcedure`)
@@ -530,6 +543,7 @@ Comprehensive workspace analytics:
 - AuditLogs for activity tracking
 - TwoFactorAuth, Passkeys
 - APIKeys (secure key management with hashedKey, lastUsedAt, expiresAt)
+- SystemSettings (singleton for theme and maintenance mode: maintenanceMode, maintenanceMessage, maintenanceStartedAt, maintenanceEndTime)
 
 **Common Patterns**:
 ```typescript

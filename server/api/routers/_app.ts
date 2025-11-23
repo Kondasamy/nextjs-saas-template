@@ -4,6 +4,7 @@ import { analyticsRouter } from './analytics'
 import { apiKeysRouter } from './api-keys'
 import { feedbackRouter } from './feedback'
 import { invitationsRouter } from './invitations'
+import { maintenanceRouter } from './maintenance'
 import { notificationsRouter } from './notifications'
 import { permissionsRouter } from './permissions'
 import { storageRouter } from './storage'
@@ -21,6 +22,7 @@ export const appRouter = createTRPCRouter({
 	analytics: analyticsRouter,
 	admin: adminRouter,
 	theme: themeRouter,
+	maintenance: maintenanceRouter,
 	apiKeys: apiKeysRouter,
 	feedback: feedbackRouter,
 })

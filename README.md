@@ -45,6 +45,7 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - System statistics and metrics
   - Audit logs with filtering and CSV export
   - Environment-based admin access control
+  - Maintenance mode banner (site-wide notifications with scheduled end times)
 - **Analytics Dashboard**:
   - User growth charts (Recharts)
   - Activity metrics and feeds
@@ -180,7 +181,10 @@ See `.env.local.example` for all required environment variables. Key variables:
 │   │       ├── layout.tsx         # Admin layout with access control
 │   │       ├── page.tsx           # Admin dashboard (system stats)
 │   │       ├── users/             # User management
-│   │       └── audit/             # Audit logs
+│   │       ├── audit/             # Audit logs
+│   │       ├── themes/            # Theme management
+│   │       ├── maintenance/       # Maintenance mode
+│   │       └── emails/            # Email templates
 │   ├── api/                       # API routes
 │   │   ├── auth/[...all]/         # Better Auth routes
 │   │   ├── trpc/[trpc]/           # tRPC routes
@@ -189,7 +193,12 @@ See `.env.local.example` for all required environment variables. Key variables:
 ├── components/                     # React components
 │   ├── admin/                     # Admin components
 │   │   ├── users-table.tsx        # User management table
-│   │   └── audit-log-table.tsx    # Audit log table
+│   │   ├── audit-log-table.tsx    # Audit log table
+│   │   ├── impersonation-banner.tsx  # Impersonation warning banner
+│   │   ├── theme-manager.tsx      # Theme management UI
+│   │   └── maintenance-manager.tsx   # Maintenance mode controls
+│   ├── maintenance-banner.tsx     # Site-wide maintenance banner
+│   ├── maintenance-banner-wrapper.tsx  # Server component wrapper
 │   ├── notifications/             # Notification components
 │   │   └── notifications-dropdown.tsx  # Bell icon dropdown with full management
 │   ├── analytics/                 # Analytics components
@@ -221,6 +230,8 @@ See `.env.local.example` for all required environment variables. Key variables:
 │   ├── rbac/                      # RBAC utilities
 │   ├── email/                     # Email utilities
 │   │   └── service.ts             # EmailService class
+│   ├── maintenance/               # Maintenance mode utilities
+│   │   └── server.ts              # Maintenance mode server functions
 │   ├── supabase/                  # Supabase clients
 │   ├── prisma.ts                  # Prisma client
 │   └── env.ts                     # Environment validation
@@ -232,7 +243,9 @@ See `.env.local.example` for all required environment variables. Key variables:
 │           ├── user.ts            # User operations
 │           ├── workspace.ts       # Workspace operations
 │           ├── analytics.ts       # Analytics data
-│           └── admin.ts           # Admin operations
+│           ├── admin.ts           # Admin operations
+│           ├── theme.ts           # Theme management
+│           └── maintenance.ts     # Maintenance mode
 ├── prisma/                        # Prisma schema
 │   └── schema.prisma              # Database schema
 ├── emails/                        # React Email templates
@@ -273,6 +286,7 @@ The project uses Prisma as the ORM. The schema includes:
 - TwoFactorAuth
 - Passkeys
 - APIKeys (secure key management with SHA-256 hashing)
+- SystemSettings (theme and maintenance mode configuration)
 
 ### Commands
 
@@ -777,6 +791,14 @@ Only users with emails in `ADMIN_EMAILS` can access the admin dashboard at `/adm
 - User information with avatars
 - IP address tracking
 - Timestamp with relative time display
+
+**Maintenance Mode** (`/admin/maintenance`):
+- Enable/disable site-wide maintenance banners
+- Customize maintenance messages
+- Set optional scheduled end times with countdown
+- Visual status indicators (active/inactive)
+- Audit logging for all maintenance actions
+- Banner displayed across all pages (dashboard and admin)
 
 ### Admin Access Control
 

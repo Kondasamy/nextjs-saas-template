@@ -315,6 +315,15 @@ export const FEATURES: Feature[] = [
 		category: 'analytics',
 		tags: ['Audit', 'Logging', 'Compliance'],
 	},
+	{
+		uid: 'feature--44',
+		title: 'Maintenance Mode Banner',
+		description:
+			'Site-wide maintenance banner system with admin controls, custom messages, scheduled end times, and audit logging.',
+		cover: 'https://placehold.co/800x450/0066EE/FFFFFF?text=Maintenance',
+		category: 'analytics',
+		tags: ['Admin', 'Notifications', 'Management'],
+	},
 	// UI & Developer Experience
 	{
 		uid: 'feature--33',

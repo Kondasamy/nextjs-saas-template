@@ -41,6 +41,8 @@ A production-ready enterprise SaaS template built with Next.js 16, Prisma, Bette
   - System statistics and metrics
   - Audit logs with filtering and CSV export
   - Environment-based admin access control (ADMIN_EMAILS)
+  - Maintenance mode banner (site-wide notifications with scheduled end times)
+  - Theme management (switch between available themes)
 - **Analytics Dashboard**:
   - User growth charts with Recharts
   - Activity metrics and feeds
@@ -172,7 +174,10 @@ pnpm dev
 │   │       ├── layout.tsx         # Admin layout with access control
 │   │       ├── page.tsx           # Admin dashboard
 │   │       ├── users/             # User management
-│   │       └── audit/             # Audit logs
+│   │       ├── audit/             # Audit logs
+│   │       ├── themes/            # Theme management
+│   │       ├── maintenance/       # Maintenance mode
+│   │       └── emails/            # Email templates
 │   ├── invite/                    # Public invitation routes
 │   │   └── [token]/               # Accept invite link
 │   ├── features/                  # Features/Products section
@@ -194,7 +199,12 @@ pnpm dev
 ├── components/                     # React components
 │   ├── admin/                     # Admin components
 │   │   ├── users-table.tsx
-│   │   └── audit-log-table.tsx
+│   │   ├── audit-log-table.tsx
+│   │   ├── impersonation-banner.tsx
+│   │   ├── theme-manager.tsx
+│   │   └── maintenance-manager.tsx
+│   ├── maintenance-banner.tsx     # Site-wide maintenance banner
+│   ├── maintenance-banner-wrapper.tsx  # Server component wrapper
 │   ├── analytics/                 # Analytics components
 │   │   ├── stats-card.tsx
 │   │   ├── user-growth-chart.tsx
@@ -262,6 +272,8 @@ pnpm dev
 │           ├── api-keys.ts        # API key management
 │           ├── analytics.ts       # Analytics router
 │           ├── admin.ts           # Admin router
+│           ├── theme.ts           # Theme management
+│           ├── maintenance.ts     # Maintenance mode
 │           └── feedback.ts        # Feedback and support
 ├── lib/                           # Utility functions
 │   ├── auth/                      # Better Auth configuration
@@ -276,6 +288,8 @@ pnpm dev
 │   │   └── checker.ts             # Permission checking utilities
 │   ├── email/                     # Email utilities
 │   │   └── service.ts             # EmailService class
+│   ├── maintenance/               # Maintenance mode utilities
+│   │   └── server.ts              # Maintenance mode server functions
 │   ├── supabase/                  # Supabase clients
 │   ├── rate-limit.ts              # Rate limiting system
 │   ├── prisma.ts                  # Prisma client

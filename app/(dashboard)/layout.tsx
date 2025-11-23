@@ -1,5 +1,6 @@
 import { ImpersonationBanner } from '@/components/admin/impersonation-banner'
 import { AppSidebar } from '@/components/app-sidebar'
+import { MaintenanceBannerWrapper } from '@/components/maintenance-banner-wrapper'
 import PageHeader from '@/components/page-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { requireAuth } from '@/lib/auth/auth-helpers'
@@ -48,6 +49,7 @@ export default async function DashboardLayout({
 			<SidebarInset>
 				<PageHeader />
 				<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+					<MaintenanceBannerWrapper />
 					{impersonationData && (
 						<ImpersonationBanner
 							targetUserEmail={impersonationData.targetUserEmail}

@@ -1,6 +1,7 @@
 import { Shield } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
+import { MaintenanceBannerWrapper } from '@/components/maintenance-banner-wrapper'
 import PageHeader from '@/components/page-header'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -19,6 +20,7 @@ export default async function AdminLayout({
 			<SidebarInset>
 				<PageHeader />
 				<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+					<MaintenanceBannerWrapper />
 					<Alert variant="warning">
 						<Shield className="h-4 w-4" />
 						<AlertTitle>Admin Mode</AlertTitle>
