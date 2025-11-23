@@ -136,6 +136,7 @@ export const adminRouter = createTRPCRouter({
 				userId: z.string().optional(),
 				organizationId: z.string().optional(),
 				action: z.string().optional(),
+				search: z.string().optional(),
 				startDate: z.date().optional(),
 				endDate: z.date().optional(),
 			})
@@ -147,6 +148,7 @@ export const adminRouter = createTRPCRouter({
 				userId,
 				organizationId,
 				action,
+				search,
 				startDate,
 				endDate,
 			} = input
@@ -168,6 +170,31 @@ export const adminRouter = createTRPCRouter({
 				where.createdAt = {}
 				if (startDate) where.createdAt.gte = startDate
 				if (endDate) where.createdAt.lte = endDate
+			}
+
+			// Add search filter across multiple fields
+			if (search) {
+				where.OR = [
+					{
+						user: {
+							OR: [
+								{ email: { contains: search, mode: 'insensitive' } },
+								{ name: { contains: search, mode: 'insensitive' } },
+							],
+						},
+					},
+					{ action: { contains: search, mode: 'insensitive' } },
+					{
+						organization: {
+							OR: [
+								{ name: { contains: search, mode: 'insensitive' } },
+								{ slug: { contains: search, mode: 'insensitive' } },
+							],
+						},
+					},
+					{ ipAddress: { contains: search, mode: 'insensitive' } },
+					{ resource: { contains: search, mode: 'insensitive' } },
+				]
 			}
 
 			const [logs, total] = await Promise.all([
@@ -257,4 +284,26 @@ export const adminRouter = createTRPCRouter({
 				},
 			})
 		}),
+
+	/**
+	 * Get distinct audit log actions (admin only)
+	 */
+	getAuditLogActions: protectedProcedure.query(async ({ ctx }) => {
+		// Verify admin access
+		if (!ctx.user || !(await isUserAdmin(ctx.user.email))) {
+			throw new TRPCError({
+				code: 'FORBIDDEN',
+				message: 'Admin access required',
+			})
+		}
+
+		// Get all distinct actions from audit logs
+		const logs = await ctx.prisma.auditLog.findMany({
+			select: { action: true },
+			distinct: ['action'],
+			orderBy: { action: 'asc' },
+		})
+
+		return logs.map((log) => log.action).sort()
+	}),
 })

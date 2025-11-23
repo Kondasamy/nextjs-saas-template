@@ -1,12 +1,13 @@
 'use client'
 
 import { formatDistanceToNow } from 'date-fns'
-import { Download, Filter } from 'lucide-react'
-import { useState } from 'react'
+import { Download, Filter, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { ActivityDetailModal } from '@/components/admin/activity-detail-modal'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
 	Select,
 	SelectContent,
@@ -37,15 +38,37 @@ const ACTION_COLORS: Record<string, string> = {
 export function AuditLogTable() {
 	const [page, setPage] = useState(0)
 	const [actionFilter, setActionFilter] = useState<string>('all')
+	const [searchInput, setSearchInput] = useState('')
+	const [debouncedSearch, setDebouncedSearch] = useState('')
 	const [selectedActivity, setSelectedActivity] = useState<any>(null)
 	const [modalOpen, setModalOpen] = useState(false)
 	const limit = 50
+
+	// Debounce search input
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearch(searchInput)
+			setPage(0) // Reset to first page on search
+		}, 500)
+
+		return () => clearTimeout(timer)
+	}, [searchInput])
+
+	// Fetch available actions for the filter
+	const { data: availableActions } = trpc.admin.getAuditLogActions.useQuery(
+		undefined,
+		{
+			staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+			gcTime: 10 * 60 * 1000,
+		}
+	)
 
 	const { data } = trpc.admin.getAuditLogs.useQuery(
 		{
 			limit,
 			offset: page * limit,
 			action: actionFilter === 'all' ? undefined : actionFilter,
+			search: debouncedSearch || undefined,
 		},
 		{
 			// Keep previous data while fetching new page
@@ -89,19 +112,27 @@ export function AuditLogTable() {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center gap-2">
+				<div className="relative flex-1 max-w-md">
+					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+					<Input
+						placeholder="Search by user, action, organization, IP..."
+						value={searchInput}
+						onChange={(e) => setSearchInput(e.target.value)}
+						className="pl-9"
+					/>
+				</div>
 				<Select value={actionFilter} onValueChange={setActionFilter}>
-					<SelectTrigger className="w-[200px]">
+					<SelectTrigger className="w-[240px]">
 						<Filter className="mr-2 h-4 w-4" />
 						<SelectValue />
 					</SelectTrigger>
-					<SelectContent>
+					<SelectContent className="max-h-[400px]">
 						<SelectItem value="all">All Actions</SelectItem>
-						<SelectItem value="user.login">User Login</SelectItem>
-						<SelectItem value="user.signup">User Signup</SelectItem>
-						<SelectItem value="workspace.create">Workspace Created</SelectItem>
-						<SelectItem value="workspace.delete">Workspace Deleted</SelectItem>
-						<SelectItem value="member.invite">Member Invited</SelectItem>
-						<SelectItem value="member.remove">Member Removed</SelectItem>
+						{availableActions?.map((action) => (
+							<SelectItem key={action} value={action}>
+								{action}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
 				<Button variant="outline" onClick={handleExport}>
