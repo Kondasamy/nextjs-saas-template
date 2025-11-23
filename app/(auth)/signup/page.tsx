@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { AuthForm } from '@/components/auth/auth-form'
 import { SocialLogin } from '@/components/auth/social-login'
 import {
@@ -9,7 +12,7 @@ import {
 	CardTitle,
 } from '@/components/ui/card'
 
-export default function SignUpPage() {
+function SignUpContent() {
 	return (
 		<div className="container flex items-center mx-auto justify-center min-h-screen py-12">
 			<Card className="w-full max-w-md">
@@ -41,5 +44,19 @@ export default function SignUpPage() {
 				</CardContent>
 			</Card>
 		</div>
+	)
+}
+
+export default function SignUpPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="container flex items-center justify-center min-h-screen">
+					<div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+				</div>
+			}
+		>
+			<SignUpContent />
+		</Suspense>
 	)
 }

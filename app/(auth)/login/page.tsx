@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { AuthForm } from '@/components/auth/auth-form'
 import { MagicLinkForm } from '@/components/auth/magic-link-form'
 import { OtpForm } from '@/components/auth/otp-form'
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-export default function LoginPage() {
+function LoginContent() {
 	const searchParams = useSearchParams()
 	const router = useRouter()
 	const redirect = searchParams.get('redirect') || '/'
@@ -82,5 +83,19 @@ export default function LoginPage() {
 				</CardContent>
 			</Card>
 		</div>
+	)
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="container mx-auto flex items-center justify-center min-h-screen">
+					<div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+				</div>
+			}
+		>
+			<LoginContent />
+		</Suspense>
 	)
 }
