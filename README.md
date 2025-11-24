@@ -16,6 +16,9 @@
 
 A modern, full-featured SaaS template that includes everything you need to launch your next enterprise application. Built with the latest technologies and best practices, featuring complete authentication, workspace management, RBAC, analytics, and admin dashboard.
 
+
+![Enterprise SaaS Template](docs/banner.png)
+
 ## ✨ Features
 
 ### 🔐 **Authentication & Security**
