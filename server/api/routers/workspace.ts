@@ -1078,11 +1078,7 @@ export const workspaceRouter = createTRPCRouter({
 										banned: true,
 									},
 								},
-								role: {
-									include: {
-										permissions: true,
-									},
-								},
+								role: true,
 							},
 						},
 						invitations: {
@@ -1099,7 +1095,6 @@ export const workspaceRouter = createTRPCRouter({
 				// Get all roles for the organization
 				ctx.prisma.role.findMany({
 					where: { organizationId: input.organizationId },
-					include: { permissions: true },
 					orderBy: { name: 'asc' },
 				}),
 				// Get current user with minimal data
