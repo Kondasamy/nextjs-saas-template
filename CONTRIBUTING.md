@@ -30,7 +30,7 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing. We ar
 1. **Fork and clone the repository:**
    ```bash
    git clone https://github.com/Kondasamy/nextjs-saas-template.git
-   cd saas-template
+   cd nextjs-saas-template
    ```
 
 2. **Install dependencies:**
@@ -280,7 +280,6 @@ Any other context or screenshots
 
 ## Getting Help
 
-- **Discord:** [Join our community](https://discord.gg/your-invite)
 - **Discussions:** Use GitHub Discussions for questions
 - **Issues:** For bug reports and feature requests
 

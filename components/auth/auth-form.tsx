@@ -36,6 +36,7 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 	const { data: session, refetch: refetchSession } = useSession()
 	const router = useRouter()
 	const searchParams = useSearchParams()
+	const utils = trpc.useUtils()
 	const ensureDefaultWorkspace = trpc.workspace.ensureDefault.useMutation()
 
 	const signInForm = useForm<SignInFormData>({
@@ -160,6 +161,8 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 				// Try to ensure default workspace exists
 				try {
 					await ensureDefaultWorkspace.mutateAsync()
+					// Invalidate workspace queries to ensure fresh data
+					await utils.workspace.list.invalidate()
 				} catch (error) {
 					// Don't fail signup if workspace creation fails
 					console.error('Failed to create default workspace:', error)

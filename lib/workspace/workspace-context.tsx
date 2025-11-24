@@ -42,6 +42,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		null
 	)
 	const [isInitialized, setIsInitialized] = useState(false)
+	const [isCreatingDefault, setIsCreatingDefault] = useState(false)
 
 	// Fetch all workspaces with caching strategy
 	const {
@@ -62,9 +63,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 	})
 
 	const ensureDefaultWorkspace = trpc.workspace.ensureDefault.useMutation({
-		onSuccess: () => {
+		onSuccess: async () => {
 			// Refetch workspaces after creating default
-			void refetchWorkspaces()
+			await refetchWorkspaces()
+			// Don't clear isCreatingDefault here - let the useEffect handle it
+			// when workspaces are loaded to avoid race conditions
+		},
+		onError: () => {
+			// On error, clear the creating state and mark as initialized
+			// to prevent infinite loading
+			setIsCreatingDefault(false)
+			setIsInitialized(true)
 		},
 	})
 
@@ -86,22 +95,24 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 				const initialWorkspace = storedWorkspace || workspaces[0]
 				setCurrentWorkspaceId(initialWorkspace.id)
 				setIsInitialized(true)
+				setIsCreatingDefault(false) // Clear creating state
 
 				// Update localStorage if we're using the first workspace
 				if (typeof window !== 'undefined' && !storedWorkspace) {
 					localStorage.setItem(WORKSPACE_STORAGE_KEY, initialWorkspace.id)
 				}
-			} else {
-				// No workspaces - try to create default workspace
-				void ensureDefaultWorkspace.mutate()
-				// Mark as initialized so loading state resolves
-				setIsInitialized(true)
+			} else if (!isCreatingDefault) {
+				// No workspaces and not already creating - try to create default workspace
+				setIsCreatingDefault(true)
+				ensureDefaultWorkspace.mutate()
+				// Don't mark as initialized yet - wait for workspace creation
 			}
 		}
 	}, [
 		workspaces,
 		isLoadingWorkspaces,
 		isInitialized,
+		isCreatingDefault,
 		// Remove mutation and refetch functions from deps - they're stable
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	])
@@ -143,7 +154,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 		workspaces,
 		switchWorkspace,
 		refetchWorkspaces: () => void refetchWorkspaces(),
-		isLoading: isLoadingWorkspaces || !isInitialized,
+		isLoading: isLoadingWorkspaces || !isInitialized || isCreatingDefault,
 	}
 
 	return (
