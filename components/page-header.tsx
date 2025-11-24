@@ -93,7 +93,12 @@ export default function PageHeader() {
 				})
 			)
 		}
-		setTheme(theme === 'dark' ? 'light' : 'dark')
+		// Handle system theme by checking resolved theme
+		const isDark =
+			theme === 'dark' ||
+			(theme === 'system' &&
+				window.matchMedia('(prefers-color-scheme: dark)').matches)
+		setTheme(isDark ? 'light' : 'dark')
 	}
 
 	// Prevent hydration mismatch
@@ -156,11 +161,14 @@ export default function PageHeader() {
 					size="icon"
 					className="cursor-pointer"
 					onClick={handleThemeToggle}
+					aria-label="Toggle theme"
 				>
-					{theme === 'dark' ? (
-						<MoonStar className="h-5 w-5" />
-					) : (
+					{theme === 'dark' ||
+					(theme === 'system' &&
+						window.matchMedia('(prefers-color-scheme: dark)').matches) ? (
 						<SunDim className="h-5 w-5" />
+					) : (
+						<MoonStar className="h-5 w-5" />
 					)}
 					<span className="sr-only">Toggle theme</span>
 				</Button>
