@@ -10,7 +10,7 @@ const prisma = new PrismaClient({ adapter })
 
 // Demo credentials - visible to users
 const DEMO_ADMIN = {
-	email: 'demo@saastemplate.com',
+	email: 'demo@yourdomain.com',
 	password: 'demo1234',
 	name: 'Demo Admin',
 }

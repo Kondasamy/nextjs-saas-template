@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-const DEMO_EMAIL = 'demo@saastemplate.com'
+const DEMO_EMAIL = 'demo@yourdomain.com'
 const DEMO_PASSWORD = 'demo1234'
 
 function DemoCredentialsBanner() {
