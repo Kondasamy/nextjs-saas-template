@@ -1,5 +1,5 @@
-import type { PrismaClient } from '@/prisma/generated/prisma/client'
 import { TRPCError } from '@trpc/server'
+import type { PrismaClient } from '@/prisma/generated/prisma/client'
 
 /**
  * Database helper utilities to reduce query duplication and improve performance
