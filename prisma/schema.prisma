@@ -2,14 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-	provider = "prisma-client-js"
+	provider = "prisma-client"
+	output   = "./generated/prisma"
 }
 
 datasource db {
 	provider = "postgresql"
-	url      = env("DATABASE_URL")
-	// DIRECT_URL is optional - if not provided, DATABASE_URL will be used for migrations
-	directUrl = env("DIRECT_URL")
 }
 
 model User {

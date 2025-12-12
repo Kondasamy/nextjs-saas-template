@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { magicLink } from 'better-auth/plugins/magic-link'
-import { passkey } from 'better-auth/plugins/passkey'
+import { passkey } from '@better-auth/passkey'
 import { EmailService } from '@/lib/email/service'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
