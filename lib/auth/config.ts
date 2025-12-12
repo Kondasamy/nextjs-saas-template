@@ -1,4 +1,5 @@
 import { passkey } from '@better-auth/passkey'
+import bcrypt from 'bcrypt'
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { magicLink } from 'better-auth/plugins/magic-link'
@@ -104,6 +105,14 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: env.NODE_ENV === 'production',
+		password: {
+			hash: async (password) => {
+				return await bcrypt.hash(password, 10)
+			},
+			verify: async ({ hash, password }) => {
+				return await bcrypt.compare(password, hash)
+			},
+		},
 		sendVerificationEmail: async ({ user, url }) => {
 			try {
 				if (env.RESEND_API_KEY) {
