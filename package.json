@@ -11,7 +11,7 @@
 		"format": "biome check --write --unsafe .",
 		"pre-commit": "pnpm format && pnpm lint:fix",
 		"db:generate": "dotenv -e .env.local -- prisma generate",
-		"db:push": "dotenv -e .env.local -- prisma db push",
+		"db:push": "prisma db push",
 		"db:migrate": "dotenv -e .env.local -- prisma migrate dev",
 		"db:migrate:deploy": "prisma migrate deploy",
 		"db:migrate:status": "dotenv -e .env.local -- prisma migrate status",
