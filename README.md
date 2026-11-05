@@ -1,202 +1,74 @@
 <div align="center">
-  <h1>🚀 Enterprise SaaS Template</h1>
-  <p>
-    <strong>Production-ready SaaS starter with Next.js 16, Better Auth, tRPC, and comprehensive RBAC</strong>
-  </p>
-  <p>
-    <a href="#features">Features</a> •
-    <a href="#quick-start">Quick Start</a> •
-    <a href="#tech-stack">Tech Stack</a> •
-    <a href="#documentation">Documentation</a> •
-    <a href="#contributing">Contributing</a>
-  </p>
+
+# Next.js SaaS Template
+
+Multi-tenant SaaS starter: Next.js 16, Better Auth, tRPC, Prisma and role-based access control.
+
+[![CI](https://github.com/Kondasamy/nextjs-saas-template/actions/workflows/ci.yml/badge.svg)](https://github.com/Kondasamy/nextjs-saas-template/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Kondasamy/nextjs-saas-template)](https://github.com/Kondasamy/nextjs-saas-template/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 </div>
 
----
+![Architecture: Browser to Next.js to tRPC with RBAC to Prisma and PostgreSQL, with Better Auth, Resend and Supabase Storage](docs/architecture.svg)
 
-A modern, full-featured SaaS template that includes everything you need to launch your next enterprise application. Built with the latest technologies and best practices, featuring complete authentication, workspace management, RBAC, analytics, and admin dashboard.
+## What's included
 
+| Area | Features |
+|---|---|
+| **Auth** | Email + password, Google / GitHub / Microsoft OAuth, magic links, passkeys, email OTP sign-in, active session management |
+| **Workspaces** | Multi-tenant isolation, invitations and invite links, custom roles over 17 granular permissions, ownership transfer, archive and clone |
+| **Admin** | User management, impersonation with audit log, maintenance mode, analytics dashboard |
+| **Platform** | tRPC API with end-to-end types, API keys (SHA-256 hashed), in-app notifications, file uploads, 11 React Email templates |
+| **UI** | ShadCN UI, Tailwind CSS 4, 14 built-in themes with light and dark modes |
+| **Quality** | TypeScript 7, Biome, Oxlint, Playwright smoke tests, GitHub Actions CI on every PR |
 
-![Enterprise SaaS Template](docs/banner.png)
+## Quick start
 
-## ✨ Features
-
-### 🔐 **Authentication & Security**
-- **7 authentication methods** via Better Auth (Email, OAuth, Magic Links, Passkeys, OTP, 2FA, SSO)
-- **RBAC system** with granular permissions (30+ permission levels)
-- **Rate limiting** with multiple tiers
-- **Security headers** (HSTS, CSP, X-Frame-Options)
-- **User impersonation** for admin support with audit logging
-
-### 🏢 **Workspace Management**
-- **Multi-tenant architecture** with workspace isolation
-- **Workspace templates** - Clone workspaces with settings and permissions
-- **Archive/restore** workspaces with audit trail
-- **Invitation links** with usage limits
-- **Bulk operations** for member management
-- **API key management** with secure SHA-256 hashing
-
-### 📊 **Analytics & Admin**
-- **Admin dashboard** with user management and system metrics
-- **Analytics dashboard** with Recharts visualizations
-- **Audit logs** with filtering and CSV export
-- **Activity tracking** and user engagement metrics
-- **Maintenance mode** with scheduled end times
-
-### 💌 **Communications**
-- **Email system** with React Email templates (6 pre-built)
-- **In-app notifications** with real-time updates
-- **Toast notifications** for user feedback
-- **Webhook support** for external integrations
-
-### 🎨 **UI & Experience**
-- **50+ ShadCN UI components**
-- **Dark/light theme** with next-themes
-- **10 motion components** with Framer Motion
-- **Responsive design** with Tailwind CSS 4
-- **Loading skeletons** and error boundaries
-- **Internationalization** ready with next-intl
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 24+ (see `.nvmrc`)
-- PostgreSQL database (Supabase recommended)
-- pnpm (recommended) or npm/yarn
-
-### Installation
+Requires **Node 24+**, **pnpm 11** and a PostgreSQL database.
 
 ```bash
-# Clone the repository
 git clone https://github.com/Kondasamy/nextjs-saas-template.git
 cd nextjs-saas-template
-
-# Install dependencies
 pnpm install
-
-# Set up environment variables
-cp .env.local.example .env.local
-
-# Set up database
-pnpm db:generate
+cp .env.local.example .env.local   # set DATABASE_URL, DIRECT_URL, BETTER_AUTH_SECRET
 pnpm db:migrate
-
-# Start development server
+pnpm db:seed                       # optional demo data (demo@yourdomain.com / demo1234)
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your application.
+Open [localhost:3000](http://localhost:3000). Email, OAuth and storage are optional and switch on when their keys are set. See [`.env.local.example`](.env.local.example) for all variables, and add your address to `ADMIN_EMAILS` for admin access.
 
-## 🛠 Tech Stack
+## Scripts
 
-- **Framework:** Next.js 16 (App Router) + React 19
-- **Database:** PostgreSQL with Prisma ORM
-- **Authentication:** Better Auth (7 methods)
-- **API:** tRPC for end-to-end type safety
-- **Storage:** Supabase (optional)
-- **Styling:** Tailwind CSS 4 + ShadCN UI
-- **Email:** React Email + Resend
-- **Analytics:** Recharts
-- **Code Quality:** Biome + Oxlint + Husky
+| Command | Purpose |
+|---|---|
+| `pnpm dev` / `pnpm build` / `pnpm start` | Develop, build, serve |
+| `pnpm typecheck` / `pnpm lint` / `pnpm format` | TypeScript, Oxlint, Biome |
+| `pnpm test:e2e` | Playwright smoke suite against `pnpm start` (build first) |
+| `pnpm test:rbac` | Ownership and permission checks against the database |
+| `pnpm test:emails` | Render every email template |
+| `pnpm db:migrate` / `pnpm db:studio` | Prisma migrations and studio |
 
-## 📁 Project Structure
+## Documentation
 
-```
-├── app/                    # Next.js App Router
-│   ├── (auth)/            # Auth pages (login, signup, etc.)
-│   ├── (dashboard)/       # Protected dashboard routes
-│   ├── (admin)/           # Admin-only routes
-│   └── api/               # API routes
-├── components/            # React components
-│   ├── ui/               # ShadCN UI components
-│   ├── admin/            # Admin components
-│   └── settings/         # Settings components
-├── server/               # Backend logic
-│   └── api/routers/      # tRPC routers
-├── lib/                  # Utilities and configs
-├── prisma/               # Database schema
-├── emails/               # Email templates
-└── hooks/                # Custom React hooks
-```
+[Getting started](docs/getting-started.md) ·
+[Authentication](docs/authentication.md) ·
+[RBAC](docs/rbac.md) ·
+[Workspaces](docs/workspaces.md) ·
+[Emails](docs/emails.md) ·
+[Admin](docs/admin.md) ·
+[API](docs/api.md) ·
+[Architecture](docs/architecture.md) ·
+[Theming](docs/theming.md) ·
+[Deployment](docs/deployment.md)
 
-## 🔧 Configuration
+**Known limitation:** 2FA can be enabled in settings but is not yet enforced at sign-in. See the [release notes](https://github.com/Kondasamy/nextjs-saas-template/releases) for other open issues.
 
-### Environment Variables
+## Contributing
 
-Create a `.env.local` file with:
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). CI must pass before merge.
 
-```env
-# Required
-DATABASE_URL=
-DIRECT_URL=
-BETTER_AUTH_SECRET=        # Min 32 chars
-BETTER_AUTH_URL=           # Your app URL
-NEXT_PUBLIC_APP_URL=
+## License
 
-# Optional
-ADMIN_EMAILS=              # Comma-separated admin emails
-RESEND_API_KEY=           # For email sending
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-```
-
-See [`.env.local.example`](.env.local.example) for all available options.
-
-### Admin Access
-
-Add admin emails to `ADMIN_EMAILS` environment variable:
-
-```env
-ADMIN_EMAILS="admin@example.com,manager@example.com"
-```
-
-## 📚 Documentation
-
-- [Getting Started](docs/getting-started.md)
-- [Authentication Guide](docs/authentication.md)
-- [RBAC & Permissions](docs/rbac.md)
-- [Workspace Management](docs/workspaces.md)
-- [Email System](docs/emails.md)
-- [Admin Dashboard](docs/admin.md)
-- [API Reference](docs/api.md)
-- [Deployment Guide](docs/deployment.md)
-- [Architecture Overview](docs/architecture.md)
-- [Theme Management](docs/theming.md)
-- [ShadCN Components](docs/shadcn-components.md)
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Commands
-
-```bash
-pnpm dev          # Start development server
-pnpm build        # Build for production
-pnpm lint         # Check linting
-pnpm typecheck    # TypeScript type checking
-pnpm test:e2e     # Playwright smoke tests (run `pnpm build` first)
-pnpm test:emails  # Render every email template
-pnpm format       # Format code
-pnpm db:studio    # Open Prisma Studio
-```
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## 🙏 Acknowledgments
-
-Built with amazing open source projects:
-- [Next.js](https://nextjs.org)
-- [Prisma](https://prisma.io)
-- [Better Auth](https://better-auth.com)
-- [tRPC](https://trpc.io)
-- [ShadCN UI](https://ui.shadcn.com)
-- [Supabase](https://supabase.com)
-
----
-
-<div align="center">
-  Made with ❤️ by the community
-</div>
+[MIT](LICENSE)
