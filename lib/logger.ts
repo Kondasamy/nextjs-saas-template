@@ -184,4 +184,4 @@ class Logger {
 export const logger = new Logger()
 
 // Export for testing
-export { sanitizeObject, maskSensitiveValue }
+export { maskSensitiveValue, sanitizeObject }

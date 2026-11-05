@@ -86,4 +86,4 @@ function CodeBlockGroup({
 	)
 }
 
-export { CodeBlockGroup, CodeBlockCode, CodeBlock }
+export { CodeBlock, CodeBlockCode, CodeBlockGroup }
