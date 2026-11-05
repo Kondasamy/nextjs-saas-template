@@ -132,7 +132,14 @@ export const auth = betterAuth({
 				}
 			},
 		}),
-		passkey(),
+		passkey({
+			// Keep the existing Prisma field names the app already reads
+			schema: {
+				passkey: {
+					fields: { name: 'deviceName', credentialID: 'credentialId' },
+				},
+			},
+		}),
 	],
 	session: {
 		expiresIn: 60 * 60 * 24 * 7, // 7 days
