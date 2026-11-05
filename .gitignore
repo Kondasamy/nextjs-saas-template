@@ -42,3 +42,9 @@ next-env.d.ts
 
 # prisma generated
 /prisma/generated
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
