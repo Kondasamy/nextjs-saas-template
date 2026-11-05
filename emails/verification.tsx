@@ -11,9 +11,13 @@ import {
 
 interface VerificationEmailProps {
 	verificationUrl: string
+	code?: string
 }
 
-export function VerificationEmail({ verificationUrl }: VerificationEmailProps) {
+export function VerificationEmail({
+	verificationUrl,
+	code,
+}: VerificationEmailProps) {
 	return (
 		<Html>
 			<Head />
@@ -21,12 +25,20 @@ export function VerificationEmail({ verificationUrl }: VerificationEmailProps) {
 			<Body style={main}>
 				<Container style={container}>
 					<Heading style={h1}>Verify your email</Heading>
-					<Text style={text}>
-						Please click the button below to verify your email address.
-					</Text>
-					<Button style={button} href={verificationUrl}>
-						Verify Email
-					</Button>
+					{code ? (
+						<Text style={text}>
+							Your verification code is: <strong>{code}</strong>
+						</Text>
+					) : (
+						<>
+							<Text style={text}>
+								Please click the button below to verify your email address.
+							</Text>
+							<Button style={button} href={verificationUrl}>
+								Verify Email
+							</Button>
+						</>
+					)}
 					<Text style={text}>
 						If you didn't create an account, you can safely ignore this email.
 					</Text>

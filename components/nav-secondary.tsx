@@ -99,7 +99,7 @@ export function NavSecondary({
 										tooltip={item.title}
 										isActive={item.isActive}
 									>
-										<ViewTransitionLink href={item.url}>
+										<ViewTransitionLink href={item.url ?? '#'}>
 											<item.icon
 												className={item.isActive ? 'text-primary' : ''}
 											/>

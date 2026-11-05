@@ -31,7 +31,7 @@ import { trpc } from '@/lib/trpc/client'
 
 const deleteAccountSchema = z.object({
 	confirmation: z.literal('DELETE', {
-		errorMap: () => ({ message: 'Please type DELETE to confirm' }),
+		message: 'Please type DELETE to confirm',
 	}),
 	password: z.string().min(1, 'Password is required'),
 })

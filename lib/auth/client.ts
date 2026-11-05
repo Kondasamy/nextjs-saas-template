@@ -1,12 +1,12 @@
 'use client'
 
 import { passkeyClient } from '@better-auth/passkey/client'
-import { magicLinkClient } from 'better-auth/client/plugins'
+import { emailOTPClient, magicLinkClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
 export const authClient = createAuthClient({
 	baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-	plugins: [magicLinkClient(), passkeyClient()],
+	plugins: [magicLinkClient(), emailOTPClient(), passkeyClient()],
 })
 
 export const { signIn, signUp, signOut, useSession } = authClient

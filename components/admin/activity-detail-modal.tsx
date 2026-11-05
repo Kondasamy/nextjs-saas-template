@@ -135,7 +135,7 @@ export function ActivityDetailModal({
 					)}
 
 					{/* Metadata */}
-					{activity.metadata && (
+					{Boolean(activity.metadata) && (
 						<>
 							<div className="space-y-2">
 								<h3 className="text-sm font-medium">Metadata</h3>

@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { z } from 'zod'
 import { EmailService } from '@/lib/email/service'
 import { logger } from '@/lib/logger'
@@ -497,7 +498,7 @@ export const userRouter = createTRPCRouter({
 
 		// Generate backup codes (8 codes, 8 characters each)
 		const backupCodes = Array.from({ length: 8 }, () =>
-			crypto.randomBytes(4).toString('hex').toUpperCase()
+			randomBytes(4).toString('hex').toUpperCase()
 		)
 
 		// Hash backup codes before storing
@@ -686,7 +687,7 @@ export const userRouter = createTRPCRouter({
 
 			// Generate new backup codes
 			const backupCodes = Array.from({ length: 8 }, () =>
-				crypto.randomBytes(4).toString('hex').toUpperCase()
+				randomBytes(4).toString('hex').toUpperCase()
 			)
 
 			// Hash backup codes
@@ -915,7 +916,7 @@ export const userRouter = createTRPCRouter({
 			organizations: organizations.map((membership) => ({
 				organization: membership.organization,
 				role: membership.role,
-				joinedAt: membership.createdAt,
+				joinedAt: membership.joinedAt,
 			})),
 			notifications,
 			auditLogs: auditLogs.map((log) => ({

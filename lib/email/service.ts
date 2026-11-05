@@ -71,9 +71,7 @@ export class EmailService {
 		verificationUrl: string,
 		code?: string
 	) {
-		const html = await render(
-			VerificationEmail({ verificationUrl, name: to.split('@')[0], code })
-		)
+		const html = await render(VerificationEmail({ verificationUrl, code }))
 
 		return sendEmail({
 			to,

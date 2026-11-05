@@ -149,7 +149,7 @@ export function InviteLinksTable() {
 								inviteLinks.map((link) => {
 									const isExpired = new Date(link.expiresAt) < new Date()
 									const isMaxedOut =
-										link.maxUses && link.usedCount >= link.maxUses
+										!!link.maxUses && link.usedCount >= link.maxUses
 
 									return (
 										<TableRow key={link.id}>

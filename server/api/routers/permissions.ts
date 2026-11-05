@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { toPermissions } from '@/lib/permissions/checker'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const permissionsRouter = createTRPCRouter({
@@ -22,10 +23,14 @@ export const permissionsRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			return ctx.prisma.role.findMany({
+			const roles = await ctx.prisma.role.findMany({
 				where: { organizationId: input.organizationId },
 				orderBy: { createdAt: 'asc' },
 			})
+			return roles.map((role) => ({
+				...role,
+				permissions: toPermissions(role.permissions),
+			}))
 		}),
 
 	createRole: protectedProcedure
@@ -58,8 +63,8 @@ export const permissionsRouter = createTRPCRouter({
 			}
 
 			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('role:create')
+				toPermissions(membership.role.permissions).includes('*') ||
+				toPermissions(membership.role.permissions).includes('role:create')
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -123,8 +128,8 @@ export const permissionsRouter = createTRPCRouter({
 			}
 
 			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('role:update')
+				toPermissions(membership.role.permissions).includes('*') ||
+				toPermissions(membership.role.permissions).includes('role:update')
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -181,8 +186,8 @@ export const permissionsRouter = createTRPCRouter({
 			}
 
 			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('role:delete')
+				toPermissions(membership.role.permissions).includes('*') ||
+				toPermissions(membership.role.permissions).includes('role:delete')
 
 			if (!hasPermission) {
 				throw new TRPCError({

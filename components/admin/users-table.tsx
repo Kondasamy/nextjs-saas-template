@@ -120,7 +120,7 @@ export function UsersTable() {
 					{
 						...previousData,
 						users: previousData.users.map((u) =>
-							u.id === userId ? { ...u, banned } : u
+							u.id === userId ? { ...u, banned: banned ?? u.banned } : u
 						),
 					}
 				)

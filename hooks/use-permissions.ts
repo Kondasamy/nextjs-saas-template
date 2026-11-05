@@ -8,7 +8,7 @@ export function usePermissions(organizationId?: string) {
 
 	// This would fetch the user's role and permissions for the current workspace
 	// For now, returning empty array as placeholder
-	const permissions = useMemo(() => {
+	const permissions = useMemo<string[]>(() => {
 		if (!user || !organizationId) {
 			return []
 		}
