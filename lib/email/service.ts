@@ -1,5 +1,4 @@
 import { render } from '@react-email/components'
-import { Resend } from 'resend'
 import { EmailChangeNotification } from '@/emails/email-change-notification'
 import { EmailChangeVerification } from '@/emails/email-change-verification'
 import FeedbackEmail from '@/emails/feedback'
@@ -11,11 +10,10 @@ import SupportEmail from '@/emails/support'
 import TwoFactorEmail from '@/emails/two-factor'
 import { VerificationEmail } from '@/emails/verification'
 import { WelcomeEmail } from '@/emails/welcome'
+import { resend } from '@/lib/email/client'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { NAME } from '../constants'
-
-const resend = new Resend(env.RESEND_API_KEY)
 
 const FROM_EMAIL =
 	env.EMAIL_FROM_ADDRESS ||
@@ -29,6 +27,10 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html }: SendEmailOptions) {
+	// Constructed lazily in lib/email/client so builds work without RESEND_API_KEY
+	if (!resend) {
+		throw new Error('Email service not configured (RESEND_API_KEY missing)')
+	}
 	try {
 		const { data, error } = await resend.emails.send({
 			from: `${FROM_NAME} <${FROM_EMAIL}>`,
