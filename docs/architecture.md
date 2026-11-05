@@ -1,529 +1,87 @@
-# Architecture Overview
+# Architecture
 
-Technical architecture and design patterns of the Enterprise SaaS Template.
+How the pieces fit together. Diagram: [architecture.svg](./architecture.svg).
 
-## System Architecture
+## Stack
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      Frontend (Next.js)                  │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  App Router │  │ React Comps  │  │   Hooks      │  │
-│  │  (Pages)    │  │  (UI/UX)     │  │  (Logic)     │  │
-│  └─────────────┘  └──────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-                              │
-                              ├── tRPC
-                              │
-┌─────────────────────────────────────────────────────────┐
-│                      API Layer (tRPC)                    │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Routers   │  │  Procedures  │  │  Middleware  │  │
-│  │  (Endpoints)│  │  (Business)  │  │   (Auth)     │  │
-│  └─────────────┘  └──────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-                              │
-                              ├── Prisma ORM
-                              │
-┌─────────────────────────────────────────────────────────┐
-│                    Data Layer (PostgreSQL)               │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │   Tables    │  │   Indexes    │  │  Relations   │  │
-│  │  (Entities) │  │  (Performance)│  │  (Integrity) │  │
-│  └─────────────┘  └──────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-```
+- Next.js 16 App Router, React 19, TypeScript (strict), Tailwind CSS 4, shadcn/ui, `motion` for animation
+- tRPC 11 (superjson transformer) over TanStack Query
+- Prisma 7 with `@prisma/adapter-pg`, PostgreSQL
+- Better Auth (passwords hashed with bcrypt in `lib/auth/config.ts`)
+- Zod 4 for input validation
+- Resend + React Email for email, Supabase for file storage
+- Playwright for the e2e smoke suite; CI in `.github/workflows/ci.yml`
 
-## Technology Stack
+## Request flow
 
-### Frontend
-- **Next.js 16** - React framework with App Router
-- **React 19** - UI library
-- **TypeScript** - Type safety
-- **Tailwind CSS 4** - Utility-first styling
-- **ShadCN UI** - Component library
-- **Framer Motion** - Animations
+1. `proxy.ts` (Next 16's renamed middleware) runs on every matched request. It refreshes the Supabase session (`lib/supabase/middleware.ts`), sets CSP and security headers, redirects signed-in users away from auth pages, and redirects anonymous users to `/login?redirect=...`.
+2. Pages are Server Components by default. They read data through the tRPC server caller (`lib/trpc/server.ts`) or auth helpers (`lib/auth/auth-helpers.ts`: `requireAuth`, `getAuthSession`, `getAuthUser`).
+3. Client Components call tRPC through `lib/trpc/client.ts` via `app/api/trpc/[trpc]/route.ts`, which applies the in-memory rate limiter (`lib/rate-limit.ts`).
+4. Procedures in `server/api/routers/*` use `ctx.prisma` (`lib/prisma.ts`) to reach Postgres.
 
-### Backend
-- **tRPC** - End-to-end typesafe APIs
-- **Prisma** - ORM and database toolkit
-- **Better Auth** - Authentication system
-- **Zod** - Schema validation
+Admin pages are guarded by `requireAdmin()` in `app/(admin)/admin/layout.tsx`; admin status comes from `ADMIN_EMAILS` (`lib/auth/admin-helpers.ts`).
 
-### Database
-- **PostgreSQL** - Primary database
-- **Supabase** - Database hosting & realtime
-- **Redis** (optional) - Caching layer
+## Where code lives
 
-### Infrastructure
-- **Vercel** - Deployment platform
-- **Resend** - Email service
-- **Supabase Storage** - File storage
+| Path | Contents |
+|------|----------|
+| `app/(auth)/` | login, signup, password reset, email/OTP verification, 2FA setup |
+| `app/(dashboard)/` | dashboard, settings, workspace pages |
+| `app/(admin)/admin/` | users, workspaces, audit, emails, maintenance, themes |
+| `app/api/` | `auth/[...all]` (Better Auth), `trpc/[trpc]`, `admin/*`, `csrf`, `email/preview`, `theme` |
+| `server/api/trpc.ts` | context, `publicProcedure`, `protectedProcedure` |
+| `server/api/routers/` | `_app.ts` plus admin, analytics, api-keys, feedback, invitations, maintenance, notifications, permissions, storage, theme, user, workspace |
+| `lib/auth/` | Better Auth server/client config, admin and impersonation helpers |
+| `lib/permissions/`, `lib/rbac/` | permission constants and checkers |
+| `lib/workspace/workspace-context.tsx` | client-side current workspace |
+| `lib/email/`, `emails/` | email service and React Email templates |
+| `lib/theme/`, `themes/` | theme registry and CSS |
+| `components/ui/` | shadcn components |
+| `hooks/` | client hooks |
+| `prisma/schema.prisma` | 14 models; client generated to `prisma/generated` |
 
-## Directory Structure
+## Data model
 
-```
-saas-template/
-├── app/                      # Next.js App Router
-│   ├── (auth)/              # Auth routes group
-│   ├── (dashboard)/         # Dashboard routes group
-│   ├── (admin)/            # Admin routes group
-│   └── api/                # API routes
-├── components/             # React components
-│   ├── ui/                # Base UI components
-│   ├── admin/             # Admin-specific
-│   ├── analytics/         # Charts & metrics
-│   ├── auth/              # Auth forms
-│   ├── rbac/              # Permission components
-│   ├── settings/          # Settings forms
-│   └── workspace/         # Workspace management
-├── server/                # Backend logic
-│   └── api/              # tRPC implementation
-│       ├── trpc.ts       # tRPC setup
-│       └── routers/      # API routers
-├── lib/                  # Utilities
-│   ├── auth/            # Auth config
-│   ├── email/           # Email service
-│   ├── permissions/     # RBAC utilities
-│   └── trpc/            # tRPC clients
-├── hooks/               # Custom React hooks
-├── emails/              # Email templates
-├── prisma/              # Database schema
-└── public/              # Static assets
-```
+14 models: `User`, `Session`, `Account`, `Verification`, `Organization`, `OrganizationMember`, `Role`, `Invitation`, `Notification`, `AuditLog`, `TwoFactorAuth`, `Passkey`, `SystemSettings`, `APIKey`. See `prisma/schema.prisma`.
 
-## Design Patterns
+A workspace is an `Organization`. Users join through `OrganizationMember`, which points to a `Role` whose `permissions` is a JSON column. `SystemSettings` is a single row (`id = 'system'`) holding the active theme and maintenance mode.
 
-### 1. Server Components by Default
+## Patterns to copy
 
-```typescript
-// Server Component (default)
-export default async function Page() {
-  const data = await fetchData()
-  return <Component data={data} />
-}
+**tRPC context has no workspace.** `ctx` contains `prisma`, `user`, `session`, `ipAddress`, `userAgent`. Workspace-scoped procedures take the workspace id as input, look up the caller's membership, and check the permission inline:
 
-// Client Component (when needed)
-'use client'
-export function InteractiveComponent() {
-  const [state, setState] = useState()
-  return <div onClick={() => setState()}>...</div>
-}
-```
-
-### 2. Data Fetching Patterns
-
-#### Server Components
-```typescript
-import { createServerCaller } from '@/lib/trpc/server'
-
-export default async function Page() {
-  const caller = await createServerCaller()
-  const data = await caller.resource.get()
-  return <View data={data} />
-}
-```
-
-#### Client Components
-```typescript
-'use client'
-import { trpc } from '@/lib/trpc/client'
-
-export function Component() {
-  const { data } = trpc.resource.get.useQuery()
-  const mutation = trpc.resource.update.useMutation()
-  return <Form onSubmit={mutation.mutate} />
-}
-```
-
-### 3. Authentication Pattern
-
-```typescript
-// Protected route
-import { requireAuth } from '@/lib/auth/auth-helpers'
-
-export default async function ProtectedPage() {
-  const { user } = await requireAuth()
-  return <Dashboard user={user} />
-}
-
-// Optional auth
-import { getAuthSession } from '@/lib/auth/auth-helpers'
-
-export default async function PublicPage() {
-  const { user } = await getAuthSession()
-  return <Page isAuthenticated={!!user} />
-}
-```
-
-### 4. Multi-Tenancy Pattern
-
-```typescript
-// Always filter by workspace
-const data = await prisma.resource.findMany({
-  where: {
-    workspaceId: ctx.workspaceId,
-    // other conditions
-  }
+```ts
+const membership = await ctx.prisma.organizationMember.findFirst({
+	where: { organizationId: input.id, userId: ctx.user.id },
+	include: { role: true },
 })
-
-// Workspace context
-const member = await prisma.organizationMember.findFirst({
-  where: {
-    userId: ctx.userId,
-    organizationId: workspaceId
-  },
-  include: { role: true }
-})
+if (!membership) throw new TRPCError({ code: 'FORBIDDEN' })
+if (!hasPermission(toPermissions(membership.role.permissions), 'workspace:update'))
+	throw new TRPCError({ code: 'FORBIDDEN' })
 ```
 
-### 5. Permission Pattern
+`hasPermission` and `toPermissions` come from `lib/permissions/checker.ts`. See `server/api/routers/workspace.ts` for real examples and [rbac.md](./rbac.md) for the permission list.
 
-```typescript
-// UI level
-<PermissionGuard permission="resource:update">
-  <EditButton />
-</PermissionGuard>
+**UI gating** uses `components/rbac/permission-guard.tsx` (`<PermissionGuard permission="...">`) with `hooks/use-permissions.ts`. UI checks are cosmetic; the procedure check is the real one.
 
-// API level
-if (!hasPermission(userId, workspaceId, 'resource:update')) {
-  throw new TRPCError({ code: 'FORBIDDEN' })
-}
-```
+**Current workspace** is chosen on the client and stored in `localStorage` by `WorkspaceProvider` (`lib/workspace/workspace-context.tsx`), then passed to procedures as input.
 
-## Database Schema
+**Audit logging** is an explicit `ctx.prisma.auditLog.create(...)` in the procedure (see `server/api/routers/theme.ts`).
 
-### Core Models
+## Realtime
 
-```prisma
-model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String?
-  avatarUrl       String?
-  emailVerified   Boolean   @default(false)
-  banned          Boolean   @default(false)
-  organizations   OrganizationMember[]
-  sessions        Session[]
-  notifications   Notification[]
-}
+There is no live realtime feature wired in:
 
-model Organization {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  logoUrl     String?
-  archived    Boolean   @default(false)
-  members     OrganizationMember[]
-  roles       Role[]
-  invitations Invitation[]
-}
+- `hooks/use-realtime-notifications.ts` polls `notifications.list` every 30 seconds.
+- `hooks/use-realtime.ts` subscribes to a Supabase Realtime broadcast channel, but nothing in `app/` or `components/` uses it.
+- `hooks/use-presence.ts` is a stub that always returns an empty list.
 
-model OrganizationMember {
-  id             String       @id @default(cuid())
-  userId         String
-  organizationId String
-  roleId         String
-  user           User         @relation()
-  organization   Organization @relation()
-  role           Role         @relation()
+## Limits
 
-  @@unique([userId, organizationId])
-}
+- Rate limiting is in-process memory. It does not share state across instances or survive restarts.
+- Next.js `revalidate`/ISR, Redis, and error tracking are not set up.
+- Tests: Playwright smoke suite (`e2e/smoke.spec.ts`), email render check (`pnpm test:emails`), RBAC check (`pnpm test:rbac`). There are no unit tests.
 
-model Role {
-  id          String   @id @default(cuid())
-  name        String
-  permissions String[] // JSON array of permissions
-  members     OrganizationMember[]
-}
-```
+## Related
 
-## Security Architecture
-
-### Authentication Flow
-
-```
-User Login Request
-    │
-    ▼
-Better Auth
-    │
-    ├── Email/Password ──► Bcrypt Validation
-    ├── OAuth ──────────► Provider Validation
-    ├── Magic Link ─────► Token Validation
-    └── Passkeys ───────► WebAuthn Validation
-    │
-    ▼
-Session Creation
-    │
-    ▼
-JWT Token/Cookie
-    │
-    ▼
-Protected Routes
-```
-
-### Authorization Flow
-
-```
-Request with Session
-    │
-    ▼
-Middleware Auth Check
-    │
-    ▼
-Route Handler
-    │
-    ▼
-Permission Check
-    │
-    ├── Role Permissions
-    ├── Resource Ownership
-    └── Workspace Membership
-    │
-    ▼
-Action Allowed/Denied
-```
-
-### Security Layers
-
-1. **Network Level**
-   - HTTPS enforcement
-   - Security headers
-   - CORS configuration
-
-2. **Application Level**
-   - Input validation (Zod)
-   - SQL injection prevention (Prisma)
-   - XSS protection (React)
-
-3. **Session Level**
-   - Secure cookies
-   - CSRF protection
-   - Session expiration
-
-4. **Data Level**
-   - Encryption at rest
-   - Encrypted connections
-   - PII protection
-
-## Performance Architecture
-
-### Caching Strategy
-
-```typescript
-// In-memory caching
-const cache = new Map()
-
-// Redis caching (optional)
-await redis.set(key, JSON.stringify(data), 'EX', 3600)
-
-// Next.js caching
-export const revalidate = 3600 // ISR
-export const dynamic = 'force-cache' // Static
-```
-
-### Database Optimization
-
-```sql
--- Indexes for common queries
-CREATE INDEX idx_user_email ON "User"(email);
-CREATE INDEX idx_org_slug ON "Organization"(slug);
-CREATE INDEX idx_member ON "OrganizationMember"(userId, organizationId);
-
--- Composite indexes
-CREATE INDEX idx_audit_user_action ON "AuditLog"(userId, action);
-```
-
-### Code Splitting
-
-```typescript
-// Dynamic imports
-const HeavyComponent = dynamic(
-  () => import('./HeavyComponent'),
-  { loading: () => <Skeleton /> }
-)
-
-// Route-based splitting (automatic with App Router)
-```
-
-## State Management
-
-### Server State (tRPC + React Query)
-
-```typescript
-// Queries
-const { data, isLoading } = trpc.resource.list.useQuery()
-
-// Mutations with optimistic updates
-const utils = trpc.useUtils()
-const mutation = trpc.resource.update.useMutation({
-  onMutate: async (newData) => {
-    await utils.resource.list.cancel()
-    const previous = utils.resource.list.getData()
-    utils.resource.list.setData(undefined, newData)
-    return { previous }
-  }
-})
-```
-
-### Client State
-
-```typescript
-// Local component state
-const [state, setState] = useState()
-
-// Context for shared state
-const WorkspaceContext = createContext()
-<WorkspaceContext.Provider value={workspace}>
-  {children}
-</WorkspaceContext.Provider>
-
-// Zustand for complex client state (optional)
-```
-
-## Error Handling
-
-### Error Boundaries
-
-```typescript
-// Global error boundary
-export default function GlobalError({ error, reset }) {
-  return (
-    <html>
-      <body>
-        <h2>Something went wrong!</h2>
-        <button onClick={() => reset()}>Try again</button>
-      </body>
-    </html>
-  )
-}
-```
-
-### API Error Handling
-
-```typescript
-// Consistent error responses
-throw new TRPCError({
-  code: 'BAD_REQUEST',
-  message: 'Validation failed',
-  cause: validationErrors
-})
-
-// Client error handling
-mutation.mutate(data, {
-  onError: (error) => {
-    toast.error(error.message)
-  }
-})
-```
-
-## Testing Architecture
-
-### Unit Tests
-```typescript
-// Component testing
-render(<Component />)
-expect(screen.getByText('Hello')).toBeInTheDocument()
-
-// Hook testing
-const { result } = renderHook(() => useCustomHook())
-expect(result.current.value).toBe(expected)
-```
-
-### Integration Tests
-```typescript
-// API testing
-const caller = createCaller({ session: mockSession })
-const result = await caller.resource.create(data)
-expect(result).toMatchObject(expected)
-```
-
-### E2E Tests
-```typescript
-// Playwright/Cypress
-await page.goto('/login')
-await page.fill('[name="email"]', 'test@example.com')
-await page.click('button[type="submit"]')
-await expect(page).toHaveURL('/dashboard')
-```
-
-## Deployment Architecture
-
-```
-GitHub Repository
-    │
-    ├── Push to main
-    │
-    ▼
-CI/CD Pipeline (GitHub Actions)
-    │
-    ├── Run tests
-    ├── Type checking
-    ├── Linting
-    └── Build
-    │
-    ▼
-Vercel Deployment
-    │
-    ├── Preview (PR)
-    └── Production (main)
-    │
-    ▼
-Edge Network (CDN)
-    │
-    ▼
-Users
-```
-
-## Monitoring & Observability
-
-### Application Monitoring
-- Error tracking (Sentry)
-- Performance monitoring
-- User analytics (Vercel Analytics)
-
-### Infrastructure Monitoring
-- Uptime monitoring
-- Database metrics
-- API response times
-
-### Business Metrics
-- User growth
-- Feature usage
-- Conversion rates
-
-## Scalability Considerations
-
-### Horizontal Scaling
-- Stateless application design
-- Database connection pooling
-- Load balancing ready
-
-### Vertical Scaling
-- Optimized queries
-- Efficient caching
-- Code splitting
-
-### Database Scaling
-- Read replicas
-- Connection pooling
-- Query optimization
-
-## Best Practices
-
-1. **Type Safety**: Leverage TypeScript throughout
-2. **Component Reusability**: Build composable components
-3. **Performance First**: Optimize for Core Web Vitals
-4. **Security by Default**: Apply security at every layer
-5. **Developer Experience**: Maintain clear patterns
-6. **Documentation**: Keep docs up to date
-7. **Testing**: Maintain good test coverage
-8. **Monitoring**: Track everything important
-
-## Next Steps
-
-- Review [Getting Started](./getting-started.md)
-- Understand [Authentication](./authentication.md)
-- Learn about [Deployment](./deployment.md)
+[getting-started.md](./getting-started.md), [authentication.md](./authentication.md), [workspaces.md](./workspaces.md), [api.md](./api.md), [deployment.md](./deployment.md)

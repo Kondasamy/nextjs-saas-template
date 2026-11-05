@@ -1,417 +1,119 @@
-# RBAC & Permissions
+# RBAC and Permissions
 
-Role-Based Access Control (RBAC) system with granular permissions for enterprise-grade security.
+Workspace-scoped role-based access control. Each workspace (`Organization`) has its own `Role` rows; each `Role` stores a JSON array of permission strings; each `OrganizationMember` points at exactly one role.
 
-## Overview
+Platform admins are a separate mechanism (the `ADMIN_EMAILS` env var), covered in [admin.md](admin.md).
 
-The RBAC system provides:
-- **Flexible role definitions** with custom permissions
-- **Granular permission checks** at UI and API levels
-- **Permission inheritance** and wildcards
-- **Visual permission management** interface
-- **Audit logging** for permission changes
+## Where the code lives
 
-## Default Roles
+| What | File |
+|------|------|
+| Prisma models `Role`, `OrganizationMember` | `prisma/schema.prisma` |
+| Permission check helpers (`hasPermission`, `isOwner`, `toPermissions`, ...) | `lib/permissions/checker.ts` |
+| Permission constants and UI labels (`PERMISSIONS`, `PERMISSION_DEFINITIONS`) | `lib/permissions/constants.ts` |
+| Role CRUD procedures | `server/api/routers/permissions.ts` |
+| Member role changes, removal, ownership transfer | `server/api/routers/workspace.ts` |
+| Default roles created for a new workspace | `workspace.create` and `workspace.ensureDefault` in `server/api/routers/workspace.ts` |
+| Roles UI | `app/(dashboard)/workspace/roles/page.tsx`, `components/workspace/roles-table.tsx`, `components/settings/role-editor-dialog.tsx`, `components/settings/permission-browser.tsx` |
+| Ownership integration test | `scripts/check-rbac.ts` (`pnpm test:rbac`) |
 
-### Owner
-- Full access (`*` permission)
-- Cannot be deleted or modified
-- Automatically assigned to workspace creator
+## How a check works
 
-### Admin
-- Workspace management
-- Member management
-- Settings management
-- Cannot delete workspace
+There is no permission middleware. The tRPC context has no workspace; each procedure takes an `organizationId` (or looks it up from the record), loads the caller's membership with its role, and checks inline:
 
-### Member
-- Read and create resources
-- Update own resources
-- Basic workspace access
+```ts
+import { hasPermission as permits, toPermissions } from '@/lib/permissions/checker'
 
-### Viewer
-- Read-only access
-- Cannot modify any resources
-
-## Permission Structure
-
-Permissions follow a `resource:action` format:
-
-```typescript
-// Format: resource:action
-'workspace:read'
-'workspace:update'
-'member:invite'
-'settings:manage'
-```
-
-### Permission Categories
-
-```typescript
-// Admin Permissions
-'admin:access'        // Access admin panel
-'admin:users'         // Manage users
-'admin:system'        // System settings
-
-// Workspace Permissions
-'workspace:read'      // View workspace
-'workspace:update'    // Edit workspace settings
-'workspace:delete'    // Delete workspace
-'workspace:archive'   // Archive/unarchive
-
-// Member Permissions
-'member:read'         // View members
-'member:invite'       // Invite new members
-'member:remove'       // Remove members
-'member:update_role'  // Change member roles
-
-// Role Permissions
-'role:read'          // View roles
-'role:create'        // Create custom roles
-'role:update'        // Edit roles
-'role:delete'        // Delete roles
-
-// Settings Permissions
-'settings:read'      // View settings
-'settings:update'    // Update settings
-```
-
-## Using Permissions
-
-### UI Components
-
-#### Permission Guard
-
-Conditionally render UI based on permissions:
-
-```tsx
-import { PermissionGuard } from '@/components/rbac/permission-guard'
-
-<PermissionGuard permission="member:invite">
-  <Button>Invite Member</Button>
-</PermissionGuard>
-
-// Multiple permissions (ANY)
-<PermissionGuard permissions={['workspace:update', 'admin:access']}>
-  <SettingsForm />
-</PermissionGuard>
-
-// Multiple permissions (ALL)
-<PermissionGuard
-  permissions={['member:invite', 'member:remove']}
-  requireAll
->
-  <MemberManagement />
-</PermissionGuard>
-```
-
-#### Fallback UI
-
-Show alternative content for unauthorized users:
-
-```tsx
-<PermissionGuard
-  permission="workspace:delete"
-  fallback={<Text>You don't have permission to delete</Text>}
->
-  <DeleteButton />
-</PermissionGuard>
-```
-
-### API Level
-
-#### tRPC Procedures
-
-Check permissions in tRPC procedures:
-
-```typescript
-import { hasPermission } from '@/lib/permissions/checker'
-
-export const updateWorkspace = protectedProcedure
-  .input(z.object({
-    workspaceId: z.string(),
-    data: z.object({...})
-  }))
-  .mutation(async ({ ctx, input }) => {
-    // Check permission
-    const canUpdate = await hasPermission(
-      ctx.user.id,
-      input.workspaceId,
-      'workspace:update'
-    )
-
-    if (!canUpdate) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'Permission denied'
-      })
-    }
-
-    // Proceed with update
-    return ctx.prisma.workspace.update({...})
-  })
-```
-
-#### Bulk Permission Check
-
-Check multiple permissions efficiently:
-
-```typescript
-const permissions = await hasPermissions(
-  userId,
-  workspaceId,
-  ['workspace:update', 'member:invite', 'role:create']
-)
-
-// Returns object with permission results
-{
-  'workspace:update': true,
-  'member:invite': false,
-  'role:create': true
+const membership = await ctx.prisma.organizationMember.findFirst({
+	where: { organizationId: input.organizationId, userId: ctx.user.id },
+	include: { role: true },
+})
+if (!membership) throw new TRPCError({ code: 'FORBIDDEN' })
+if (!permits(toPermissions(membership.role.permissions), 'member:invite')) {
+	throw new TRPCError({ code: 'FORBIDDEN', message: 'Insufficient permissions' })
 }
 ```
 
-## Custom Roles
+`hasPermission` matching rules:
+- `*` grants everything. A role containing `*` is treated as an Owner everywhere.
+- Exact string match.
+- `resource:*` grants every `resource:<action>`.
 
-### Creating Roles
+Always wrap `Role.permissions` with `toPermissions()`: it is a Prisma `Json` column, and `toPermissions` returns `[]` for anything that is not an array of strings.
 
-```typescript
-// Via UI
-// Navigate to /workspace/roles
-// Click "Create Role"
-// Select permissions
-// Save
+`server/api/utils/db-helpers.ts` also has `verifyMembershipWithRole` (throws FORBIDDEN if not a member) and its own `hasPermission(prisma, userId, orgId, permission)`. The latter does not support `resource:*` wildcards and is not used by any router.
 
-// Via API
-const role = await trpc.permissions.createRole.mutate({
-  workspaceId: 'workspace_123',
-  name: 'Content Manager',
-  description: 'Manages content and publications',
-  permissions: [
-    'content:read',
-    'content:create',
-    'content:update',
-    'content:publish'
-  ]
-})
-```
+## Permissions the server actually checks
 
-### Updating Roles
+These are the only strings that gate anything server-side:
 
-```typescript
-await trpc.permissions.updateRole.mutate({
-  roleId: 'role_123',
-  permissions: ['content:read', 'content:update']
-})
-```
+| Permission | Procedures |
+|------------|-----------|
+| `workspace:update` | `workspace.update` |
+| `member:invite` | `invitations.create`, `createInviteLink`, `bulkInviteMembers`, `revokeInviteLink` (or the link's creator) |
+| `member:manage` | `workspace.updateMemberRole`, `workspace.bulkUpdateMemberRoles` |
+| `member:remove` | `workspace.removeMember`, `workspace.bulkRemoveMembers` |
+| `role:create` / `role:update` / `role:delete` | `permissions.createRole` / `updateRole` / `deleteRole` |
+| `settings:update` | `apiKeys.create`, `apiKeys.revoke` |
+| `*` (Owner) | `workspace.delete`, `transferOwnership`, `archiveWorkspace`, `unarchiveWorkspace` |
 
-### Role Assignment
+Everything else that is workspace-scoped (`workspace.getById`, `getTeamPanelData`, `getWorkspaceUsage`, `cloneWorkspace`, `invitations.list`, `listInviteLinks`, `cancel`, `permissions.listRoles`, `apiKeys.list`, analytics with `organizationId`) only requires membership.
 
-```typescript
-// Assign role to member
-await trpc.workspace.updateMemberRole.mutate({
-  memberId: 'member_123',
-  roleId: 'role_456'
-})
+The UI also reads `currentWorkspace.role.permissions` directly in a few places, e.g. `components/workspace/workspace-settings.tsx` checks `*` or `workspace:update`. UI checks are cosmetic; the server check is what counts.
 
-// Bulk update roles
-await trpc.workspace.bulkUpdateMemberRoles.mutate({
-  memberIds: ['member_1', 'member_2'],
-  roleId: 'role_789'
-})
-```
+## Default roles
 
-## Permission Management UI
+`workspace.create` and `workspace.ensureDefault` create four system roles (`isSystem: true`, cannot be edited or deleted):
 
-### Permission Browser
+| Role | Permissions |
+|------|-------------|
+| Owner | `*` |
+| Admin | `member:read`, `member:create`, `member:update`, `member:delete`, `role:read`, `workspace:read`, `workspace:update` |
+| Member | `member:read`, `workspace:read` |
+| Viewer | `member:read`, `workspace:read` |
 
-Visual interface for managing permissions:
+Consequence: with these defaults, Admin can only edit workspace settings. It cannot invite, change roles, remove members, manage roles or manage API keys, because none of `member:invite`, `member:manage`, `member:remove`, `role:*` or `settings:update` are in its list. Member and Viewer are identical. To make Admin useful, change the arrays in both places in `workspace.ts` (existing workspaces keep their stored roles).
 
-```tsx
-import { PermissionBrowser } from '@/components/rbac/permission-browser'
+`transferOwnership` demotes the old owner to the system role named `Admin`, creating one with `workspace:update`, `member:invite`, `member:manage`, `member:remove` if it does not exist.
 
-<PermissionBrowser
-  selectedPermissions={role.permissions}
-  onChange={(permissions) => updateRole(permissions)}
-  showCategories={true}
-/>
-```
+`prisma/seed.ts` uses different strings again (`members:read`, `roles:create`, `api-keys:create`, ...), none of which the server checks.
 
-### Role Editor Dialog
+## Vocabulary mismatch
 
-Complete role management interface:
+There are three permission vocabularies in the repo. Only the strings in the table above are enforced.
 
-```tsx
-import { RoleEditorDialog } from '@/components/rbac/role-editor-dialog'
+| Source | Strings | Used by |
+|--------|---------|---------|
+| `lib/permissions/constants.ts` (authoritative for new code) | `workspace:view/update/delete`, `member:view/invite/manage/remove`, `role:view/create/update/delete`, `content:*`, `settings:view/update`, `*` | `checker.ts`, the permission browser and role editor UI |
+| `lib/rbac/permissions.ts` (legacy) | `workspace:read/manage`, `member:read/update`, `resource:*`, `admin:*`, plus its own `DEFAULT_ROLES` | Only the `Permission` type in `components/rbac/permission-guard.tsx` |
+| Seeded/default role arrays | `*:read`, `member:create/delete`, `members:*`, `roles:*` | Stored in the DB, mostly unchecked |
 
-<RoleEditorDialog
-  role={existingRole}
-  workspaceId={workspaceId}
-  onSave={handleSave}
-/>
-```
+Use `lib/permissions/constants.ts` for new checks and role editors. Do not rely on `lib/rbac/permissions.ts`.
 
-## Advanced Features
+`PermissionGuard` (`components/rbac/permission-guard.tsx`) is not usable as is: it reads from `hooks/use-permissions.ts`, which always returns an empty array, so it always renders the fallback. It is not used anywhere. For UI gating, check `useWorkspace().currentWorkspace.role.permissions` with `hasPermission` from `lib/permissions/checker.ts`.
 
-### Wildcard Permissions
+## Common tasks
 
-Use wildcards for broad access:
+**Add a new permission**
+1. Add it to `PERMISSIONS` and `PERMISSION_DEFINITIONS` in `lib/permissions/constants.ts` (it then appears in the role editor).
+2. Check it in the procedure with `permits(toPermissions(membership.role.permissions), '...')`.
+3. Add it to the default role arrays in `workspace.create` and `workspace.ensureDefault` if built-in roles should have it.
 
-```typescript
-// All workspace permissions
-'workspace:*'
+**Custom roles**: `permissions.createRole({ organizationId, name, description?, permissions })` and `updateRole({ id, ...})`. Permission strings are not validated against the constants list.
 
-// All permissions (super admin)
-'*'
+**Change a member's role**: `workspace.updateMemberRole({ organizationId, userId, roleId })`. The role must belong to the same workspace.
 
-// Check wildcard permission
-hasPermission(userId, workspaceId, 'workspace:*')
-```
+## Ownership rules
 
-### Permission Inheritance
+- A workspace can have several members with `*` roles; all count as owners.
+- `updateMemberRole`, `removeMember` and `bulkRemoveMembers` refuse to leave a workspace with zero owners. `scripts/check-rbac.ts` covers this.
+- `bulkUpdateMemberRoles` blocks changing your own role but does not check the last-owner rule.
+- Only owners can delete, archive, unarchive or transfer ownership.
 
-Permissions can inherit from parent resources:
+## Gotchas
 
-```typescript
-// If user has 'workspace:*', they implicitly have:
-// - workspace:read
-// - workspace:update
-// - workspace:delete
-// etc.
-```
+- A caller with `role:create` can create a role containing `*`, and a caller with `member:manage` can assign any workspace role, including Owner, to any member, themselves included (`updateMemberRole` has no self check). Treat `member:manage` and `role:*` as owner-equivalent.
+- Invitations take a `roleId` that is not checked against the workspace or against the inviter's own role. See [workspaces.md](workspaces.md).
+- `pnpm test:rbac` runs against the database in `DATABASE_URL`. Point it at a local or CI database, never production.
 
-### Dynamic Permissions
-
-Create context-aware permissions:
-
-```typescript
-// Check if user owns the resource
-const isOwner = resource.createdById === userId
-
-// Apply owner-specific permissions
-if (isOwner) {
-  permissions.push('resource:delete')
-}
-```
-
-## Permission Helpers
-
-### Check User Permissions
-
-```typescript
-import { getUserPermissions } from '@/lib/permissions/checker'
-
-// Get all user permissions
-const permissions = await getUserPermissions(
-  userId,
-  workspaceId
-)
-// Returns: ['workspace:read', 'member:invite', ...]
-```
-
-### Check Role Permissions
-
-```typescript
-import { getRolePermissions } from '@/lib/permissions/checker'
-
-// Get role permissions
-const permissions = await getRolePermissions(roleId)
-// Returns: ['content:create', 'content:update', ...]
-```
-
-### Permission Utilities
-
-```typescript
-import {
-  canUserPerform,
-  hasAnyPermission,
-  hasAllPermissions
-} from '@/lib/permissions/utils'
-
-// Single permission check
-const canEdit = await canUserPerform(
-  userId,
-  'workspace:update'
-)
-
-// Any permission
-const canManage = await hasAnyPermission(
-  userId,
-  ['admin:access', 'workspace:update']
-)
-
-// All permissions
-const isFullAdmin = await hasAllPermissions(
-  userId,
-  ['admin:access', 'admin:users', 'admin:system']
-)
-```
-
-## Best Practices
-
-### 1. Granular Permissions
-
-Create specific permissions rather than broad ones:
-
-```typescript
-// Good
-'invoice:create'
-'invoice:view_own'
-'invoice:view_all'
-
-// Avoid
-'invoice:manage' // Too broad
-```
-
-### 2. Permission Naming
-
-Use consistent naming conventions:
-
-```typescript
-// Pattern: resource:action
-'user:create'
-'user:read'
-'user:update'
-'user:delete'
-```
-
-### 3. Default Deny
-
-Always default to denying access:
-
-```typescript
-// Check permission explicitly
-if (!hasPermission(user, 'action')) {
-  throw new Error('Access denied')
-}
-```
-
-### 4. Audit Logging
-
-Log permission changes:
-
-```typescript
-await createAuditLog({
-  action: 'permission.updated',
-  userId,
-  metadata: {
-    roleId,
-    addedPermissions,
-    removedPermissions
-  }
-})
-```
-
-## Security Considerations
-
-1. **Never trust client-side checks alone** - Always verify on server
-2. **Cache permissions carefully** - Invalidate on changes
-3. **Audit all permission changes** - Maintain compliance
-4. **Use least privilege principle** - Grant minimum required access
-5. **Regular permission reviews** - Audit role assignments
-
-## Next Steps
-
-- Implement [Workspace Management](./workspaces.md)
-- Configure [Admin Features](./admin.md)
-- Review [API Documentation](./api.md)
+Related: [workspaces.md](workspaces.md), [api.md](api.md), [admin.md](admin.md).

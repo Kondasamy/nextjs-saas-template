@@ -1,211 +1,98 @@
 # Getting Started
 
-Welcome to the Enterprise SaaS Template! This guide will help you set up and run the project locally.
+How to run the app locally. For production, see [deployment.md](./deployment.md).
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
+- Node.js 24+ (`.nvmrc`)
+- pnpm (version pinned in `package.json` `packageManager`; `corepack enable` picks it up)
+- PostgreSQL 16 (local Docker container or a hosted database)
 
-- **Node.js 24+** (LTS, see `.nvmrc`)
-- **pnpm** (recommended), npm, or yarn
-- **PostgreSQL database** (Supabase recommended for easy setup)
-- **Git** for version control
-
-## Installation
-
-### 1. Clone the Repository
+## 1. Install
 
 ```bash
-git clone https://github.com/yourcompany/saas-template.git
+git clone <your-fork-url> saas-template
 cd saas-template
-```
-
-### 2. Install Dependencies
-
-We recommend using pnpm for faster, more efficient package management:
-
-```bash
 pnpm install
 ```
 
-### 3. Environment Setup
+## 2. Start a database
 
-Copy the example environment file and configure it:
+Option A, local Postgres in Docker (matches CI):
+
+```bash
+docker run -d --name saas-postgres \
+  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=saas \
+  -p 5432:5432 postgres:16-alpine
+```
+
+Option B, a hosted Postgres (Supabase, Neon, etc.). Use the pooled URL for `DATABASE_URL` and the direct URL for `DIRECT_URL`.
+
+## 3. Configure environment
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` with your configuration:
+Required values (validated by `lib/env.ts`; the app will not start without them):
 
-```env
-# Required - Database
-DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
-DIRECT_URL="postgresql://user:password@localhost:5432/dbname"
+| Variable | Local value |
+| --- | --- |
+| `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/saas` |
+| `DIRECT_URL` | same as above (used by Prisma migrations, see `prisma.config.ts`) |
+| `BETTER_AUTH_SECRET` | 32+ chars, e.g. `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | `http://localhost:3000` |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` |
 
-# Required - Authentication
-BETTER_AUTH_SECRET="your-secret-key-min-32-chars"
-BETTER_AUTH_URL="http://localhost:3000"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+Optional:
 
-# Optional - Admin Access
-ADMIN_EMAILS="admin@example.com"
+- `ADMIN_EMAILS`: comma-separated emails that get admin access (see [admin.md](./admin.md)).
+- `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`: send real email. Without a key, auth emails are skipped and the verification link is logged to the dev server console.
+- `GOOGLE_CLIENT_ID`/`_SECRET`, `GITHUB_CLIENT_ID`/`_SECRET`, `MICROSOFT_CLIENT_ID`/`_SECRET`: OAuth providers, each enabled only when both values are set. Callback URL: `<BETTER_AUTH_URL>/api/auth/callback/<provider>`.
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`: file uploads and realtime.
 
-# Optional - Email (Resend)
-RESEND_API_KEY="re_..."
-EMAIL_FROM_ADDRESS="noreply@yourdomain.com"
-EMAIL_FROM_NAME="Your App Name"
+The example file also lists `MAILCHIMP_*`, `LOOPS_*`, `CONVERTKIT_*`, `SAML_*`, `OKTA_*`, `SENTRY_*`, PostHog and GA keys. Nothing reads them; leave them empty.
 
-# Optional - Supabase (for storage and realtime)
-NEXT_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJ..."
-SUPABASE_SERVICE_ROLE_KEY="eyJ..."
-```
-
-### 4. Database Setup
-
-Generate the Prisma client and set up your database:
+## 4. Create the schema and seed
 
 ```bash
-# Generate Prisma client
-pnpm db:generate
-
-# Run migrations (production)
-pnpm db:migrate
-
-# OR push schema directly (development)
-pnpm db:push
-
-# Optional: Open Prisma Studio to view your database
-pnpm db:studio
+pnpm db:generate   # Prisma client into prisma/generated (gitignored, required before dev/build)
+pnpm db:migrate    # prisma migrate dev: applies migrations to the dev database
+pnpm db:seed       # demo data
 ```
 
-### 5. Start Development Server
+`db:generate`, `db:migrate`, `db:seed` and `db:studio` load `.env.local` via dotenv. `db:push` and `db:migrate:deploy` do not; they read the shell environment.
+
+The seed **deletes all users, workspaces and related rows first**, then creates a demo admin (`demo@yourdomain.com` / `demo1234`, `isAdmin: true`), sample users and two workspaces. Only run it against a throwaway database.
+
+## 5. Run
 
 ```bash
-pnpm dev
+pnpm dev   # http://localhost:3000
 ```
 
-Your application will be available at [http://localhost:3000](http://localhost:3000).
+Sign in with the demo account, or sign up. Email verification is only required when `NODE_ENV=production`.
 
-## Project Structure
+## Commands
 
-```
-saas-template/
-├── app/                    # Next.js App Router
-├── components/            # React components
-├── server/               # Backend logic & tRPC
-├── lib/                  # Utilities and configs
-├── prisma/               # Database schema
-├── emails/               # Email templates
-├── hooks/                # Custom React hooks
-├── public/               # Static assets
-└── docs/                 # Documentation
-```
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` / `build` / `start` | Next.js dev server, production build, production server |
+| `pnpm typecheck` | `tsc --noEmit` (run `pnpm exec next typegen` first for route types) |
+| `pnpm lint` / `lint:fix` | Oxlint |
+| `pnpm format` | Biome (writes changes) |
+| `pnpm test:rbac` | RBAC checks against the database (`scripts/check-rbac.ts`) |
+| `pnpm test:emails` | Renders every template in `emails/` |
+| `pnpm test:e2e` | Playwright smoke suite (`e2e/`) against `pnpm start`; run `pnpm build` first and seed the DB |
+| `pnpm db:studio` | Prisma Studio |
+| `pnpm db:migrate:status` | Migration status |
 
-## Development Commands
+## Gotchas
 
-```bash
-# Development
-pnpm dev          # Start development server
-pnpm build        # Build for production
-pnpm start        # Start production server
+- `next.config.mjs` sets `typescript.ignoreBuildErrors: true`, so `pnpm build` passes with type errors. Run `pnpm typecheck`; CI does.
+- Admin status is the `User.isAdmin` column. Listing an email in `ADMIN_EMAILS` promotes that user the first time they open `/admin`; removing it later does not demote them.
+- Route protection lives in `proxy.ts` (Next 16's name for middleware). New public pages must be added to `publicRoutes` there.
 
-# Database
-pnpm db:generate  # Generate Prisma client
-pnpm db:migrate   # Run migrations
-pnpm db:push      # Push schema (dev only)
-pnpm db:studio    # Open Prisma Studio
+## Next
 
-# Code Quality
-pnpm lint         # Run linter
-pnpm lint:fix     # Fix linting issues
-pnpm format       # Format code
-pnpm typecheck    # TypeScript type checking
-pnpm test:e2e     # Playwright smoke tests (build first)
-pnpm test:emails  # Render every email template
-```
-
-## First Steps After Setup
-
-### 1. Create Your First Admin User
-
-1. Sign up through the normal registration flow
-2. Add your email to `ADMIN_EMAILS` in `.env.local`
-3. Restart the development server
-4. Access the admin dashboard at `/admin`
-
-### 2. Configure Authentication Providers (Optional)
-
-To enable OAuth providers, add these to your `.env.local`:
-
-```env
-# Google OAuth
-AUTH_GOOGLE_ID="..."
-AUTH_GOOGLE_SECRET="..."
-
-# GitHub OAuth
-AUTH_GITHUB_ID="..."
-AUTH_GITHUB_SECRET="..."
-
-# Microsoft OAuth
-AUTH_MICROSOFT_ID="..."
-AUTH_MICROSOFT_SECRET="..."
-```
-
-### 3. Set Up Email Service (Optional)
-
-1. Create a [Resend](https://resend.com) account
-2. Get your API key
-3. Add to `.env.local`:
-   ```env
-   RESEND_API_KEY="re_..."
-   ```
-
-### 4. Enable File Storage (Optional)
-
-1. Create a [Supabase](https://supabase.com) project
-2. Add credentials to `.env.local`:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL="..."
-   NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
-   SUPABASE_SERVICE_ROLE_KEY="..."
-   ```
-
-## Common Issues & Solutions
-
-### Database Connection Issues
-
-**Problem**: Cannot connect to database
-**Solution**:
-- Verify PostgreSQL is running
-- Check connection string format
-- Ensure database exists
-
-### Build Errors
-
-**Problem**: TypeScript errors during build
-**Solution**:
-- Run `pnpm typecheck` to identify issues
-- The project allows builds with TS errors (see `next.config.mjs`)
-
-### Authentication Issues
-
-**Problem**: Authentication not working
-**Solution**:
-- Verify `BETTER_AUTH_SECRET` is at least 32 characters
-- Check `BETTER_AUTH_URL` matches your app URL
-- Ensure database migrations are up to date
-
-## Next Steps
-
-- Read the [Architecture Overview](./architecture.md)
-- Set up [Authentication](./authentication.md)
-- Configure [RBAC & Permissions](./rbac.md)
-- Explore [Admin Features](./admin.md)
-
-## Getting Help
-
-- Check our [documentation](../README.md#documentation)
-- Open an [issue on GitHub](https://github.com/yourcompany/saas-template/issues)
-- Join our [community Discord](https://discord.gg/your-invite)
+[architecture.md](./architecture.md), [authentication.md](./authentication.md), [workspaces.md](./workspaces.md), [rbac.md](./rbac.md), [api.md](./api.md).

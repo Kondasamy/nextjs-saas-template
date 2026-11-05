@@ -63,6 +63,8 @@ Open [localhost:3000](http://localhost:3000). Email, OAuth and storage are optio
 [Theming](docs/theming.md) ·
 [Deployment](docs/deployment.md)
 
+Using an AI coding agent? [`AGENTS.md`](AGENTS.md) has the commands, conventions and gotchas it needs. Claude Code, Cursor, Codex and Copilot read it automatically.
+
 **Known limitation:** 2FA can be enabled in settings but is not yet enforced at sign-in. See the [release notes](https://github.com/Kondasamy/nextjs-saas-template/releases) for other open issues.
 
 ## Contributing

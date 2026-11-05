@@ -1,56 +1,29 @@
 # Documentation
 
-Welcome to the Enterprise SaaS Template documentation.
+Guides for developers working on this template. AI agents should start with [`AGENTS.md`](../AGENTS.md), which links back here.
 
-## 📖 Guides
+## Start here
 
-### Getting Started
-- [**Getting Started**](getting-started.md) - Installation, setup, and first steps
-- [**Architecture Overview**](architecture.md) - System design and technical architecture
+- [Getting started](getting-started.md): install, configure, run locally
+- [Architecture](architecture.md): how requests flow through proxy, tRPC, Prisma and Better Auth
 
-### Core Features
-- [**Authentication**](authentication.md) - Complete auth system with 7 methods
-- [**RBAC & Permissions**](rbac.md) - Role-based access control system
-- [**Workspace Management**](workspaces.md) - Multi-tenant workspace features
+## Features
 
-### User Interface
-- [**Theme Management**](theming.md) - Dynamic theme system with admin controls
-- [**ShadCN Components**](shadcn-components.md) - Managing UI components
+- [Authentication](authentication.md): sign-in methods, sessions, 2FA, passkeys
+- [RBAC](rbac.md): roles, permissions and how to check them
+- [Workspaces](workspaces.md): multi-tenancy, members, invitations
+- [Emails](emails.md): templates, sending, previews
+- [Admin](admin.md): admin panel, impersonation, maintenance mode
+- [Theming](theming.md): built-in themes and adding your own
 
-### Communication
-- [**Email System**](emails.md) - Email templates and configuration
+## Reference
 
-### Administration
-- [**Admin Dashboard**](admin.md) - Admin panel features and management
+- [API](api.md): every tRPC router and procedure, plus REST routes
+- [shadcn components](shadcn-components.md): adding and updating UI components
+- [Deployment](deployment.md): production setup and checklist
 
-### Development
-- [**API Reference**](api.md) - Complete tRPC API documentation
-- [**Deployment**](deployment.md) - Production deployment guide
+## Project
 
-## 🚀 Quick Links
-
-- [Main README](../README.md)
-- [Contributing Guide](../CONTRIBUTING.md)
-- [Security Policy](../SECURITY.md)
-- [Code of Conduct](../CODE_OF_CONDUCT.md)
-- [License](../LICENSE)
-
-## 📚 External Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Better Auth Documentation](https://www.better-auth.com/docs)
-- [tRPC Documentation](https://trpc.io/docs)
-- [ShadCN UI](https://ui.shadcn.com)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-
-## 🤝 Need Help?
-
-- Check the relevant documentation guide
-- Search for existing [GitHub Issues](https://github.com/Kondasamy/nextjs-saas-template/issues)
-- Open a new issue with the question tag
-- Join our community discussions
-
----
-
-*Documentation for Enterprise SaaS Template v0.0.1*
+- [Contributing](../CONTRIBUTING.md)
+- [Security policy](../SECURITY.md)
+- [Code of conduct](../CODE_OF_CONDUCT.md)
