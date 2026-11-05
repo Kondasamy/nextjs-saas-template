@@ -1,8 +1,9 @@
 {
-	"$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/crates/oxc_cli/schemas/oxlint.schema.json",
-	"allow": ["@typescript-eslint/no-explicit-any"],
-	"deny": [],
-	"ignore": [
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"rules": {
+		"typescript/no-explicit-any": "off"
+	},
+	"ignorePatterns": [
 		"node_modules/**",
 		".next/**",
 		"dist/**",
