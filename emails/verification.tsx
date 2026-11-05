@@ -7,7 +7,7 @@ import {
 	Html,
 	Preview,
 	Text,
-} from '@react-email/components'
+} from 'react-email'
 
 interface VerificationEmailProps {
 	verificationUrl: string

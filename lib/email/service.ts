@@ -1,4 +1,4 @@
-import { render } from '@react-email/components'
+import { render } from 'react-email'
 import { EmailChangeNotification } from '@/emails/email-change-notification'
 import { EmailChangeVerification } from '@/emails/email-change-verification'
 import FeedbackEmail from '@/emails/feedback'

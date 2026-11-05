@@ -21,6 +21,17 @@ test('login page renders the sign-in form', async ({ page }) => {
 	).toBeVisible()
 })
 
+test('sign-in form shows zod validation messages', async ({ page }) => {
+	await page.goto('/login')
+	await page.locator('#password').fill('short')
+	await page.getByRole('button', { name: 'Sign In', exact: true }).click()
+	await expect(page.getByText('Invalid email address')).toBeVisible()
+	await expect(
+		page.getByText('Password must be at least 8 characters')
+	).toBeVisible()
+	await expect(page).toHaveURL(/\/login/)
+})
+
 test('social sign-in buttons render a logo and an accessible name', async ({
 	page,
 }) => {

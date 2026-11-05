@@ -1,5 +1,5 @@
-import { Button } from '@react-email/components'
 import type { ReactNode } from 'react'
+import { Button } from 'react-email'
 
 interface EmailButtonProps {
 	href: string

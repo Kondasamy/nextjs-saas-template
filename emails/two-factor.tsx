@@ -1,4 +1,4 @@
-import { Heading, Text } from '@react-email/components'
+import { Heading, Text } from 'react-email'
 import { NAME } from '@/lib/constants'
 import { EmailLayout } from './components/email-layout'
 
