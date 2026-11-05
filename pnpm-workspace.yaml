@@ -1,3 +1,6 @@
-ignoredBuiltDependencies:
-  - '@prisma/engines'
-  - prisma
+allowBuilds:
+  '@prisma/engines': false
+  bcrypt: true
+  esbuild: true
+  prisma: false
+  sharp: true
