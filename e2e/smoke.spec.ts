@@ -75,6 +75,21 @@ test('demo user signs in, sees the dashboard, and signs out', async ({
 	await expect(page).toHaveURL(/\/login/)
 })
 
+test('robots.txt is public for signed-out crawlers', async ({ request }) => {
+	const res = await request.get('/robots.txt', { maxRedirects: 0 })
+	expect(res.status()).toBe(200)
+	const body = await res.text()
+	expect(body).toMatch(/User-Agent:/i)
+	expect(body).toMatch(/Sitemap:/i)
+})
+
+test('matcher change keeps / protected', async ({ request }) => {
+	const res = await request.get('/', { maxRedirects: 0 })
+	expect(res.status()).toBeGreaterThanOrEqual(300)
+	expect(res.status()).toBeLessThan(400)
+	expect(res.headers().location).toMatch(/\/login/)
+})
+
 test('X-Robots-Tag is absent when NOINDEX is unset', async ({ request }) => {
 	const res = await request.get('/login')
 	expect(res.headers()['x-robots-tag']).toBeUndefined()
