@@ -104,6 +104,6 @@ export const config = {
 		 * - robots.txt (must stay public for crawlers)
 		 * - public folder
 		 */
-		'/((?!api|_next/static|_next/image|favicon.ico|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+		'/((?!api|_next/static|_next/image|favicon\\.ico$|robots\\.txt$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
 	],
 }

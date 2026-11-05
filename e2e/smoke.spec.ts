@@ -88,6 +88,17 @@ test('matcher change keeps / protected', async ({ request }) => {
 	expect(res.status()).toBeGreaterThanOrEqual(300)
 	expect(res.status()).toBeLessThan(400)
 	expect(res.headers().location).toMatch(/\/login/)
+
+	// The robots.txt exemption is exact, not a prefix
+	const lookalike = await request.get('/robots.txt.bak', { maxRedirects: 0 })
+	expect(lookalike.headers().location).toMatch(/\/login/)
+})
+
+test('OTP password-reset endpoints are disabled', async ({ request }) => {
+	const res = await request.post('/api/auth/email-otp/reset-password', {
+		data: { email: 'demo@yourdomain.com', otp: '000000', password: 'x' },
+	})
+	expect(res.status()).toBe(404)
 })
 
 test('X-Robots-Tag is absent when NOINDEX is unset', async ({ request }) => {

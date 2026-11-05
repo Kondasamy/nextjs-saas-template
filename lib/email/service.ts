@@ -147,6 +147,41 @@ export class EmailService {
 	}
 
 	/**
+	 * Send a one-time code from the email OTP plugin, worded for its purpose
+	 */
+	static async sendOtpCode(
+		to: string,
+		code: string,
+		type: 'sign-in' | 'email-verification' | 'change-email'
+	) {
+		const copy = {
+			'sign-in': {
+				subject: `Your ${NAME} sign-in code`,
+				heading: 'Sign-in code',
+				intro: `Use this code to sign in to ${NAME}:`,
+				warning:
+					"If you didn't try to sign in, you can ignore this email. Someone may have typed your address by mistake.",
+			},
+			'email-verification': {
+				subject: 'Verify your email address',
+				heading: 'Verify your email',
+				intro: `Use this code to verify your email address for ${NAME}:`,
+				warning: "If you didn't create an account, you can ignore this email.",
+			},
+			'change-email': {
+				subject: 'Confirm your new email address',
+				heading: 'Confirm your new email',
+				intro: `Use this code to confirm your new email address for ${NAME}:`,
+				warning:
+					"If you didn't request this change, please secure your account by changing your password.",
+			},
+		}[type]
+		const html = await render(TwoFactorEmail({ name: 'there', code, ...copy }))
+
+		return sendEmail({ to, subject: copy.subject, html })
+	}
+
+	/**
 	 * Send email change verification
 	 */
 	static async sendEmailChangeVerification(

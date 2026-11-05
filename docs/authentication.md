@@ -336,16 +336,16 @@ Admins can impersonate users:
 authClient.signIn.email({ email, password })
 authClient.signIn.social({ provider })
 authClient.signIn.magicLink({ email })
-authClient.signIn.otp({ email, otp })
+authClient.emailOtp.sendVerificationOtp({ email, type: 'sign-in' })
+authClient.signIn.emailOtp({ email, otp }) // existing accounts only
 authClient.signUp({ email, password, name })
 authClient.signOut()
 authClient.verifyEmail({ token })
 authClient.resetPassword({ token, newPassword })
 authClient.changePassword({ currentPassword, newPassword })
 authClient.changeEmail({ newEmail })
-authClient.twoFactor.enable()
-authClient.twoFactor.disable()
-authClient.twoFactor.verify({ code })
+// 2FA (TOTP) setup lives in the user tRPC router (setup2FA / verify2FA).
+// It is not yet enforced at sign-in.
 ```
 
 ### Helper Functions

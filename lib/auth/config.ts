@@ -17,6 +17,13 @@ if (!prisma) {
 }
 
 export const auth = betterAuth({
+	// Password reset is link-based (requestPasswordReset/resetPassword); turn off
+	// the parallel OTP reset endpoints the emailOTP plugin would otherwise add
+	disabledPaths: [
+		'/email-otp/request-password-reset',
+		'/email-otp/reset-password',
+		'/forget-password/email-otp',
+	],
 	database: prismaAdapter(prisma, {
 		provider: 'postgresql', // or whatever provider is used, but likely just empty object is enough if not required
 	}),
@@ -114,14 +121,12 @@ export const auth = betterAuth({
 		emailOTP({
 			// OTP is a sign-in method only; new accounts go through sign-up and email verification
 			disableSignUp: true,
-			sendVerificationOTP: async ({ email, otp }) => {
+			sendVerificationOTP: async ({ email, otp, type }) => {
+				// Password reset stays link-based; its OTP endpoints are disabled below
+				if (type === 'forget-password') return
 				try {
 					if (env.RESEND_API_KEY) {
-						await EmailService.sendVerification(
-							email,
-							'',
-							otp // Pass OTP as code
-						)
+						await EmailService.sendOtpCode(email, otp, type)
 					} else {
 						logger.debug('OTP email skipped (RESEND_API_KEY not set)', {
 							to: email,
