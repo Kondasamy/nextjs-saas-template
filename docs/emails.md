@@ -1,488 +1,76 @@
-# Email System
+# Emails
 
-Comprehensive email system with React Email templates and automatic sending via Better Auth.
+Transactional emails are React components in `emails/`, rendered with `react-email` and sent through [Resend](https://resend.com). There is no marketing-email integration (the `MAILCHIMP_API_KEY`, `LOOPS_API_KEY` and `CONVERTKIT_API_KEY` vars in `lib/env.ts` are unused).
 
-## Overview
+## Where the code lives
 
-The email system provides:
-- **6 pre-built templates** with consistent styling
-- **Automatic sending** for auth flows
-- **React Email** for component-based templates
-- **Resend** integration for delivery
-- **Preview route** for development
+| What | File |
+| --- | --- |
+| Templates | `emails/*.tsx` |
+| Shared layout, header, footer, button | `emails/components/` |
+| Send functions (`EmailService`) | `lib/email/service.ts` |
+| Resend client | `lib/email/client.ts` (`resend` is `null` when `RESEND_API_KEY` is unset) |
+| App name used in subjects and sender | `NAME` in `lib/constants.ts` |
+| Dev preview route | `app/api/email/preview/route.ts` |
+| Admin test-send route | `app/api/admin/emails/test/route.ts` (UI at `/admin/emails`) |
+| Render check | `scripts/render-emails.ts` (`pnpm test:emails`) |
 
 ## Configuration
 
-### Environment Setup
-
 ```env
-# Required for email sending
-RESEND_API_KEY="re_..."
-EMAIL_FROM_ADDRESS="noreply@yourdomain.com"
-EMAIL_FROM_NAME="Your App Name"
+RESEND_API_KEY=       # required to send anything
+EMAIL_FROM_ADDRESS=   # default: noreply@<NAME lowercased, no spaces>.com
+EMAIL_FROM_NAME=      # default: NAME from lib/constants.ts
 ```
 
-### Email Service
+Verify the sender domain in Resend before sending to real users.
 
-Centralized email service in `lib/email/service.ts`:
+## Templates and when they are sent
 
-```typescript
-import { EmailService } from '@/lib/email/service'
+| Template | `EmailService` method | Sent by |
+| --- | --- | --- |
+| `verification.tsx` | `sendVerification` | Better Auth email verification (`lib/auth/config.ts`) |
+| `password-reset.tsx` | `sendPasswordReset` | Better Auth password reset |
+| `magic-link.tsx` | `sendMagicLink` | Better Auth magic link plugin |
+| `two-factor.tsx` | `sendOtpCode` | Better Auth email OTP plugin (subject and copy vary by sign-in / email-verification / change-email) |
+| `two-factor.tsx` | `send2FACode` | Admin test route only |
+| `email-change-verification.tsx` | `sendEmailChangeVerification` | `user.requestEmailChange` (to the new address) |
+| `email-change-notification.tsx` | `sendEmailChangeNotification` | `user.requestEmailChange` (to the old address) |
+| `password-changed.tsx` | `sendPasswordChanged` | `user.changePassword` |
+| `feedback.tsx` | `sendFeedback` | `feedback.submitFeedback`, to every address in `ADMIN_EMAILS` |
+| `support.tsx` | `sendSupport` | `feedback.submitSupport`, to every address in `ADMIN_EMAILS` |
+| `welcome.tsx` | `sendWelcome` | Admin test route only |
+| `invitation.tsx` | `sendInvitation` | Admin test route only |
 
-// All email methods
-EmailService.sendWelcome(email, name)
-EmailService.sendVerification(email, verificationUrl, code)
-EmailService.sendPasswordReset(email, name, resetUrl)
-EmailService.sendMagicLink(email, magicLink)
-EmailService.sendInvitation(email, inviterName, orgName, role, url)
-EmailService.send2FACode(email, name, code)
+`EmailService.sendCustom(to, subject, html)` sends arbitrary HTML.
+
+## Common tasks
+
+Preview a template locally (`pnpm dev`, not available in production):
+
+```
+/api/email/preview?template=welcome|verification|password-reset|magic-link|invitation|two-factor
 ```
 
-## Email Templates
+The other five templates have no preview case; use `pnpm test:emails` or add a case to the route.
 
-### Template Structure
+Send a real test email: sign in as an admin, open `/admin/emails`, or `POST /api/admin/emails/test` with `{ template, email }`.
 
-All templates use a consistent layout:
+Add a template:
 
-```tsx
-// emails/components/email-layout.tsx
-export function EmailLayout({ children }) {
-  return (
-    <Html>
-      <Head />
-      <Preview>{previewText}</Preview>
-      <Tailwind>
-        <Body>
-          <Container>
-            <EmailHeader />
-            {children}
-            <EmailFooter />
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
-  )
-}
-```
+1. Create `emails/<name>.tsx` wrapping content in `EmailLayout` (it takes a `preview` prop). Export the component (default or named).
+2. Add a `static async sendX(...)` to `EmailService` that calls `render(...)` then the module-level `sendEmail({ to, subject, html })`.
+3. If the template uses a prop not in the `sample` object in `scripts/render-emails.ts`, add it there, or `pnpm test:emails` (run in CI) fails with "missing prop rendered" or "link with no target".
+4. Optionally add a case to the preview route and the admin test route.
 
-### Available Templates
+## Gotchas
 
-#### 1. Welcome Email
+- `EmailService` methods throw when `RESEND_API_KEY` is missing. The Better Auth hooks check for the key first and only log; other callers wrap sends in try/catch. Follow that pattern so a missing key never breaks a request.
+- Workspace invitations do not send an email. `invitations.create` and `bulkInviteMembers` only create records; share an invite link (`invitations.createInviteLink`, opened at `/invite/[token]`) instead.
+- No welcome email is sent on sign-up.
+- `lib/email/client.ts` also exports a `sendEmail` that returns `{ success, error }` instead of throwing; nothing uses it. Use `EmailService`.
+- Email sends are not queued or retried.
 
-Sent automatically after user signup:
+## Related
 
-```tsx
-// emails/welcome.tsx
-export default function WelcomeEmail({
-  name,
-  email
-}: {
-  name: string
-  email: string
-}) {
-  return (
-    <EmailLayout>
-      <Heading>Welcome to {APP_NAME}!</Heading>
-      <Text>Hi {name},</Text>
-      <Text>Thanks for signing up...</Text>
-      <Button href={loginUrl}>Get Started</Button>
-    </EmailLayout>
-  )
-}
-```
-
-#### 2. Verification Email
-
-Email address verification:
-
-```tsx
-// emails/verification.tsx
-export default function VerificationEmail({
-  verificationUrl,
-  code
-}: {
-  verificationUrl: string
-  code: string
-}) {
-  return (
-    <EmailLayout>
-      <Heading>Verify Your Email</Heading>
-      <Text>Your verification code: {code}</Text>
-      <Button href={verificationUrl}>Verify Email</Button>
-    </EmailLayout>
-  )
-}
-```
-
-#### 3. Password Reset
-
-Password recovery email:
-
-```tsx
-// emails/password-reset.tsx
-export default function PasswordResetEmail({
-  name,
-  resetUrl
-}: {
-  name: string
-  resetUrl: string
-}) {
-  return (
-    <EmailLayout>
-      <Heading>Reset Your Password</Heading>
-      <Text>Hi {name},</Text>
-      <Text>Click below to reset your password:</Text>
-      <Button href={resetUrl}>Reset Password</Button>
-    </EmailLayout>
-  )
-}
-```
-
-#### 4. Magic Link
-
-Passwordless authentication:
-
-```tsx
-// emails/magic-link.tsx
-export default function MagicLinkEmail({
-  magicLink
-}: {
-  magicLink: string
-}) {
-  return (
-    <EmailLayout>
-      <Heading>Your Magic Link</Heading>
-      <Text>Click to sign in:</Text>
-      <Button href={magicLink}>Sign In</Button>
-    </EmailLayout>
-  )
-}
-```
-
-#### 5. Team Invitation
-
-Workspace invitation email:
-
-```tsx
-// emails/invitation.tsx
-export default function InvitationEmail({
-  inviterName,
-  organizationName,
-  role,
-  invitationUrl
-}: InvitationProps) {
-  return (
-    <EmailLayout>
-      <Heading>You're Invited!</Heading>
-      <Text>{inviterName} invited you to join {organizationName}</Text>
-      <Text>Role: {role}</Text>
-      <Button href={invitationUrl}>Accept Invitation</Button>
-    </EmailLayout>
-  )
-}
-```
-
-#### 6. Two-Factor Code
-
-2FA verification code:
-
-```tsx
-// emails/two-factor.tsx
-export default function TwoFactorEmail({
-  name,
-  code
-}: {
-  name: string
-  code: string
-}) {
-  return (
-    <EmailLayout>
-      <Heading>Your 2FA Code</Heading>
-      <Text>Hi {name},</Text>
-      <Text>Your verification code:</Text>
-      <CodeBlock>{code}</CodeBlock>
-    </EmailLayout>
-  )
-}
-```
-
-## Better Auth Integration
-
-Emails are automatically sent via Better Auth hooks:
-
-```typescript
-// lib/auth/config.ts
-export const auth = betterAuth({
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
-    sendResetPassword: async ({ user, url }) => {
-      await EmailService.sendPasswordReset(
-        user.email,
-        user.name,
-        url
-      )
-    }
-  },
-  magicLink: {
-    enabled: true,
-    sendMagicLink: async ({ email, url }) => {
-      await EmailService.sendMagicLink(email, url)
-    }
-  },
-  // ... other configurations
-})
-```
-
-## Development Tools
-
-### Email Preview
-
-Preview emails during development:
-
-```bash
-# Start dev server
-pnpm dev
-
-# Visit preview URLs
-http://localhost:3000/api/email/preview?template=welcome
-http://localhost:3000/api/email/preview?template=verification
-http://localhost:3000/api/email/preview?template=password-reset
-http://localhost:3000/api/email/preview?template=magic-link
-http://localhost:3000/api/email/preview?template=invitation
-http://localhost:3000/api/email/preview?template=two-factor
-```
-
-**Note:** Preview is only available in development mode.
-
-### Testing Emails
-
-Without Resend API key, emails log to console:
-
-```typescript
-// lib/email/service.ts
-if (!process.env.RESEND_API_KEY) {
-  console.log('📧 Email Preview:')
-  console.log('To:', to)
-  console.log('Subject:', subject)
-  console.log('HTML:', html)
-  return { id: 'console-preview' }
-}
-```
-
-## Custom Templates
-
-### Creating New Templates
-
-1. Create template file:
-
-```tsx
-// emails/custom-notification.tsx
-import { EmailLayout } from './components/email-layout'
-import { Heading, Text, Button } from '@react-email/components'
-
-export default function CustomNotification({
-  title,
-  message,
-  actionUrl
-}: Props) {
-  return (
-    <EmailLayout>
-      <Heading>{title}</Heading>
-      <Text>{message}</Text>
-      <Button href={actionUrl}>Take Action</Button>
-    </EmailLayout>
-  )
-}
-```
-
-2. Add to EmailService:
-
-```typescript
-// lib/email/service.ts
-static async sendCustomNotification(
-  email: string,
-  title: string,
-  message: string,
-  actionUrl: string
-) {
-  const html = await render(
-    CustomNotification({ title, message, actionUrl })
-  )
-
-  return EmailService.send({
-    to: email,
-    subject: title,
-    html
-  })
-}
-```
-
-3. Add preview support:
-
-```typescript
-// app/api/email/preview/route.ts
-case 'custom-notification':
-  component = CustomNotification({
-    title: 'Important Update',
-    message: 'Your attention is needed...',
-    actionUrl: 'https://example.com/action'
-  })
-  break
-```
-
-## Styling Emails
-
-### Using Tailwind
-
-React Email supports Tailwind CSS:
-
-```tsx
-import { Tailwind } from '@react-email/tailwind'
-
-<Tailwind>
-  <div className="bg-gray-100 p-4">
-    <h1 className="text-2xl font-bold text-blue-600">
-      Welcome!
-    </h1>
-  </div>
-</Tailwind>
-```
-
-### Custom Styles
-
-Use inline styles for better compatibility:
-
-```tsx
-<div
-  style={{
-    backgroundColor: '#f3f4f6',
-    padding: '16px',
-    borderRadius: '8px'
-  }}
->
-  Content
-</div>
-```
-
-## Email Providers
-
-### Resend (Default)
-
-Current integration uses Resend:
-
-```typescript
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
-await resend.emails.send({
-  from: `${EMAIL_FROM_NAME} <${EMAIL_FROM_ADDRESS}>`,
-  to: email,
-  subject: subject,
-  html: html
-})
-```
-
-### Alternative Providers
-
-Easy to swap providers:
-
-```typescript
-// SendGrid
-import sgMail from '@sendgrid/mail'
-sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-await sgMail.send({...})
-
-// Postmark
-import { ServerClient } from 'postmark'
-const client = new ServerClient(process.env.POSTMARK_KEY)
-await client.sendEmail({...})
-
-// AWS SES
-import { SES } from 'aws-sdk'
-const ses = new SES()
-await ses.sendEmail({...}).promise()
-```
-
-## Marketing Emails
-
-### Integration Options
-
-Support for marketing platforms:
-
-```typescript
-// Mailchimp
-await mailchimp.lists.addListMember(listId, {
-  email_address: email,
-  status: 'subscribed'
-})
-
-// Loops
-await loops.createContact({
-  email: email,
-  properties: { name, role }
-})
-
-// ConvertKit
-await convertkit.addSubscriber({
-  email: email,
-  first_name: name
-})
-```
-
-## Best Practices
-
-### 1. Consistent Branding
-
-- Use company colors
-- Include logo in header
-- Consistent footer with links
-- Clear call-to-action buttons
-
-### 2. Mobile Responsiveness
-
-- Use responsive tables
-- Minimum font size 14px
-- Touch-friendly buttons (44px height)
-- Single column layout
-
-### 3. Email Deliverability
-
-- Verify sender domain
-- Set up SPF/DKIM/DMARC
-- Use descriptive subject lines
-- Include unsubscribe links
-
-### 4. Testing
-
-- Test across email clients
-- Check spam score
-- Verify links work
-- Test with real data
-
-## Troubleshooting
-
-### Common Issues
-
-**Emails not sending:**
-- Verify RESEND_API_KEY is set
-- Check sender domain is verified
-- Review Resend dashboard for errors
-
-**Emails in spam:**
-- Verify domain authentication
-- Check spam score
-- Review email content
-- Add unsubscribe link
-
-**Template not rendering:**
-- Check React Email syntax
-- Verify component imports
-- Test in preview route
-
-## Next Steps
-
-- Set up [Admin Dashboard](./admin.md)
-- Configure [Deployment](./deployment.md)
-- Review [API Documentation](./api.md)
+[authentication.md](./authentication.md) for which auth flows send email, [admin.md](./admin.md) for the test-send page.

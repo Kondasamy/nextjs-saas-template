@@ -1,299 +1,55 @@
-# Contributing to Enterprise SaaS Template
+# Contributing
 
-Thank you for your interest in contributing! We welcome contributions from the community and are grateful for any help you can provide.
+By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately, see [SECURITY.md](SECURITY.md).
 
-## 📋 Table of Contents
+## Setup
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Process](#development-process)
-- [How to Contribute](#how-to-contribute)
-- [Coding Standards](#coding-standards)
-- [Commit Guidelines](#commit-guidelines)
-- [Pull Request Process](#pull-request-process)
-- [Reporting Issues](#reporting-issues)
+Follow [docs/getting-started.md](docs/getting-started.md). Short version: Node 24, `pnpm install`, a local Postgres (Docker works), `.env.local` from `.env.local.example`, then `pnpm db:generate && pnpm db:migrate && pnpm db:seed && pnpm dev`. Use a throwaway database: the seed wipes users and workspaces.
 
-## Code of Conduct
+AI agents should also read [AGENTS.md](AGENTS.md).
 
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing. We are committed to fostering a welcoming and inclusive community.
+## Workflow
 
-## Getting Started
+1. Branch from `main` (`feat/...`, `fix/...`, `docs/...`).
+2. Make the change. Follow the patterns already in the code; see [docs/architecture.md](docs/architecture.md).
+3. Schema changes: edit `prisma/schema.prisma` and commit the migration created by `pnpm db:migrate`.
+4. Update the relevant file in `docs/` if behaviour changes.
+5. Open a PR against `main`.
 
-### Prerequisites
+## Checks
 
-- Node.js 24+ and pnpm 11
-- PostgreSQL database (Supabase recommended)
-- Git
+The Husky pre-commit hook runs `pnpm format && pnpm lint:fix` (Biome formatting: tabs, single quotes, no semicolons; Oxlint).
 
-### Setting Up Development Environment
-
-1. **Fork and clone the repository:**
-   ```bash
-   git clone https://github.com/Kondasamy/nextjs-saas-template.git
-   cd nextjs-saas-template
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   pnpm install
-   ```
-
-3. **Set up environment variables:**
-   ```bash
-   cp .env.local.example .env.local
-   # Edit .env.local with your configuration
-   ```
-
-4. **Set up the database:**
-   ```bash
-   pnpm db:generate
-   pnpm db:push  # For development
-   ```
-
-5. **Start the development server:**
-   ```bash
-   pnpm dev
-   ```
-
-## Development Process
-
-### Branching Strategy
-
-- `main` - Production-ready code
-- `develop` - Development branch (optional)
-- Feature branches - `feature/your-feature-name`
-- Bug fixes - `fix/bug-description`
-- Documentation - `docs/what-you-are-documenting`
-
-### Workflow
-
-1. Create a new branch from `main`
-2. Make your changes
-3. Write/update tests if applicable
-4. Update documentation if needed
-5. Submit a pull request
-
-## How to Contribute
-
-### Types of Contributions
-
-#### 🐛 Bug Reports
-- Use the issue template
-- Include reproduction steps
-- Provide environment details
-- Add error messages/screenshots
-
-#### ✨ Feature Requests
-- Check existing issues first
-- Provide use case and context
-- Explain the expected behavior
-- Consider implementation approach
-
-#### 📝 Documentation
-- Fix typos and clarifications
-- Add examples and guides
-- Improve code comments
-- Translate documentation
-
-#### 💻 Code Contributions
-- Bug fixes
-- New features
-- Performance improvements
-- Refactoring
-
-## Coding Standards
-
-### TypeScript/JavaScript
-
-- Use TypeScript for all new code
-- Follow existing code style (enforced by Biome)
-- Use meaningful variable and function names
-- Add JSDoc comments for public APIs
-
-### React/Next.js
-
-- Use functional components with hooks
-- Follow React best practices
-- Keep components small and focused
-- Use proper TypeScript types
-
-### Database/Prisma
-
-- Follow existing schema patterns
-- Create migrations for schema changes
-- Use meaningful model and field names
-- Add appropriate indexes
-
-### Styling
-
-- Use Tailwind CSS classes
-- Follow existing component patterns
-- Ensure responsive design
-- Maintain dark/light theme support
-
-### Code Quality Checks
-
-Before submitting, ensure your code passes:
+CI (`.github/workflows/ci.yml`) runs on every PR, against a Postgres 16 service that it migrates and seeds:
 
 ```bash
-# Format code
-pnpm format
-
-# Lint check
-pnpm lint
-
-# Type check
+pnpm exec next typegen
 pnpm typecheck
-
-# Build check
+pnpm lint
+pnpm test:rbac      # needs a migrated, seeded database
 pnpm build
+pnpm test:emails
+pnpm test:e2e       # Playwright smoke suite against `pnpm start`; build first
 ```
 
-## Commit Guidelines
+Run the same locally before pushing. `pnpm build` ignores type errors (`next.config.mjs`), so `pnpm typecheck` is the step that catches them.
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
+## Commits
 
-### Format
+[Conventional Commits](https://www.conventionalcommits.org/): `type(scope): subject`, with types `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `chore`, `ci`. Examples from history:
+
 ```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
+fix(rbac): stop bulk removal from deleting every owner
+test(emails): fail on missing props and links without a target
 ```
 
-### Types
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation only
-- `style:` Code style changes (formatting)
-- `refactor:` Code refactoring
-- `perf:` Performance improvements
-- `test:` Test additions or corrections
-- `chore:` Maintenance tasks
-- `ci:` CI/CD changes
+## Pull requests
 
-### Examples
-```bash
-feat(auth): add OAuth provider for Discord
-fix(workspace): resolve member invitation email bug
-docs(readme): update installation instructions
-chore(deps): update dependencies
-```
-
-## Pull Request Process
-
-### Before Submitting
-
-1. **Update from main:**
-   ```bash
-   git fetch origin
-   git rebase origin/main
-   ```
-
-2. **Run all checks:**
-   ```bash
-   pnpm format
-   pnpm lint:fix
-   pnpm build
-   ```
-
-3. **Test your changes thoroughly**
-
-### PR Guidelines
-
-- **Title:** Use conventional commit format
-- **Description:**
-  - Explain what changes you made
-  - Why you made them
-  - Link related issues
-  - Include screenshots for UI changes
-- **Size:** Keep PRs focused and reasonably sized
-- **Tests:** Include tests for new functionality
-- **Documentation:** Update relevant docs
-
-### PR Template
-
-```markdown
-## Description
-Brief description of changes
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-
-## How Has This Been Tested?
-Describe your testing process
-
-## Checklist
-- [ ] My code follows the project style guidelines
-- [ ] I have performed a self-review
-- [ ] I have added tests that prove my fix/feature works
-- [ ] New and existing tests pass locally
-- [ ] I have updated documentation accordingly
-```
-
-## Reporting Issues
-
-### Bug Report Template
-
-```markdown
-**Describe the bug**
-A clear description of the bug
-
-**To Reproduce**
-Steps to reproduce:
-1. Go to '...'
-2. Click on '...'
-3. See error
-
-**Expected behavior**
-What you expected to happen
-
-**Screenshots**
-If applicable, add screenshots
-
-**Environment:**
-- OS: [e.g., macOS, Windows, Linux]
-- Browser: [e.g., Chrome, Safari]
-- Node version: [e.g., 18.x]
-- Database: [e.g., PostgreSQL 14]
-```
-
-### Feature Request Template
-
-```markdown
-**Is your feature request related to a problem?**
-A clear description of the problem
-
-**Describe the solution**
-What you want to happen
-
-**Describe alternatives**
-Other solutions you've considered
-
-**Additional context**
-Any other context or screenshots
-```
-
-## Getting Help
-
-- **Discussions:** Use GitHub Discussions for questions
-- **Issues:** For bug reports and feature requests
-
-## Recognition
-
-Contributors will be recognized in:
-- The README.md contributors section
-- Release notes
-- Our website (if applicable)
+- Title in commit format. Describe what changed, why, and how you tested it. Link the issue if there is one.
+- Keep PRs focused. Add screenshots for UI changes.
+- Add or update tests when you change behaviour covered by `scripts/check-rbac.ts`, `scripts/render-emails.ts` or `e2e/`.
+- CI must be green.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
-
----
-
-Thank you for contributing to make this project better! 🎉
+Contributions are licensed under the MIT License ([LICENSE](LICENSE)).

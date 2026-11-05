@@ -1,365 +1,101 @@
-# Authentication Guide
+# Authentication
 
-This template uses [Better Auth](https://better-auth.com) for a comprehensive authentication system supporting multiple methods.
+Auth is [Better Auth](https://better-auth.com) with the Prisma adapter. Sessions are cookie-based, last 7 days and refresh daily.
 
-## Supported Authentication Methods
+## Where the code lives
 
-### 1. Email & Password
-Traditional email/password authentication with:
-- Email verification
-- Password strength validation
-- Secure bcrypt hashing
+| What | File |
+| --- | --- |
+| Server config (methods, plugins, email hooks, session) | `lib/auth/config.ts` |
+| Browser client (`authClient`, `signIn`, `signUp`, `signOut`, `useSession`) | `lib/auth/client.ts` |
+| HTTP handler for `/api/auth/*` | `app/api/auth/[...all]/route.ts` |
+| Server helpers that redirect to `/login` | `lib/auth/auth-helpers.ts` |
+| Server helpers that throw instead | `lib/auth/server.ts` |
+| Admin checks | `lib/auth/admin-helpers.ts` (see [admin.md](./admin.md)) |
+| Route protection and security headers | `proxy.ts` |
+| Auth pages | `app/(auth)/` (login, signup, forgot-password, reset-password, verify-email, verify-otp, setup-2fa) |
+| Auth UI components | `components/auth/` |
+| 2FA, sessions, passkey management | `server/api/routers/user.ts` |
 
-### 2. OAuth Providers
-Pre-configured OAuth support for:
-- Google
-- GitHub
-- Microsoft
-- Easy to add more providers
+## Sign-in methods
 
-### 3. Magic Links
-Passwordless authentication via email:
-- One-click login
-- Secure token generation
-- Automatic expiration
+| Method | How it is wired |
+| --- | --- |
+| Email + password | `emailAndPassword` in config. Passwords hashed with bcrypt. Email verification is required only when `NODE_ENV=production`. |
+| Google, GitHub, Microsoft OAuth | `socialProviders`. Each is enabled only when both its client ID and secret are set. |
+| Magic link | `magicLink` plugin. |
+| Email OTP | `emailOTP` plugin. Sign-in only for existing accounts (`disableSignUp: true`). |
+| Passkeys | `@better-auth/passkey` plugin. Sign-in UI exists (`components/auth/passkey-auth.tsx`); there is no UI to register a passkey yet. Users can list, rename and remove passkeys via `user.listPasskeys` / `renamePasskey` / `removePasskey`. |
+| TOTP 2FA | Custom, not a Better Auth plugin. `user.setup2FA`, `verify2FA`, `disable2FA`, `get2FAStatus`, `regenerateBackupCodes` (uses `speakeasy` + `qrcode`, stored in the `TwoFactorAuth` model). **2FA is not checked at sign-in**, so enabling it does not protect the account yet. |
 
-### 4. Passkeys (WebAuthn)
-Modern biometric authentication:
-- Face ID / Touch ID
-- Hardware security keys
-- Platform authenticators
+There is no SSO, SAML or Okta support. The `SAML_*` and `OKTA_*` vars in `lib/env.ts` are unused.
 
-### 5. One-Time Passwords (OTP)
-Email-based OTP codes:
-- 6-digit verification codes
-- Time-based expiration
-- Rate limited attempts
+Password reset is link-based only (`requestPasswordReset` / `resetPassword`). The email-OTP reset endpoints are disabled in `disabledPaths`.
 
-### 6. Two-Factor Authentication (2FA)
-TOTP-based 2FA with:
-- QR code generation
-- Authenticator app support
-- Backup codes
-
-### 7. Enterprise SSO
-SAML and OKTA integration for enterprise customers.
-
-## Configuration
-
-### Basic Setup
-
-The authentication system is configured in `lib/auth/config.ts`:
-
-```typescript
-import { betterAuth } from 'better-auth'
-import { prismaAdapter } from 'better-auth/adapters/prisma'
-
-export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: 'postgresql'
-  }),
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true
-  },
-  // ... other configurations
-})
-```
-
-### OAuth Provider Setup
-
-Add OAuth credentials to your `.env.local`:
+## Environment variables
 
 ```env
-# Google OAuth
-AUTH_GOOGLE_ID="your-google-client-id"
-AUTH_GOOGLE_SECRET="your-google-client-secret"
+BETTER_AUTH_SECRET=   # min 32 chars; also signs impersonation cookies
+BETTER_AUTH_URL=      # server base URL
+NEXT_PUBLIC_APP_URL=  # client base URL used by lib/auth/client.ts
 
-# GitHub OAuth
-AUTH_GITHUB_ID="your-github-client-id"
-AUTH_GITHUB_SECRET="your-github-client-secret"
+GOOGLE_CLIENT_ID=     GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=     GITHUB_CLIENT_SECRET=
+MICROSOFT_CLIENT_ID=  MICROSOFT_CLIENT_SECRET=
 
-# Microsoft OAuth
-AUTH_MICROSOFT_ID="your-microsoft-client-id"
-AUTH_MICROSOFT_SECRET="your-microsoft-client-secret"
+RESEND_API_KEY=       # without it, auth emails are skipped and only logged
 ```
 
-### Email Configuration
+OAuth callback URL for each provider: `{BETTER_AUTH_URL}/api/auth/callback/{google|github|microsoft}`.
 
-Emails are sent automatically for:
-- Account verification
-- Password reset
-- Magic links
-- OTP codes
-- 2FA codes
+## Common tasks
 
-Configure email service:
-
-```env
-RESEND_API_KEY="re_..."
-EMAIL_FROM_ADDRESS="noreply@yourdomain.com"
-EMAIL_FROM_NAME="Your App Name"
-```
-
-## Using Authentication
-
-### In React Components
-
-#### Client Components
+Read the session in a Server Component:
 
 ```tsx
-'use client'
+import { requireAuth } from '@/lib/auth/auth-helpers' // redirects to /login if signed out
+const session = await requireAuth()
 
-import { useAuth } from '@/hooks/use-auth'
-
-export function MyComponent() {
-  const { user, session, isLoading } = useAuth()
-
-  if (isLoading) return <div>Loading...</div>
-  if (!user) return <div>Not authenticated</div>
-
-  return <div>Welcome {user.name}!</div>
-}
+import { getAuthSession } from '@/lib/auth/auth-helpers' // returns null if signed out
+const session = await getAuthSession()
 ```
 
-#### Server Components
+Read the session in a Client Component: `useAuth()` from `hooks/use-auth.ts` returns `{ user, session, isLoading, isAuthenticated }`.
 
-```tsx
-import { getAuthSession } from '@/lib/auth/auth-helpers'
+In tRPC, use `protectedProcedure`; `ctx.user` and `ctx.session` are set (see [api.md](./api.md)).
 
-export default async function Page() {
-  const { user, session } = await getAuthSession()
+Client calls used by the app's UI:
 
-  if (!user) {
-    redirect('/login')
-  }
-
-  return <div>Welcome {user.name}!</div>
-}
-```
-
-### Protected Routes
-
-#### Using Middleware
-
-Routes are protected via `middleware.ts`:
-
-```typescript
-// Automatically protects:
-// - /dashboard/*
-// - /settings/*
-// - /admin/*
-// - /workspace/*
-```
-
-#### Using Helper Functions
-
-```tsx
-import { requireAuth } from '@/lib/auth/auth-helpers'
-
-export default async function ProtectedPage() {
-  const { user } = await requireAuth()
-  // User is guaranteed to be authenticated
-  return <div>Protected content</div>
-}
-```
-
-### Sign In/Out
-
-#### Sign In
-
-```tsx
-import { authClient } from '@/lib/auth/client'
-
-// Email & Password
-await authClient.signIn.email({
-  email: 'user@example.com',
-  password: 'password123'
-})
-
-// OAuth
-await authClient.signIn.social({
-  provider: 'google'
-})
-
-// Magic Link
-await authClient.signIn.magicLink({
-  email: 'user@example.com'
-})
-```
-
-#### Sign Out
-
-```tsx
-await authClient.signOut()
-```
-
-## Session Management
-
-### Session Data
-
-Sessions include:
-- User information
-- Device tracking
-- IP address
-- User agent
-- Last activity
-
-### Session Helpers
-
-```typescript
-// Get current session
-const { session, user } = await getAuthSession()
-
-// Check if user is authenticated
-if (session) {
-  console.log('User is logged in:', user.email)
-}
-
-// Get session in tRPC
-export const protectedProcedure = t.procedure
-  .use(async ({ ctx, next }) => {
-    const session = await getAuthSession()
-    if (!session) throw new Error('Unauthorized')
-    return next({ ctx: { ...ctx, session } })
-  })
-```
-
-## Security Features
-
-### Password Requirements
-
-Enforced password policy:
-- Minimum 8 characters
-- At least one uppercase letter
-- At least one lowercase letter
-- At least one number
-- At least one special character
-
-### Rate Limiting
-
-Authentication endpoints are rate-limited:
-- 5 attempts per 15 minutes for auth endpoints
-- IP-based tracking
-- Automatic blocking on excess attempts
-
-### Security Headers
-
-Applied automatically:
-- CSRF protection
-- XSS protection
-- Secure cookies
-- HTTP-only sessions
-
-## Email Templates
-
-Pre-built email templates for all auth flows:
-
-### Available Templates
-- `welcome.tsx` - New user welcome
-- `verification.tsx` - Email verification
-- `password-reset.tsx` - Password reset
-- `magic-link.tsx` - Magic link login
-- `two-factor.tsx` - 2FA codes
-
-### Customizing Templates
-
-Edit templates in `emails/` directory:
-
-```tsx
-// emails/welcome.tsx
-export default function WelcomeEmail({ name }: { name: string }) {
-  return (
-    <EmailLayout>
-      <Text>Welcome {name}!</Text>
-      {/* Your custom content */}
-    </EmailLayout>
-  )
-}
-```
-
-## Advanced Features
-
-### Custom User Fields
-
-Add custom fields to user model:
-
-```prisma
-// prisma/schema.prisma
-model User {
-  // ... existing fields
-  bio        String?
-  timezone   String?
-  language   String?
-  avatarUrl  String?
-}
-```
-
-### Social Account Linking
-
-Users can link multiple social accounts:
-- Link/unlink providers
-- Account merging
-- Primary email selection
-
-### Impersonation
-
-Admins can impersonate users:
-- Audit logged
-- Time-limited sessions
-- Visual indicator
-
-## Troubleshooting
-
-### Common Issues
-
-**Email verification not working**
-- Check RESEND_API_KEY is set
-- Verify EMAIL_FROM_ADDRESS is valid
-- Check spam folder
-
-**OAuth redirect errors**
-- Verify redirect URLs in provider settings
-- Check BETTER_AUTH_URL matches your domain
-- Ensure provider credentials are correct
-
-**Session not persisting**
-- Check BETTER_AUTH_SECRET is set
-- Verify cookies are enabled
-- Check domain configuration
-
-## API Reference
-
-### Auth Client Methods
-
-```typescript
-authClient.signIn.email({ email, password })
-authClient.signIn.social({ provider })
-authClient.signIn.magicLink({ email })
+```ts
+signIn.email({ email, password })
+signIn.social({ provider: 'google' })
+signIn.magicLink({ email })
 authClient.emailOtp.sendVerificationOtp({ email, type: 'sign-in' })
-authClient.signIn.emailOtp({ email, otp }) // existing accounts only
-authClient.signUp({ email, password, name })
-authClient.signOut()
-authClient.verifyEmail({ token })
+signIn.emailOtp({ email, otp })
+signIn.passkey()
+signUp.email({ email, password, name })
+authClient.requestPasswordReset({ email, redirectTo })
 authClient.resetPassword({ token, newPassword })
-authClient.changePassword({ currentPassword, newPassword })
-authClient.changeEmail({ newEmail })
-// 2FA (TOTP) setup lives in the user tRPC router (setup2FA / verify2FA).
-// It is not yet enforced at sign-in.
+signOut()
 ```
 
-### Helper Functions
+Password change, email change, session listing/revocation, account export and deletion are tRPC procedures in `server/api/routers/user.ts`, not Better Auth client calls.
 
-```typescript
-// Server-side helpers
-getAuthSession() // Get current session
-requireAuth()    // Require authentication
-requireAdmin()   // Require admin access
-isUserAdmin(email) // Check if user is admin
-```
+Add an OAuth provider: add it to `socialProviders` in `lib/auth/config.ts`, add its env vars to `lib/env.ts`, and add a button in `components/auth/social-login.tsx`.
 
-## Next Steps
+## Route protection
 
-- Set up [RBAC & Permissions](./rbac.md)
-- Configure [Workspace Management](./workspaces.md)
-- Implement [Admin Features](./admin.md)
+`proxy.ts` runs on every non-API, non-static request. Public paths: `/login`, `/signup`, `/forgot-password`, `/verify-email`, `/verify-otp`. Everything else redirects signed-out users to `/login?redirect=<path>`. Signed-in users hitting an auth page are sent to `/`. API routes are excluded from the matcher, so each route and tRPC procedure must check auth itself.
+
+## Gotchas
+
+- Password reset is currently broken end to end: `app/(auth)/forgot-password/page.tsx` sends `redirectTo: .../auth/reset-password` but the page lives at `/reset-password`, and `/reset-password` is not in the public list in `proxy.ts`, so a signed-out user would be redirected to `/login` anyway.
+- Two `requireAuth` functions exist: `lib/auth/auth-helpers.ts` redirects, `lib/auth/server.ts` throws. Pick deliberately.
+- Rate limiting: `/api/trpc` uses `defaultRateLimiter` (100 req / 15 min per IP, in-memory) from `lib/rate-limit.ts`. `authRateLimiter` is defined there but not applied to `/api/auth`. In-memory limits do not work across multiple instances.
+- Password rules are only a client-side `min(8)` in the forms; there is no server-side complexity policy.
+- Email send failures in auth hooks are logged and swallowed, so sign-up succeeds even if the email never goes out.
+- The `banned` flag only blocks admin access (`requireAdmin`); banned users can still sign in.
+
+## Related
+
+[emails.md](./emails.md) for auth email templates, [admin.md](./admin.md) for admin access and impersonation, [rbac.md](./rbac.md) and [workspaces.md](./workspaces.md) for authorization inside workspaces.
