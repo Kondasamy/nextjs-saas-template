@@ -21,6 +21,17 @@ test('login page renders the sign-in form', async ({ page }) => {
 	).toBeVisible()
 })
 
+test('social sign-in buttons render a logo and an accessible name', async ({
+	page,
+}) => {
+	await page.goto('/login')
+	for (const name of ['Continue with Google', 'Continue with GitHub']) {
+		const button = page.getByRole('button', { name })
+		await expect(button).toBeVisible()
+		await expect(button.locator('svg')).toBeVisible()
+	}
+})
+
 test('protected routes redirect signed-out visitors to /login', async ({
 	page,
 }) => {

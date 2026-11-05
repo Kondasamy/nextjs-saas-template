@@ -198,6 +198,7 @@ export function InviteLinksTable() {
 														<Copy className="h-4 w-4" />
 													</Button>
 													<Button
+														aria-label="Revoke invite link"
 														variant="ghost"
 														size="icon"
 														onClick={() => {

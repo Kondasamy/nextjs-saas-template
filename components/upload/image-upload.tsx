@@ -37,6 +37,7 @@ export function ImageUpload({
 				<div className="relative w-32 h-32 rounded-lg overflow-hidden border">
 					<Image src={preview} alt="Preview" fill className="object-cover" />
 					<Button
+						aria-label="Remove image"
 						variant="destructive"
 						size="icon"
 						className="absolute top-2 right-2"
