@@ -60,7 +60,7 @@ A modern, full-featured SaaS template that includes everything you need to launc
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 24+ (see `.nvmrc`)
 - PostgreSQL database (Supabase recommended)
 - pnpm (recommended) or npm/yarn
 
@@ -174,13 +174,12 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 pnpm dev          # Start development server
 pnpm build        # Build for production
 pnpm lint         # Check linting
+pnpm typecheck    # TypeScript type checking
+pnpm test:e2e     # Playwright smoke tests (run `pnpm build` first)
+pnpm test:emails  # Render every email template
 pnpm format       # Format code
 pnpm db:studio    # Open Prisma Studio
 ```
-
-## 🐛 Known Issues
-
-- **Next.js 16 Build:** Production builds may fail with Turbopack. Use Next.js 15 for production or wait for 16.1+. Development works perfectly.
 
 ## 📄 License
 
