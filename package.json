@@ -15,6 +15,7 @@
 		"typecheck": "tsc --noEmit",
 		"test:e2e": "playwright test",
 		"test:emails": "tsx scripts/render-emails.ts",
+		"test:rbac": "tsx scripts/check-rbac.ts",
 		"format": "biome check --write --unsafe .",
 		"pre-commit": "pnpm format && pnpm lint:fix",
 		"db:generate": "dotenv -e .env.local -- prisma generate",

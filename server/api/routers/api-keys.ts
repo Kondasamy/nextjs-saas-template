@@ -1,7 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { toPermissions } from '@/lib/permissions/checker'
+import {
+	hasPermission as permits,
+	toPermissions,
+} from '@/lib/permissions/checker'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 /**
@@ -97,9 +100,10 @@ export const apiKeysRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('settings:update')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'settings:update'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -187,9 +191,10 @@ export const apiKeysRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('settings:update')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'settings:update'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({

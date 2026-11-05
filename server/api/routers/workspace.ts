@@ -1,6 +1,9 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { toPermissions } from '@/lib/permissions/checker'
+import {
+	hasPermission as permits,
+	toPermissions,
+} from '@/lib/permissions/checker'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 import {
 	getOrganizationStats,
@@ -352,9 +355,10 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			// Check permissions (simplified - you can enhance this)
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('workspace:update')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'workspace:update'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -437,11 +441,10 @@ export const workspaceRouter = createTRPCRouter({
 				})
 			}
 
-			const hasPermission =
-				toPermissions(callerMembership.role.permissions).includes('*') ||
-				toPermissions(callerMembership.role.permissions).includes(
-					'member:manage'
-				)
+			const hasPermission = permits(
+				toPermissions(callerMembership.role.permissions),
+				'member:manage'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -567,11 +570,10 @@ export const workspaceRouter = createTRPCRouter({
 				})
 			}
 
-			const hasPermission =
-				toPermissions(callerMembership.role.permissions).includes('*') ||
-				toPermissions(callerMembership.role.permissions).includes(
-					'member:remove'
-				)
+			const hasPermission = permits(
+				toPermissions(callerMembership.role.permissions),
+				'member:remove'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -838,9 +840,10 @@ export const workspaceRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('member:manage')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'member:manage'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -957,9 +960,10 @@ export const workspaceRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('member:remove')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'member:remove'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -974,6 +978,30 @@ export const workspaceRouter = createTRPCRouter({
 					code: 'BAD_REQUEST',
 					message: 'Cannot remove yourself from the workspace',
 				})
+			}
+
+			// Check ownership once up front: per-target counts run concurrently and
+			// would all see the same pre-delete total, letting every owner be removed
+			const targetOwners = await ctx.prisma.organizationMember.count({
+				where: {
+					organizationId: input.organizationId,
+					userId: { in: input.userIds },
+					role: { permissions: { array_contains: ['*'] } },
+				},
+			})
+			if (targetOwners > 0) {
+				const ownerCount = await ctx.prisma.organizationMember.count({
+					where: {
+						organizationId: input.organizationId,
+						role: { permissions: { array_contains: ['*'] } },
+					},
+				})
+				if (targetOwners >= ownerCount) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Cannot remove the last owner',
+					})
+				}
 			}
 
 			// Process all removals
@@ -993,24 +1021,6 @@ export const workspaceRouter = createTRPCRouter({
 
 					if (!targetMember) {
 						throw new Error(`Member ${userId} not found`)
-					}
-
-					// Check if removing the last owner
-					if (toPermissions(targetMember.role.permissions).includes('*')) {
-						const ownerCount = await ctx.prisma.organizationMember.count({
-							where: {
-								organizationId: input.organizationId,
-								role: {
-									permissions: {
-										array_contains: ['*'],
-									},
-								},
-							},
-						})
-
-						if (ownerCount === 1) {
-							throw new Error('Cannot remove the last owner')
-						}
 					}
 
 					// Remove member

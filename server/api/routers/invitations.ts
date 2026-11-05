@@ -1,7 +1,10 @@
 import { TRPCError } from '@trpc/server'
 import { randomBytes } from 'crypto'
 import { z } from 'zod'
-import { toPermissions } from '@/lib/permissions/checker'
+import {
+	hasPermission as permits,
+	toPermissions,
+} from '@/lib/permissions/checker'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 
 export const invitationsRouter = createTRPCRouter({
@@ -71,9 +74,10 @@ export const invitationsRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('member:invite')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'member:invite'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -310,9 +314,10 @@ export const invitationsRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('member:invite')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'member:invite'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -433,8 +438,7 @@ export const invitationsRouter = createTRPCRouter({
 			const membership = invitation.organization.members[0]
 			const hasPermission =
 				invitation.invitedById === ctx.user.id ||
-				toPermissions(membership?.role.permissions).includes('*') ||
-				toPermissions(membership?.role.permissions).includes('member:invite')
+				permits(toPermissions(membership?.role.permissions), 'member:invite')
 
 			if (!hasPermission) {
 				throw new TRPCError({ code: 'FORBIDDEN' })
@@ -588,9 +592,10 @@ export const invitationsRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				toPermissions(membership.role.permissions).includes('*') ||
-				toPermissions(membership.role.permissions).includes('member:invite')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'member:invite'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({

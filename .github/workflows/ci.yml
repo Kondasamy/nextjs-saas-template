@@ -61,8 +61,11 @@ jobs:
           pnpm exec prisma migrate deploy
           pnpm exec tsx prisma/seed.ts
 
+      # Generate Next route types so typecheck covers .next/types before build
+      - run: pnpm exec next typegen
       - run: pnpm typecheck
       - run: pnpm lint
+      - run: pnpm test:rbac
       - run: pnpm build
       - run: pnpm test:emails
 
