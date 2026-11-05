@@ -1,4 +1,4 @@
-import { Img, Section } from '@react-email/components'
+import { Img, Section } from 'react-email'
 import { NAME } from '@/lib/constants'
 
 export function EmailHeader() {

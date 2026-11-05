@@ -113,3 +113,13 @@ export function usePermissions() {
 		getMissingPermissions,
 	}
 }
+
+/**
+ * Role.permissions is a Prisma Json column; narrow it to string[].
+ * Anything that is not an array of strings yields no permissions.
+ */
+export function toPermissions(value: unknown): string[] {
+	return Array.isArray(value)
+		? value.filter((p): p is string => typeof p === 'string')
+		: []
+}

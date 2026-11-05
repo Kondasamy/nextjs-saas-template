@@ -105,8 +105,8 @@ railway variables set DATABASE_URL="..."
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install Node.js 20
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# Install Node.js 24
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Install pnpm
@@ -259,6 +259,17 @@ AUTH_GOOGLE_SECRET="..."
 AUTH_GITHUB_ID="..."
 AUTH_GITHUB_SECRET="..."
 ```
+
+### Search Indexing (`NOINDEX`)
+
+Set `NOINDEX=true` to send `X-Robots-Tag: noindex, nofollow` on every route,
+for example when the app runs on its own subdomain next to a marketing site.
+
+`NOINDEX` is read by `next.config.mjs` when `pnpm build` runs, so it must be
+set at **build time**. Setting it only on the running server has no effect;
+rebuild after changing it. Leave it unset to let search engines index the app.
+
+`/robots.txt` is always served without authentication so crawlers can read it.
 
 ### Generate Secrets
 

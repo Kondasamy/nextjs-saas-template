@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import {
+	hasPermission as permits,
+	toPermissions,
+} from '@/lib/permissions/checker'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 /**
@@ -43,12 +47,13 @@ export const apiKeysRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			// Only return non-sensitive data (not the actual key or hashed key)
+			// Only return non-sensitive data (`key` holds just the last 8 chars; never hashedKey)
 			const apiKeys = await ctx.prisma.aPIKey.findMany({
 				where: { organizationId: input.organizationId },
 				select: {
 					id: true,
 					name: true,
+					key: true,
 					lastUsedAt: true,
 					expiresAt: true,
 					createdAt: true,
@@ -95,9 +100,10 @@ export const apiKeysRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('settings:update')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'settings:update'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -185,9 +191,10 @@ export const apiKeysRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('settings:update')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'settings:update'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({

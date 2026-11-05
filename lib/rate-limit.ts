@@ -135,7 +135,7 @@ export class RateLimiter {
 		if (storeSize > MAX_STORE_SIZE * EMERGENCY_CLEANUP_THRESHOLD) {
 			// Remove expired entries first
 			const expired = Object.entries(store)
-				.filter(([_, entry]) => entry.resetTime < now)
+				.filter(([, entry]) => entry.resetTime < now)
 				.map(([k]) => k)
 
 			for (const k of expired) {

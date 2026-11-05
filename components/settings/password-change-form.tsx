@@ -21,6 +21,7 @@ import {
 	evaluatePasswordStrength,
 	getPasswordStrengthBgColor,
 	getPasswordStrengthColor,
+	type PasswordStrength,
 } from '@/lib/utils/password'
 
 const passwordChangeSchema = z
@@ -43,7 +44,7 @@ const passwordChangeSchema = z
 type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>
 
 export function PasswordChangeForm() {
-	const [passwordStrength, setPasswordStrength] = useState({
+	const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({
 		score: 0,
 		feedback: [],
 		isStrong: false,

@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { signIn } from '@/lib/auth/client'
+import { authClient, signIn } from '@/lib/auth/client'
 
 const otpSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -34,9 +34,11 @@ export function OtpForm() {
 
 		setIsLoading(true)
 		try {
-			await signIn.otp({
+			const { error } = await authClient.emailOtp.sendVerificationOtp({
 				email,
+				type: 'sign-in',
 			})
+			if (error) throw error
 			setEmailSent(true)
 			toast.success('OTP sent! Check your email.')
 		} catch {
@@ -49,10 +51,11 @@ export function OtpForm() {
 	const handleVerifyOtp = async (data: OtpFormData) => {
 		setIsLoading(true)
 		try {
-			await signIn.otp({
+			const { error } = await signIn.emailOtp({
 				email: data.email,
 				otp: data.otp,
 			})
+			if (error) throw error
 			toast.success('Signed in successfully')
 		} catch {
 			toast.error('Invalid OTP. Please try again.')

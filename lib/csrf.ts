@@ -23,7 +23,7 @@ export async function generateCSRFToken(sessionId?: string): Promise<string> {
 		sessionId,
 	}
 
-	const token = await new SignJWT(payload)
+	const token = await new SignJWT({ ...payload })
 		.setProtectedHeader({ alg: 'HS256' })
 		.setIssuedAt()
 		.setExpirationTime('24h')

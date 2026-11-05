@@ -6,7 +6,7 @@ Welcome to the Enterprise SaaS Template! This guide will help you set up and run
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js 18+** (LTS recommended)
+- **Node.js 24+** (LTS, see `.nvmrc`)
 - **pnpm** (recommended), npm, or yarn
 - **PostgreSQL database** (Supabase recommended for easy setup)
 - **Git** for version control
@@ -121,7 +121,9 @@ pnpm db:studio    # Open Prisma Studio
 pnpm lint         # Run linter
 pnpm lint:fix     # Fix linting issues
 pnpm format       # Format code
-pnpm type-check   # TypeScript type checking
+pnpm typecheck    # TypeScript type checking
+pnpm test:e2e     # Playwright smoke tests (build first)
+pnpm test:emails  # Render every email template
 ```
 
 ## First Steps After Setup
@@ -184,7 +186,7 @@ AUTH_MICROSOFT_SECRET="..."
 
 **Problem**: TypeScript errors during build
 **Solution**:
-- Run `pnpm type-check` to identify issues
+- Run `pnpm typecheck` to identify issues
 - The project allows builds with TS errors (see `next.config.mjs`)
 
 ### Authentication Issues

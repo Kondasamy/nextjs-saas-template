@@ -9,7 +9,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { signIn, signUp, useSession } from '@/lib/auth/client'
+import { authClient, signIn, signUp, useSession } from '@/lib/auth/client'
 import { trpc } from '@/lib/trpc/client'
 
 const signInSchema = z.object({
@@ -99,8 +99,9 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 				// If API call fails, try refetching session hook as fallback
 				if (refetchSession) {
 					try {
-						const refetchResult = await refetchSession()
-						const refetchSessionData = refetchResult?.data ?? refetchResult
+						// refetch() resolves to void; read the session explicitly
+						await refetchSession()
+						const { data: refetchSessionData } = await authClient.getSession()
 						isAuthenticated = !!refetchSessionData?.user
 					} catch {
 						// Check current session from hook as last resort
@@ -174,8 +175,8 @@ export function AuthForm({ mode = 'signin', onSuccess }: AuthFormProps) {
 					await new Promise((resolve) => setTimeout(resolve, 300))
 
 					// Refetch session to check if user is logged in
-					const updatedSession = await refetchSession()
-					const sessionData = updatedSession?.data ?? updatedSession
+					await refetchSession()
+					const { data: sessionData } = await authClient.getSession()
 
 					if (sessionData?.user) {
 						// User is logged in, redirect to dashboard

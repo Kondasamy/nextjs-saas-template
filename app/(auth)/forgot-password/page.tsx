@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
 	const handleSubmit = async (data: ForgotPasswordFormData) => {
 		setIsLoading(true)
 		try {
-			const result = await authClient.forgetPassword({
+			const result = await authClient.requestPasswordReset({
 				email: data.email,
 				redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`,
 			})

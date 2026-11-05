@@ -65,7 +65,7 @@ export async function startImpersonation(
 		data: {
 			action: 'IMPERSONATION_START',
 			userId: adminId,
-			details: {
+			metadata: {
 				targetUserId: userId,
 				targetUserEmail: targetUser.email,
 			},
@@ -87,15 +87,17 @@ export async function stopImpersonation(): Promise<string | null> {
 	}
 
 	try {
-		const { payload } = await jwtVerify(sessionCookie.value, JWT_SECRET)
-		const session = payload as ImpersonationSession
+		const { payload: session } = await jwtVerify<ImpersonationSession>(
+			sessionCookie.value,
+			JWT_SECRET
+		)
 
 		// Log impersonation end in audit log
 		await prisma.auditLog.create({
 			data: {
 				action: 'IMPERSONATION_END',
 				userId: session.adminId,
-				details: {
+				metadata: {
 					targetUserId: session.userId,
 					duration: Date.now() - session.startedAt,
 				},
@@ -127,10 +129,13 @@ export async function getImpersonationSession(): Promise<ImpersonationSession | 
 	}
 
 	try {
-		const { payload } = await jwtVerify(sessionCookie.value, JWT_SECRET, {
-			maxTokenAge: '1h',
-		})
-		const session = payload as ImpersonationSession
+		const { payload: session } = await jwtVerify<ImpersonationSession>(
+			sessionCookie.value,
+			JWT_SECRET,
+			{
+				maxTokenAge: '1h',
+			}
+		)
 
 		// JWT handles expiration, but double-check for safety
 		if (Date.now() - session.startedAt > 60 * 60 * 1000) {

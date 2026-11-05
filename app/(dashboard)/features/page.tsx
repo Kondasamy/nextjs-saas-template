@@ -6,7 +6,6 @@ import {
 	ChevronDown,
 	ChevronRight,
 	ExternalLink,
-	Github,
 	ListCollapse,
 	ListFilter,
 	PlayCircle,
@@ -15,6 +14,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { GitHubIcon } from '@/components/brand-icons'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -126,7 +126,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
 										handleExternalLink(feature.github)
 									}}
 								>
-									<Github className="mr-2 h-4 w-4" /> View on GitHub
+									<GitHubIcon className="mr-2 h-4 w-4" /> View on GitHub
 								</DropdownMenuItem>
 							)}
 							{feature.tutorial && (

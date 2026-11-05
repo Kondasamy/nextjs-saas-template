@@ -26,6 +26,8 @@ export function FileUpload({
 	const [progress, setProgress] = useState(0)
 	const [file, setFile] = useState<File | null>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
+	const utils = trpc.useUtils()
+	const getUploadUrl = trpc.storage.getUploadUrl.useMutation()
 
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const selectedFile = e.target.files?.[0]
@@ -62,14 +64,14 @@ export function FileUpload({
 
 		try {
 			// Get upload URL from tRPC
-			const uploadUrl = await trpc.storage.getUploadUrl.mutate({
+			const uploadUrl = await getUploadUrl.mutateAsync({
 				bucket,
 				path: path || file.name,
 				contentType: file.type,
 			})
 
 			// Upload file to Supabase
-			const response = await fetch(uploadUrl.url, {
+			const response = await fetch(uploadUrl.signedUrl, {
 				method: 'PUT',
 				body: file,
 				headers: {
@@ -82,7 +84,7 @@ export function FileUpload({
 			}
 
 			// Get public URL
-			const publicUrl = await trpc.storage.getPublicUrl.query({
+			const publicUrl = await utils.storage.getPublicUrl.fetch({
 				bucket,
 				path: path || file.name,
 			})

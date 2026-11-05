@@ -38,6 +38,11 @@ const nextConfig = {
 			{
 				source: '/(.*)',
 				headers: [
+					// Opt-in: set NOINDEX=true at build time to keep an app subdomain
+					// out of search indexes. headers() is read during `next build`.
+					...(process.env.NOINDEX === 'true'
+						? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
+						: []),
 					{
 						key: 'X-DNS-Prefetch-Control',
 						value: 'on',

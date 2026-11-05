@@ -1,5 +1,5 @@
-import { render } from '@react-email/components'
 import { NextResponse } from 'next/server'
+import { render } from 'react-email'
 import { InvitationEmail } from '@/emails/invitation'
 import MagicLinkEmail from '@/emails/magic-link'
 import PasswordResetEmail from '@/emails/password-reset'

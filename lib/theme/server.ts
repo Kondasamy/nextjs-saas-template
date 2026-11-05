@@ -91,8 +91,8 @@ export function extractThemeVariables(css: string): string {
 	const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
 
 	// Extract :root and .dark blocks
-	const rootMatch = withoutComments.match(/:root\s*\{([^}]+)\}/s)
-	const darkMatch = withoutComments.match(/\.dark\s*\{([^}]+)\}/s)
+	const rootMatch = withoutComments.match(/:root\s*\{([^}]+)\}/)
+	const darkMatch = withoutComments.match(/\.dark\s*\{([^}]+)\}/)
 
 	let result = ''
 	if (rootMatch) result += `:root {${rootMatch[1]}}\n\n`

@@ -1,15 +1,21 @@
 import { initTRPC, TRPCError } from '@trpc/server'
+import { headers } from 'next/headers'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { getUser } from '@/lib/auth/server'
+import { getSession } from '@/lib/auth/server'
 import { prisma } from '@/lib/prisma'
 
 export const createTRPCContext = async () => {
-	const user = await getUser()
+	// next/headers works for both the HTTP handler and the server caller
+	const h = await headers()
+	const session = await getSession()
 
 	return {
 		prisma,
-		user,
+		user: session?.user ?? null,
+		session: session?.session ?? null,
+		ipAddress: h.get('x-forwarded-for') ?? undefined,
+		userAgent: h.get('user-agent') ?? undefined,
 	}
 }
 

@@ -2,6 +2,10 @@
 
 import * as React from 'react'
 import * as RechartsPrimitive from 'recharts'
+import type {
+	NameType,
+	ValueType,
+} from 'recharts/types/component/DefaultTooltipContent'
 
 import { cn } from '@/lib/utils'
 
@@ -119,6 +123,11 @@ function ChartTooltipContent({
 	nameKey,
 	labelKey,
 }: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+	// Recharts 3 injects these into custom content instead of exposing them on Tooltip props
+	Pick<
+		RechartsPrimitive.DefaultTooltipContentProps<ValueType, NameType>,
+		'payload' | 'label'
+	> &
 	React.ComponentProps<'div'> & {
 		hideLabel?: boolean
 		hideIndicator?: boolean
@@ -186,7 +195,7 @@ function ChartTooltipContent({
 
 					return (
 						<div
-							key={item.dataKey}
+							key={`${item.dataKey}`}
 							className={cn(
 								'[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5',
 								indicator === 'dot' && 'items-center'
@@ -257,7 +266,10 @@ function ChartLegendContent({
 	verticalAlign = 'bottom',
 	nameKey,
 }: React.ComponentProps<'div'> &
-	Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
+	Pick<
+		RechartsPrimitive.DefaultLegendContentProps,
+		'payload' | 'verticalAlign'
+	> & {
 		hideIcon?: boolean
 		nameKey?: string
 	}) {
@@ -345,9 +357,9 @@ function getPayloadConfigFromPayload(
 
 export {
 	ChartContainer,
-	ChartTooltip,
-	ChartTooltipContent,
 	ChartLegend,
 	ChartLegendContent,
 	ChartStyle,
+	ChartTooltip,
+	ChartTooltipContent,
 }

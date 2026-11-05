@@ -1,5 +1,9 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import {
+	hasPermission as permits,
+	toPermissions,
+} from '@/lib/permissions/checker'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 import {
 	getOrganizationStats,
@@ -145,7 +149,7 @@ export const workspaceRouter = createTRPCRouter({
 			slug: m.organization.slug,
 			description: m.organization.description,
 			logo: m.organization.logo,
-			role: m.role,
+			role: { ...m.role, permissions: toPermissions(m.role.permissions) },
 			joinedAt: m.joinedAt,
 		}))
 	}),
@@ -177,7 +181,7 @@ export const workspaceRouter = createTRPCRouter({
 			archived: m.organization.archived,
 			archivedAt: m.organization.archivedAt,
 			archivedBy: m.organization.archivedBy,
-			role: m.role,
+			role: { ...m.role, permissions: toPermissions(m.role.permissions) },
 			joinedAt: m.joinedAt,
 		}))
 	}),
@@ -305,7 +309,7 @@ export const workspaceRouter = createTRPCRouter({
 				})
 
 				// Return organization with members included
-				return tx.organization.findUnique({
+				return tx.organization.findUniqueOrThrow({
 					where: { id: org.id },
 					include: {
 						members: {
@@ -351,9 +355,10 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			// Check permissions (simplified - you can enhance this)
-			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('workspace:update')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'workspace:update'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -390,7 +395,10 @@ export const workspaceRouter = createTRPCRouter({
 				},
 			})
 
-			if (!membership || !membership.role.permissions.includes('*')) {
+			if (
+				!membership ||
+				!toPermissions(membership.role.permissions).includes('*')
+			) {
 				throw new TRPCError({
 					code: 'FORBIDDEN',
 					message: 'Only owners can delete',
@@ -433,9 +441,10 @@ export const workspaceRouter = createTRPCRouter({
 				})
 			}
 
-			const hasPermission =
-				callerMembership.role.permissions.includes('*') ||
-				callerMembership.role.permissions.includes('member:manage')
+			const hasPermission = permits(
+				toPermissions(callerMembership.role.permissions),
+				'member:manage'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -478,19 +487,19 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			// Prevent demoting the last owner
-			if (targetMembership.role.permissions.includes('*')) {
+			if (toPermissions(targetMembership.role.permissions).includes('*')) {
 				const ownerCount = await ctx.prisma.organizationMember.count({
 					where: {
 						organizationId: input.organizationId,
 						role: {
 							permissions: {
-								equals: ['*'],
+								array_contains: ['*'],
 							},
 						},
 					},
 				})
 
-				if (ownerCount <= 1 && !role.permissions.includes('*')) {
+				if (ownerCount <= 1 && !toPermissions(role.permissions).includes('*')) {
 					throw new TRPCError({
 						code: 'BAD_REQUEST',
 						message: 'Cannot demote the last owner',
@@ -523,8 +532,8 @@ export const workspaceRouter = createTRPCRouter({
 						oldRoleName: targetMembership.role.name,
 						newRoleName: role.name,
 					},
-					ipAddress: ctx.req?.headers.get('x-forwarded-for') || undefined,
-					userAgent: ctx.req?.headers.get('user-agent') || undefined,
+					ipAddress: ctx.ipAddress,
+					userAgent: ctx.userAgent,
 				},
 			})
 
@@ -561,9 +570,10 @@ export const workspaceRouter = createTRPCRouter({
 				})
 			}
 
-			const hasPermission =
-				callerMembership.role.permissions.includes('*') ||
-				callerMembership.role.permissions.includes('member:remove')
+			const hasPermission = permits(
+				toPermissions(callerMembership.role.permissions),
+				'member:remove'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -592,13 +602,13 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			// Prevent removing the last owner
-			if (targetMembership.role.permissions.includes('*')) {
+			if (toPermissions(targetMembership.role.permissions).includes('*')) {
 				const ownerCount = await ctx.prisma.organizationMember.count({
 					where: {
 						organizationId: input.organizationId,
 						role: {
 							permissions: {
-								equals: ['*'],
+								array_contains: ['*'],
 							},
 						},
 					},
@@ -631,8 +641,8 @@ export const workspaceRouter = createTRPCRouter({
 						targetUserName: targetMembership.user.name,
 						roleName: targetMembership.role.name,
 					},
-					ipAddress: ctx.req?.headers.get('x-forwarded-for') || undefined,
-					userAgent: ctx.req?.headers.get('user-agent') || undefined,
+					ipAddress: ctx.ipAddress,
+					userAgent: ctx.userAgent,
 				},
 			})
 
@@ -670,7 +680,7 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			// Only owners (users with '*' permission) can transfer ownership
-			if (!callerMembership.role.permissions.includes('*')) {
+			if (!toPermissions(callerMembership.role.permissions).includes('*')) {
 				throw new TRPCError({
 					code: 'FORBIDDEN',
 					message: 'Only owners can transfer ownership',
@@ -697,7 +707,7 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			// Don't allow transferring to someone who's already an owner
-			if (targetMembership.role.permissions.includes('*')) {
+			if (toPermissions(targetMembership.role.permissions).includes('*')) {
 				throw new TRPCError({
 					code: 'BAD_REQUEST',
 					message: 'Target user is already an owner',
@@ -787,8 +797,8 @@ export const workspaceRouter = createTRPCRouter({
 						newOwnerEmail: targetMembership.user.email,
 						newOwnerName: targetMembership.user.name,
 					},
-					ipAddress: ctx.req?.headers.get('x-forwarded-for') || undefined,
-					userAgent: ctx.req?.headers.get('user-agent') || undefined,
+					ipAddress: ctx.ipAddress,
+					userAgent: ctx.userAgent,
 				},
 			})
 
@@ -830,9 +840,10 @@ export const workspaceRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('member:manage')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'member:manage'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -949,9 +960,10 @@ export const workspaceRouter = createTRPCRouter({
 				throw new TRPCError({ code: 'FORBIDDEN' })
 			}
 
-			const hasPermission =
-				membership.role.permissions.includes('*') ||
-				membership.role.permissions.includes('member:remove')
+			const hasPermission = permits(
+				toPermissions(membership.role.permissions),
+				'member:remove'
+			)
 
 			if (!hasPermission) {
 				throw new TRPCError({
@@ -966,6 +978,30 @@ export const workspaceRouter = createTRPCRouter({
 					code: 'BAD_REQUEST',
 					message: 'Cannot remove yourself from the workspace',
 				})
+			}
+
+			// Check ownership once up front: per-target counts run concurrently and
+			// would all see the same pre-delete total, letting every owner be removed
+			const targetOwners = await ctx.prisma.organizationMember.count({
+				where: {
+					organizationId: input.organizationId,
+					userId: { in: input.userIds },
+					role: { permissions: { array_contains: ['*'] } },
+				},
+			})
+			if (targetOwners > 0) {
+				const ownerCount = await ctx.prisma.organizationMember.count({
+					where: {
+						organizationId: input.organizationId,
+						role: { permissions: { array_contains: ['*'] } },
+					},
+				})
+				if (targetOwners >= ownerCount) {
+					throw new TRPCError({
+						code: 'BAD_REQUEST',
+						message: 'Cannot remove the last owner',
+					})
+				}
 			}
 
 			// Process all removals
@@ -985,24 +1021,6 @@ export const workspaceRouter = createTRPCRouter({
 
 					if (!targetMember) {
 						throw new Error(`Member ${userId} not found`)
-					}
-
-					// Check if removing the last owner
-					if (targetMember.role.permissions.includes('*')) {
-						const ownerCount = await ctx.prisma.organizationMember.count({
-							where: {
-								organizationId: input.organizationId,
-								role: {
-									permissions: {
-										has: '*',
-									},
-								},
-							},
-						})
-
-						if (ownerCount === 1) {
-							throw new Error('Cannot remove the last owner')
-						}
 					}
 
 					// Remove member
@@ -1118,8 +1136,17 @@ export const workspaceRouter = createTRPCRouter({
 			}
 
 			return {
-				organization,
-				roles,
+				organization: {
+					...organization,
+					members: organization.members.map((m) => ({
+						...m,
+						role: { ...m.role, permissions: toPermissions(m.role.permissions) },
+					})),
+				},
+				roles: roles.map((role) => ({
+					...role,
+					permissions: toPermissions(role.permissions),
+				})),
 				currentUser,
 				currentUserRole: membership.role,
 			}
@@ -1250,14 +1277,17 @@ export const workspaceRouter = createTRPCRouter({
 							organizationId: organization.id,
 							name: role.name,
 							description: role.description,
-							permissions: role.permissions,
+							permissions: toPermissions(role.permissions),
 							isSystem: role.isSystem,
 						},
 					})
 					roleMapping[role.id] = newRole.id
 
 					// Track the Owner role if we cloned it
-					if (role.name === 'Owner' || role.permissions.includes('*')) {
+					if (
+						role.name === 'Owner' ||
+						toPermissions(role.permissions).includes('*')
+					) {
 						ownerRole = newRole
 					}
 				}
@@ -1327,7 +1357,10 @@ export const workspaceRouter = createTRPCRouter({
 				},
 			})
 
-			if (!membership || !membership.role.permissions.includes('*')) {
+			if (
+				!membership ||
+				!toPermissions(membership.role.permissions).includes('*')
+			) {
 				throw new TRPCError({
 					code: 'FORBIDDEN',
 					message: 'Only owners can archive workspaces',
@@ -1381,7 +1414,10 @@ export const workspaceRouter = createTRPCRouter({
 				},
 			})
 
-			if (!membership || !membership.role.permissions.includes('*')) {
+			if (
+				!membership ||
+				!toPermissions(membership.role.permissions).includes('*')
+			) {
 				throw new TRPCError({
 					code: 'FORBIDDEN',
 					message: 'Only owners can unarchive workspaces',

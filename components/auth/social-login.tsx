@@ -1,7 +1,7 @@
 'use client'
 
-import { Chrome, Github } from 'lucide-react'
 import { toast } from 'sonner'
+import { GitHubIcon, GoogleIcon } from '@/components/brand-icons'
 import { Button } from '@/components/ui/button'
 import { signIn } from '@/lib/auth/client'
 
@@ -27,7 +27,7 @@ export function SocialLogin() {
 				className="w-full"
 				onClick={() => handleSocialSignIn('google')}
 			>
-				<Chrome className="mr-2 h-4 w-4" />
+				<GoogleIcon className="mr-2 h-4 w-4" />
 				Continue with Google
 			</Button>
 			<Button
@@ -36,7 +36,7 @@ export function SocialLogin() {
 				className="w-full"
 				onClick={() => handleSocialSignIn('github')}
 			>
-				<Github className="mr-2 h-4 w-4" />
+				<GitHubIcon className="mr-2 h-4 w-4" />
 				Continue with GitHub
 			</Button>
 		</div>

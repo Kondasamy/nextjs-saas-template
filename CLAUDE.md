@@ -5,7 +5,7 @@ Development guidance for Claude Code (claude.ai/code) when working with this rep
 ## Quick Reference
 
 **Package Manager**: Use `pnpm` (not npm or yarn)
-**Node Version**: 18+ required
+**Node Version**: 24+ required (`.nvmrc`)
 **Framework**: Next.js 16 App Router (no Pages Router)
 **Database**: PostgreSQL with Prisma ORM
 
@@ -27,6 +27,11 @@ pnpm db:studio    # Open Prisma Studio
 pnpm lint         # Check linting (Oxlint)
 pnpm lint:fix     # Auto-fix issues
 pnpm format       # Format code (Biome)
+pnpm typecheck    # TypeScript type checking
+
+# Tests (CI runs all of these on every PR)
+pnpm test:e2e     # Playwright smoke suite against `pnpm start` (build first)
+pnpm test:emails  # Render every email template
 ```
 
 ## Project Structure
@@ -153,13 +158,6 @@ Detailed documentation available in `/docs`:
 - [Architecture](docs/architecture.md) - System design
 - [Theme Management](docs/theming.md) - Dynamic themes
 - [ShadCN Components](docs/shadcn-components.md) - UI components
-
-## Known Issues
-
-**Next.js 16 Build**: Production builds may fail with Turbopack error. Solutions:
-1. Use Next.js 15 for production: `pnpm add next@15`
-2. Wait for Next.js 16.1+ fixes
-3. Development server works perfectly
 
 ## Important Notes
 

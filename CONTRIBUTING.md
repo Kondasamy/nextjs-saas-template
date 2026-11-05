@@ -21,7 +21,7 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing. We ar
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm
+- Node.js 24+ and pnpm 11
 - PostgreSQL database (Supabase recommended)
 - Git
 
@@ -143,7 +143,7 @@ pnpm format
 pnpm lint
 
 # Type check
-pnpm type-check
+pnpm typecheck
 
 # Build check
 pnpm build

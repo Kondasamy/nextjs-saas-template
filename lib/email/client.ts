@@ -25,8 +25,8 @@ export async function sendEmail({
 			from: env.EMAIL_FROM_ADDRESS ?? 'noreply@example.com',
 			to: Array.isArray(to) ? to : [to],
 			subject,
-			html,
-			text,
+			// Resend requires at least one of html/text
+			...(html !== undefined ? { html, text } : { text: text ?? '' }),
 		})
 
 		if (error) {

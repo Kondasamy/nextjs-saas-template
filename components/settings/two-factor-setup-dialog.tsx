@@ -177,6 +177,7 @@ export function TwoFactorSetupDialog({
 									<div className="flex gap-2">
 										<Input value={secret} readOnly className="font-mono" />
 										<Button
+											aria-label="Copy secret"
 											variant="outline"
 											size="icon"
 											onClick={handleCopySecret}
